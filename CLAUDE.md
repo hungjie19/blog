@@ -4,7 +4,7 @@
 
 - Framework：Astro (SSG)
 - 部署：GitHub Pages，base path `/blog`
-- 網址：`https://hungjie19.github.io/blog`
+- 網址：`https://jasperhung.dev`
 - Package manager：pnpm
 
 ## 文章結構

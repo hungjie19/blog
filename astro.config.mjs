@@ -8,8 +8,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://hungjie19.github.io',
-  base: '/blog',
+  site: 'https://jasperhung.dev',
   integrations: [sitemap()],
   markdown: {
     shikiConfig: {
