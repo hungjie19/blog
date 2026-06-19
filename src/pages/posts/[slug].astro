@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import AuthorCard from '../../components/AuthorCard.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -38,6 +39,7 @@ const { Content } = await render(post);
     <div class="article-body">
       <Content />
     </div>
+    <AuthorCard />
   </article>
 </BlogLayout>
 
