@@ -41,33 +41,33 @@ const { Content } = await render(post);
       </div>
     </div>
 
-    <div class="prose">
+    <div class="article-body">
       <Content />
     </div>
   </article>
 </BlogLayout>
 
 <style>
-  .prose {
+  .article-body {
     color: var(--text);
     font-size: 15px;
     line-height: 1.75;
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   }
 
-  .prose :global(h2) { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem; letter-spacing: -0.01em; }
-  .prose :global(h3) { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
-  .prose :global(h4) { font-size: 1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--muted); }
+  .article-body :global(h2) { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem; letter-spacing: -0.01em; }
+  .article-body :global(h3) { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+  .article-body :global(h4) { font-size: 1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--muted); }
 
-  .prose :global(p)  { margin: 0 0 1rem; }
-  .prose :global(a)  { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
-  .prose :global(a:hover) { opacity: 0.7; }
+  .article-body :global(p)  { margin: 0 0 1rem; }
+  .article-body :global(a)  { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  .article-body :global(a:hover) { opacity: 0.7; }
 
-  .prose :global(strong) { font-weight: 600; }
-  .prose :global(em)     { font-style: italic; }
-  .prose :global(del)    { color: var(--muted); }
+  .article-body :global(strong) { font-weight: 600; }
+  .article-body :global(em)     { font-style: italic; }
+  .article-body :global(del)    { color: var(--muted); }
 
-  .prose :global(code:not(pre code)) {
+  .article-body :global(code:not(pre code)) {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.82em;
     background: rgba(128, 128, 128, 0.12);
@@ -78,7 +78,7 @@ const { Content } = await render(post);
     padding: 1px 6px;
   }
 
-  .prose :global(pre) {
+  .article-body :global(pre) {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -90,14 +90,14 @@ const { Content } = await render(post);
     line-height: 1.6;
   }
 
-  .prose :global(pre code) {
+  .article-body :global(pre code) {
     background: none;
     border: none;
     padding: 0;
     font-size: inherit;
   }
 
-  .prose :global(blockquote) {
+  .article-body :global(blockquote) {
     margin: 1.5rem 0;
     padding: 12px 20px;
     background: rgba(128, 128, 128, 0.08);
@@ -109,28 +109,28 @@ const { Content } = await render(post);
     color: var(--muted);
   }
 
-  .prose :global(blockquote p) { margin: 0; }
+  .article-body :global(blockquote p) { margin: 0; }
 
-  .prose :global(ul), .prose :global(ol) {
+  .article-body :global(ul), .article-body :global(ol) {
     margin: 0 0 1rem;
     padding-left: 1.5rem;
   }
 
-  .prose :global(li) { margin-bottom: 4px; }
+  .article-body :global(li) { margin-bottom: 4px; }
 
-  .prose :global(li input[type="checkbox"]) {
+  .article-body :global(li input[type="checkbox"]) {
     margin-right: 6px;
     accent-color: var(--text);
   }
 
-  .prose :global(table) {
+  .article-body :global(table) {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
     margin: 1.25rem 0;
   }
 
-  .prose :global(th) {
+  .article-body :global(th) {
     text-align: left;
     font-weight: 600;
     font-size: 12px;
@@ -141,19 +141,19 @@ const { Content } = await render(post);
     padding: 6px 12px 6px 0;
   }
 
-  .prose :global(td) {
+  .article-body :global(td) {
     border-bottom: 1px solid var(--border);
     padding: 8px 12px 8px 0;
     vertical-align: top;
   }
 
-  .prose :global(hr) {
+  .article-body :global(hr) {
     border: none;
     border-top: 1px solid var(--border);
     margin: 2rem 0;
   }
 
-  .prose :global(img) {
+  .article-body :global(img) {
     max-width: 100%;
     border-radius: 8px;
     border: 1px solid var(--border);
