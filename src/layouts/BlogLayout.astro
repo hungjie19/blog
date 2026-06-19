@@ -46,6 +46,8 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
 </head>
 <body style="display:flex;height:100vh;overflow:hidden;">
 
+  <div id="sidebar-backdrop"></div>
+
   <!-- Sidebar -->
   <aside
     id="sidebar"
@@ -54,7 +56,6 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
       flex-shrink: 0;
       background: var(--sidebar);
       border-right: 1px solid var(--border);
-      display: flex;
       flex-direction: column;
       transition: transform 0.2s ease;
     "
@@ -65,7 +66,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
         href={base}
         style="display: block; padding: 16px; font-size: 16px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em;"
       >
-        Jasper
+        Jasper cowork with AI
       </a>
     </div>
 
@@ -200,10 +201,27 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     .content-wrapper { padding: 48px 32px; }
   }
 
+  #sidebar { display: flex; }
+
   @media (max-width: 768px) {
-    #sidebar { display: none; }
+    #sidebar {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      z-index: 100;
+    }
     #sidebar.open { display: flex; }
     #menu-btn { display: flex !important; }
+    #sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 99;
+    }
+    #sidebar-backdrop.open { display: block; }
   }
 
   nav a:hover {
@@ -222,7 +240,10 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     navigator.clipboard.writeText(window.location.href);
   });
 
-  document.getElementById('menu-btn')?.addEventListener('click', () => {
+  function toggleSidebar() {
     document.getElementById('sidebar')?.classList.toggle('open');
-  });
+    document.getElementById('sidebar-backdrop')?.classList.toggle('open');
+  }
+  document.getElementById('menu-btn')?.addEventListener('click', toggleSidebar);
+  document.getElementById('sidebar-backdrop')?.addEventListener('click', toggleSidebar);
 </script>
