@@ -1,1 +1,40 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@layer base {
+  :root {
+    --bg:       #ffffff;
+    --surface:  #f5f5f5;
+    --border:   #e5e5e5;
+    --text:     #0a0a0a;
+    --muted:    #737373;
+    --sidebar:  #fafafa;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:       #0f0f0f;
+      --surface:  #171717;
+      --border:   #262626;
+      --text:     #ededed;
+      --muted:    #525252;
+      --sidebar:  #171717;
+    }
+  }
+
+  html, body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    height: 100%;
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+}
