@@ -12,6 +12,9 @@ export default defineConfig({
   markdown: {
     shikiConfig: {
       theme: 'monokai',
+      defaultProps: {
+        showLineNumbers: true,
+      },
     },
     remarkPlugins: [remarkDirective, remarkAdmonitions],
   },
