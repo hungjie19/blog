@@ -142,8 +142,17 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
         </svg>
       </button>
 
-      <!-- Title -->
-      <span style="flex: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <!-- Mobile blog title (visible only on mobile) -->
+      <a
+        id="mobile-blog-title"
+        href={base}
+        style="display: none; font-size: 15px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; flex-shrink: 0;"
+      >
+        Jasper cowork with AI
+      </a>
+
+      <!-- Title (article title, desktop only) -->
+      <span id="topbar-title" style="flex: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
         {title ?? ''}
       </span>
 
@@ -214,6 +223,8 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     }
     #sidebar.open { display: flex; }
     #menu-btn { display: flex !important; }
+    #mobile-blog-title { display: block !important; }
+    #topbar-title { display: none; }
     #sidebar-backdrop {
       display: none;
       position: fixed;
