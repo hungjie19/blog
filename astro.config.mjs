@@ -1,5 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import remarkDirective from 'remark-directive';
+import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
 
 import tailwindcss from '@tailwindcss/vite';
 
@@ -10,7 +12,8 @@ export default defineConfig({
   markdown: {
     shikiConfig: {
       theme: 'monokai',
-    }
+    },
+    remarkPlugins: [remarkDirective, remarkAdmonitions],
   },
   vite: {
     plugins: [tailwindcss()]

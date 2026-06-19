@@ -138,6 +138,28 @@ git push origin main
 
 ---
 
+## Admonitions
+
+:::note
+這是一個 note，適合補充說明。
+:::
+
+:::tip
+這是一個 tip，工具或技巧。
+:::
+
+:::important
+這是 important，重要資訊。
+:::
+
+:::caution
+這是 caution，注意事項。
+:::
+
+:::warning
+這是 warning，警告。
+:::
+
 ## 長程式碼（測試橫向捲動）
 
 ```typescript
