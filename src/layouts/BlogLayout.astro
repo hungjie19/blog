@@ -114,16 +114,9 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
         <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Tags</div>
         <div style="display: flex; flex-wrap: wrap; gap: 6px;">
           {allTags.map(tag => (
-            <span style="
-              font-size: 11px;
-              color: var(--muted);
-              background: var(--surface);
-              border: 1px solid var(--border);
-              border-radius: 4px;
-              padding: 2px 8px;
-            ">
-              {tag}
-            </span>
+            <a href={`${base}tags/${tag}`} style="font-size: 12px; color: #60a5fa; text-decoration: none;">
+              #{tag}
+            </a>
           ))}
         </div>
       </div>

@@ -1,17 +1,106 @@
 ---
+import { getCollection } from 'astro:content';
 import BlogLayout from '../layouts/BlogLayout.astro';
+
+const base = import.meta.env.BASE_URL;
+const posts = (await getCollection('blog')).sort(
+  (a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
+);
 ---
 
 <BlogLayout>
-  <div style="
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 60vh;
-    text-align: center;
-    gap: 12px;
-  ">
-    <div style="font-size: 13px; color: var(--muted);">選一篇文章開始閱讀</div>
+  <div class="feed">
+    {posts.map((post, i) => (
+      <article class="feed-item">
+        <a href={`${base}posts/${post.id}`} class="feed-link">
+          <div class="feed-meta">
+            <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
+            <span class="feed-title">{post.data.title}</span>
+          </div>
+
+          {post.data.description && (
+            <p class="feed-desc">{post.data.description}</p>
+          )}
+
+          {post.data.tags.length > 0 && (
+            <div class="feed-tags">
+              {post.data.tags.map(tag => (
+                <span>#{tag}</span>
+              ))}
+            </div>
+          )}
+
+          {post.data.image && (
+            <img class="feed-image" src={post.data.image} alt={post.data.title} loading="lazy" />
+          )}
+        </a>
+
+        {i < posts.length - 1 && <hr class="feed-divider" />}
+      </article>
+    ))}
   </div>
 </BlogLayout>
+
+<style>
+  .feed { display: flex; flex-direction: column; }
+
+  .feed-item { padding: 24px 0; }
+
+  .feed-link {
+    display: block;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .feed-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  time {
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .feed-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  .feed-link:hover .feed-title { opacity: 0.75; }
+
+  .feed-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin: 0 0 10px;
+  }
+
+  .feed-tags {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #60a5fa;
+  }
+
+  .feed-image {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-top: 4px;
+    display: block;
+  }
+
+  .feed-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+</style>

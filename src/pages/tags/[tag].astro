@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  const tags = [...new Set(posts.flatMap(p => p.data.tags))];
+  return tags.map(tag => ({
+    params: { tag },
+    props: { tag, posts: posts.filter(p => p.data.tags.includes(tag)).sort((a, b) =>
+      new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
+    )},
+  }));
+}
+
+const { tag, posts } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<BlogLayout title={`#${tag}`}>
+  <div>
+    <div style="margin-bottom: 32px;">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">
+        <a href={base} style="color: var(--muted); text-decoration: none;">所有文章</a>
+        <span style="margin: 0 6px;">›</span>
+        <span>標籤</span>
+      </div>
+      <h1 style="
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #60a5fa;
+        margin: 0;
+        letter-spacing: -0.01em;
+      ">#{tag}</h1>
+      <p style="margin: 8px 0 0; font-size: 13px; color: var(--muted);">{posts.length} 篇文章</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1px;">
+      {posts.map(post => (
+        <a
+          href={`${base}posts/${post.id}`}
+          style="
+            display: block;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text);
+          "
+        >
+          <div style="font-size: 15px; font-weight: 500; margin-bottom: 4px;">{post.data.title}</div>
+          <div style="font-size: 12px; color: var(--muted);">
+            {post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+          {post.data.description && (
+            <div style="font-size: 13px; color: var(--muted); margin-top: 4px; opacity: 0.8;">{post.data.description}</div>
+          )}
+        </a>
+      ))}
+    </div>
+  </div>
+</BlogLayout>
