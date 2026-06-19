@@ -192,8 +192,9 @@ const { Content } = await render(post);
 
   .article-body :global(hr) {
     border: none;
-    border-top: 1px solid var(--border);
+    height: 1px;
     margin: 2rem 0;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.25) 20%, rgba(255,255,255,0.25) 80%, transparent);
   }
 
   .article-body :global(img) {
