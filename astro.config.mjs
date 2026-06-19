@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import remarkDirective from 'remark-directive';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
+import sitemap from '@astrojs/sitemap';
 
 import tailwindcss from '@tailwindcss/vite';
 
@@ -9,6 +10,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://hungjie19.github.io',
   base: '/blog',
+  integrations: [sitemap()],
   markdown: {
     shikiConfig: {
       theme: 'monokai',

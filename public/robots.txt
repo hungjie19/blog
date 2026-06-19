@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hungjie19.github.io/blog/sitemap-index.xml
