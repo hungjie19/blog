@@ -11,7 +11,7 @@ const posts = (await getCollection('blog')).sort(
 <BlogLayout>
   <div class="feed">
     {posts.map((post, i) => (
-      <article class="feed-item">
+      <article class="feed-item" data-index={i}>
         <a href={`${base}posts/${post.id}`} class="feed-link">
           <div class="feed-meta">
             <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
@@ -103,4 +103,33 @@ const posts = (await getCollection('blog')).sort(
     border-top: 1px solid var(--border);
     margin: 0;
   }
+
+  .feed-item {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .feed-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
+
+<script>
+  const items = document.querySelectorAll('.feed-item');
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const i = Number(el.dataset.index);
+          setTimeout(() => el.classList.add('visible'), i * 80);
+          observer.unobserve(el);
+        }
+      });
+    },
+    { threshold: 0.05 }
+  );
+  items.forEach(item => observer.observe(item));
+</script>
