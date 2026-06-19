@@ -13,11 +13,15 @@ description: 測試所有 Markdown 元素的渲染效果
 
 #### H4 標題
 
+##### H5 標題
+
+###### H6 標題
+
 ---
 
 ## 文字樣式
 
-普通文字。**粗體**，*斜體*，~~刪除線~~，`inline code`，**_粗體斜體_**。
+普通文字。**粗體**，_斜體_，~~刪除線~~，`inline code`，**_粗體斜體_**。
 
 這是一段比較長的段落，用來測試行距與最大寬度的設定是否舒適。工程師的 blog 最重要的是閱讀體驗，文字不能太擠也不能太散，行高約 1.75 是比較舒服的數值。
 
@@ -77,7 +81,7 @@ interface Post {
 }
 
 async function getPosts(): Promise<Post[]> {
-  const posts = await getCollection('blog');
+  const posts = await getCollection("blog");
   return posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 }
 ```
@@ -113,12 +117,12 @@ git push origin main
 
 ## 表格
 
-| 工具 | 用途 | 費用 |
-|------|------|------|
-| Astro | 靜態網站生成 | 免費 |
-| GitHub Pages | 部署 | 免費 |
-| Cloudflare | DNS + Analytics | 免費 |
-| Umami Cloud | 進階 Analytics | 免費（基本） |
+| 工具         | 用途            | 費用         |
+| ------------ | --------------- | ------------ |
+| Astro        | 靜態網站生成    | 免費         |
+| GitHub Pages | 部署            | 免費         |
+| Cloudflare   | DNS + Analytics | 免費         |
+| Umami Cloud  | 進階 Analytics  | 免費（基本） |
 
 ---
 
@@ -163,5 +167,12 @@ git push origin main
 ## 長程式碼（測試橫向捲動）
 
 ```typescript
-const result = await Promise.all(posts.map(async (post) => ({ slug: post.slug, title: post.data.title, date: post.data.date, tags: post.data.tags })));
+const result = await Promise.all(
+  posts.map(async (post) => ({
+    slug: post.slug,
+    title: post.data.title,
+    date: post.data.date,
+    tags: post.data.tags,
+  })),
+);
 ```

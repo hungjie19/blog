@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @layer base {
   :root {
@@ -17,7 +16,7 @@
       --surface:  #171717;
       --border:   #262626;
       --text:     #ededed;
-      --muted:    #525252;
+      --muted:    #a3a3a3;
       --sidebar:  #171717;
     }
   }

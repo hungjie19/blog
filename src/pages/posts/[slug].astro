@@ -50,14 +50,18 @@ const { Content } = await render(post);
 <style>
   .article-body {
     color: var(--text);
-    font-size: 15px;
-    line-height: 1.75;
+    font-size: 16px;
+    line-height: 1.8;
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   }
 
-  .article-body :global(h2) { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.75rem; letter-spacing: -0.01em; }
-  .article-body :global(h3) { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
-  .article-body :global(h4) { font-size: 1rem; font-weight: 600; margin: 1.25rem 0 0.5rem; color: var(--muted); }
+  /* H1-H6 (body = 16px) */
+  .article-body :global(h1) { font-size: 2rem;      font-weight: 700; margin: 2.5rem 0 1rem;    letter-spacing: -0.02em;  line-height: 1.25; color: var(--text); }
+  .article-body :global(h2) { font-size: 1.75rem;   font-weight: 700; margin: 2.25rem 0 0.75rem; letter-spacing: -0.015em; line-height: 1.3;  color: var(--text); }
+  .article-body :global(h3) { font-size: 1.5rem;    font-weight: 600; margin: 2rem 0 0.5rem;    letter-spacing: -0.01em;  line-height: 1.35; color: var(--text); }
+  .article-body :global(h4) { font-size: 1.375rem;  font-weight: 600; margin: 1.75rem 0 0.5rem; line-height: 1.4;         color: var(--text); }
+  .article-body :global(h5) { font-size: 1.25rem;   font-weight: 600; margin: 1.5rem 0 0.5rem;  line-height: 1.4;         color: var(--text); }
+  .article-body :global(h6) { font-size: 1.125rem;  font-weight: 600; margin: 1.25rem 0 0.5rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
 
   .article-body :global(p)  { margin: 0 0 1rem; }
   .article-body :global(a)  { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
@@ -65,29 +69,53 @@ const { Content } = await render(post);
 
   .article-body :global(strong) { font-weight: 600; }
   .article-body :global(em)     { font-style: italic; }
-  .article-body :global(del)    { color: var(--muted); }
+  .article-body :global(del)    { text-decoration: line-through; opacity: 0.9; }
 
   .article-body :global(code:not(pre code)) {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82em;
-    background: rgba(128, 128, 128, 0.12);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(128, 128, 128, 0.15);
-    border-radius: 4px;
-    padding: 1px 6px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.9em;
+    background: rgba(255, 255, 255, 0.05);
+    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.4rem;
+    padding: 1px 0.25rem;
+    color: rgb(244, 169, 169);
+    white-space: pre-wrap;
+    font-variant-ligatures: none;
   }
 
   .article-body :global(pre) {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 16px 20px;
+    padding: 16px 0;
     overflow-x: auto;
     margin: 1.25rem 0;
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
     line-height: 1.6;
+    counter-reset: line;
+  }
+
+  /* 行號 CSS counter */
+  .article-body :global(pre code .line) {
+    display: inline-block;
+    width: 100%;
+    padding: 0 20px 0 56px;
+    position: relative;
+  }
+
+  .article-body :global(pre code .line::before) {
+    counter-increment: line;
+    content: counter(line);
+    position: absolute;
+    left: 0;
+    width: 36px;
+    text-align: right;
+    color: var(--muted);
+    opacity: 0.4;
+    font-size: 12px;
+    user-select: none;
+    pointer-events: none;
   }
 
   .article-body :global(pre code) {
@@ -98,20 +126,41 @@ const { Content } = await render(post);
   }
 
   .article-body :global(blockquote) {
+    position: relative;
     margin: 1.5rem 0;
-    padding: 12px 20px;
-    background: rgba(128, 128, 128, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(128, 128, 128, 0.12);
-    border-radius: 8px;
+    padding: 20px 20px 20px 48px;
+    background: #292929;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     font-style: italic;
-    color: var(--muted);
+    color: var(--text);
+  }
+
+  .article-body :global(blockquote)::before {
+    content: '\201C';
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 2.5rem;
+    line-height: 1;
+    color: #60a5fa;
+    font-style: normal;
+    font-family: Georgia, serif;
   }
 
   .article-body :global(blockquote p) { margin: 0; }
 
-  .article-body :global(ul), .article-body :global(ol) {
+  .article-body :global(ul) {
+    list-style-type: disc;
+    margin: 0 0 1rem;
+    padding-left: 1.5rem;
+  }
+
+  .article-body :global(ul ul) { list-style-type: circle; margin: 4px 0; }
+  .article-body :global(ul ul ul) { list-style-type: square; }
+
+  .article-body :global(ol) {
+    list-style-type: decimal;
     margin: 0 0 1rem;
     padding-left: 1.5rem;
   }
