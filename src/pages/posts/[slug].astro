@@ -30,7 +30,7 @@ const { Content } = await render(post);
       <div style="display: flex; gap: 12px; font-size: 13px; color: var(--muted); align-items: center; flex-wrap: wrap;">
         <span>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
         {post.data.tags.map(tag => (
-          <a href={`${import.meta.env.BASE_URL}tags/${tag}`} style="color: #60a5fa; text-decoration: none; font-size: 13px;">#{tag}</a>
+          <a href={`${import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'}tags/${tag}`} style="color: #60a5fa; text-decoration: none; font-size: 13px;">#{tag}</a>
         ))}
       </div>
     </div>
