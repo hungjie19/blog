@@ -93,6 +93,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </head>
 <body style="display:flex;height:100dvh;overflow:hidden;">
+  {activeSlug && <div id="reading-progress" style="position:fixed;top:0;left:0;height:3px;width:0%;background:#60a5fa;z-index:1000;transition:width 0.08s linear;pointer-events:none;"></div>}
 
   <div id="sidebar-backdrop"></div>
 
@@ -305,4 +306,14 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   }
   document.getElementById('menu-btn')?.addEventListener('click', toggleSidebar);
   document.getElementById('sidebar-backdrop')?.addEventListener('click', toggleSidebar);
+
+  const main = document.querySelector('main');
+  const bar = document.getElementById('reading-progress');
+  if (main && bar) {
+    main.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = main;
+      const pct = scrollHeight <= clientHeight ? 100 : (scrollTop / (scrollHeight - clientHeight)) * 100;
+      (bar as HTMLElement).style.width = pct + '%';
+    });
+  }
 </script>
