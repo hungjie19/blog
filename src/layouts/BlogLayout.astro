@@ -92,7 +92,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </head>
-<body style="display:flex;height:100vh;overflow:hidden;">
+<body style="display:flex;height:100dvh;overflow:hidden;">
 
   <div id="sidebar-backdrop"></div>
 
@@ -231,7 +231,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     </header>
 
     <!-- Content -->
-    <main style="flex: 1; overflow-y: auto;">
+    <main style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;">
       <div class="content-wrapper">
         <slot />
       </div>
