@@ -85,6 +85,9 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <!-- JSON-LD -->
   <script type="application/ld+json" set:html={jsonLd} />
 
+  <!-- Raw markdown alternate (AEO: AI crawlers can read plain markdown directly) -->
+  {activeSlug && <link rel="alternate" type="text/markdown" href={`${canonicalUrl}.md`} title="Raw Markdown" />}
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -268,7 +271,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     }
     #sidebar.open { display: flex; }
     #menu-btn { display: flex !important; }
-    #mobile-blog-title { display: block !important; }
+    #mobile-blog-title { display: block !important; flex: 1; }
     #topbar-title { display: none; }
     #sidebar-backdrop {
       display: none;
