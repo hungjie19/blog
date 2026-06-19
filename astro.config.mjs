@@ -7,6 +7,11 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://hungjie19.github.io',
   base: '/blog',
+  markdown: {
+    shikiConfig: {
+      theme: 'monokai',
+    }
+  },
   vite: {
     plugins: [tailwindcss()]
   }
