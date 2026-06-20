@@ -68,6 +68,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <meta name="description" content={pageDescription} />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+  <link rel="alternate" type="application/rss+xml" title="Jasper cowork with AI" href={`${siteUrl}/rss.xml`} />
 
   <!-- Open Graph -->
   <meta property="og:type" content={activeSlug ? 'article' : 'website'} />
