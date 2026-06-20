@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
+    "@expressive-code/plugin-line-numbers": "^0.43.1",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.1",
     "astro": "^6.4.7",
+    "astro-expressive-code": "^0.43.1",
     "hastscript": "^9.0.1",
     "mdast-util-directive": "^3.1.0",
     "mdast-util-to-markdown": "^2.1.2",

@@ -86,46 +86,9 @@ const readingTime = `約 ${minutes} 分鐘`;
     font-variant-ligatures: none;
   }
 
-  .article-body :global(pre) {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 0;
-    overflow-x: auto;
+  .article-body :global(.expressive-code) {
     margin: 1.25rem 0;
-    font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
-    line-height: 1.6;
-    counter-reset: line;
-  }
-
-  /* 行號 CSS counter */
-  .article-body :global(pre code .line) {
-    display: inline-block;
-    width: 100%;
-    padding: 0 20px 0 56px;
-    position: relative;
-  }
-
-  .article-body :global(pre code .line::before) {
-    counter-increment: line;
-    content: counter(line);
-    position: absolute;
-    left: 0;
-    width: 36px;
-    text-align: right;
-    color: var(--muted);
-    opacity: 0.4;
-    font-size: 12px;
-    user-select: none;
-    pointer-events: none;
-  }
-
-  .article-body :global(pre code) {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: inherit;
   }
 
   .article-body :global(blockquote) {
