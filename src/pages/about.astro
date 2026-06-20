@@ -6,16 +6,18 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
 <BlogLayout title="About">
   <div class="about-wrapper">
-    <div class="about-header">
-      <img src={`${base}favicon.svg`} alt="Jasper Hung" class="about-avatar" />
-      <div>
-        <h1 class="about-name">Jasper Hung</h1>
-        <p class="about-role">Software Engineer</p>
-      </div>
+    <img
+      src={`${base}author-card-about.jpg`}
+      alt="Jasper Hung coworking with AI"
+      class="about-hero"
+    />
+
+    <div class="about-identity">
+      <h1 class="about-name">Jasper Hung</h1>
     </div>
 
     <div class="about-bio">
-      <p>軟體工程師，從前端出發，對網站的設計與互動有一定的品味，主要用 React / TypeScript 做產品。</p>
+      <p>Software Engineer，從前端出發，對網站的設計與互動有一定的品味，主要用 React / TypeScript 做產品。</p>
       <p>相信 AI 協作是接下來最值得投入的事。不是把 AI 當工具用，而是把 context 給它、一起討論、自己做決定——讓我可以同時消化設計、後端、PM 三邊的 constraint，做出更完整的思考。</p>
       <p>這裡記錄協作的實戰片段：一個 bug 怎麼從前端止血到後端根治、一個需求怎麼拆成可執行的 spec、以及那些 AI 一針見血說中我沒想到的地方。</p>
     </div>
@@ -32,19 +34,16 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     padding-top: 16px;
   }
 
-  .about-header {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 32px;
+  .about-hero {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    display: block;
+    margin-bottom: 28px;
   }
 
-  .about-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    flex-shrink: 0;
+  .about-identity {
+    margin-bottom: 24px;
   }
 
   .about-name {
@@ -55,13 +54,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     letter-spacing: -0.02em;
   }
 
-  .about-role {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .about-bio {
+.about-bio {
     color: var(--text);
     font-size: 15px;
     line-height: 1.8;

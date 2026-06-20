@@ -1,11 +1,11 @@
 ---
-import { getCollection, render } from 'astro:content';
-import BlogLayout from '../../layouts/BlogLayout.astro';
-import AuthorCard from '../../components/AuthorCard.astro';
+import { getCollection, render } from "astro:content";
+import BlogLayout from "../../layouts/BlogLayout.astro";
+import AuthorCardScene from "../../components/AuthorCardScene.astro";
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map(post => ({
+  const posts = await getCollection("blog");
+  return posts.map((post) => ({
     params: { slug: post.id },
     props: { post },
   }));
@@ -14,39 +14,65 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
-const text = post.body ?? '';
+const text = post.body ?? "";
 const chineseChars = (text.match(/[一-鿿]/g) ?? []).length;
 const englishWords = (text.match(/[a-zA-Z]+/g) ?? []).length;
 const minutes = Math.max(1, Math.ceil(chineseChars / 400 + englishWords / 200));
 const readingTime = `約 ${minutes} 分鐘`;
 ---
 
-<BlogLayout title={post.data.title} activeSlug={post.id} description={post.data.description} date={post.data.date instanceof Date ? post.data.date.toISOString() : String(post.data.date ?? '')}>
+<BlogLayout
+  title={post.data.title}
+  activeSlug={post.id}
+  description={post.data.description}
+  date={post.data.date instanceof Date
+    ? post.data.date.toISOString()
+    : String(post.data.date ?? "")}
+>
   <article>
     <div style="margin-bottom: 32px;">
-      <h1 style="
+      <h1
+        style="
         font-size: 1.75rem;
         font-weight: 600;
         color: var(--text);
         line-height: 1.3;
         letter-spacing: -0.02em;
         margin: 0 0 12px;
-      ">
+      "
+      >
         {post.data.title}
       </h1>
-      <div style="display: flex; gap: 12px; font-size: 13px; color: var(--muted); align-items: center; flex-wrap: wrap;">
-        <span>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+      <div
+        style="display: flex; gap: 12px; font-size: 13px; color: var(--muted); align-items: center; flex-wrap: wrap;"
+      >
+        <span
+          >{
+            post.data.date.toLocaleDateString("zh-TW", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          }</span
+        >
         <span>{readingTime}</span>
-        {post.data.tags.map(tag => (
-          <a href={`${import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/'}tags/${tag}`} style="color: #60a5fa; text-decoration: none; font-size: 13px;">#{tag}</a>
-        ))}
+        {
+          post.data.tags.map((tag) => (
+            <a
+              href={`${import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + "/"}tags/${tag}`}
+              style="color: #60a5fa; text-decoration: none; font-size: 13px;"
+            >
+              #{tag}
+            </a>
+          ))
+        }
       </div>
     </div>
 
     <div class="article-body">
       <Content />
     </div>
-    <AuthorCard />
+    <AuthorCardScene />
   </article>
 </BlogLayout>
 
@@ -55,27 +81,82 @@ const readingTime = `約 ${minutes} 分鐘`;
     color: var(--text);
     font-size: 16px;
     line-height: 1.8;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
   }
 
   /* H1-H6 (body = 16px) */
-  .article-body :global(h1) { font-size: 2rem;      font-weight: 700; margin: 2.5rem 0 1rem;    letter-spacing: -0.02em;  line-height: 1.25; color: var(--text); }
-  .article-body :global(h2) { font-size: 1.75rem;   font-weight: 700; margin: 2.25rem 0 0.75rem; letter-spacing: -0.015em; line-height: 1.3;  color: var(--text); }
-  .article-body :global(h3) { font-size: 1.5rem;    font-weight: 600; margin: 2rem 0 0.5rem;    letter-spacing: -0.01em;  line-height: 1.35; color: var(--text); }
-  .article-body :global(h4) { font-size: 1.375rem;  font-weight: 600; margin: 1.75rem 0 0.5rem; line-height: 1.4;         color: var(--text); }
-  .article-body :global(h5) { font-size: 1.25rem;   font-weight: 600; margin: 1.5rem 0 0.5rem;  line-height: 1.4;         color: var(--text); }
-  .article-body :global(h6) { font-size: 1.125rem;  font-weight: 600; margin: 1.25rem 0 0.5rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
+  .article-body :global(h1) {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 2.5rem 0 1rem;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .article-body :global(h2) {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 2.25rem 0 0.75rem;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+    color: var(--text);
+  }
+  .article-body :global(h3) {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 2rem 0 0.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    color: var(--text);
+  }
+  .article-body :global(h4) {
+    font-size: 1.375rem;
+    font-weight: 600;
+    margin: 1.75rem 0 0.5rem;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .article-body :global(h5) {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .article-body :global(h6) {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
 
-  .article-body :global(p)  { margin: 0 0 1rem; }
-  .article-body :global(a)  { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
-  .article-body :global(a:hover) { opacity: 0.7; }
+  .article-body :global(p) {
+    margin: 0 0 1rem;
+  }
+  .article-body :global(a) {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .article-body :global(a:hover) {
+    opacity: 0.7;
+  }
 
-  .article-body :global(strong) { font-weight: 600; }
-  .article-body :global(em)     { font-style: italic; }
-  .article-body :global(del)    { text-decoration: line-through; opacity: 0.9; }
+  .article-body :global(strong) {
+    font-weight: 600;
+  }
+  .article-body :global(em) {
+    font-style: italic;
+  }
+  .article-body :global(del) {
+    text-decoration: line-through;
+    opacity: 0.9;
+  }
 
   .article-body :global(code:not(pre code)) {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.9em;
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -103,7 +184,7 @@ const readingTime = `約 ${minutes} 分鐘`;
   }
 
   .article-body :global(blockquote)::before {
-    content: '\201C';
+    content: "\201C";
     position: absolute;
     left: 14px;
     top: 10px;
@@ -114,7 +195,9 @@ const readingTime = `約 ${minutes} 分鐘`;
     font-family: Georgia, serif;
   }
 
-  .article-body :global(blockquote p) { margin: 0; }
+  .article-body :global(blockquote p) {
+    margin: 0;
+  }
 
   .article-body :global(ul) {
     list-style-type: disc;
@@ -122,8 +205,13 @@ const readingTime = `約 ${minutes} 分鐘`;
     padding-left: 1.5rem;
   }
 
-  .article-body :global(ul ul) { list-style-type: circle; margin: 4px 0; }
-  .article-body :global(ul ul ul) { list-style-type: square; }
+  .article-body :global(ul ul) {
+    list-style-type: circle;
+    margin: 4px 0;
+  }
+  .article-body :global(ul ul ul) {
+    list-style-type: square;
+  }
 
   .article-body :global(ol) {
     list-style-type: decimal;
@@ -131,7 +219,9 @@ const readingTime = `約 ${minutes} 分鐘`;
     padding-left: 1.5rem;
   }
 
-  .article-body :global(li) { margin-bottom: 4px; }
+  .article-body :global(li) {
+    margin-bottom: 4px;
+  }
 
   .article-body :global(li input[type="checkbox"]) {
     margin-right: 6px;
@@ -166,7 +256,13 @@ const readingTime = `約 ${minutes} 分鐘`;
     border: none;
     height: 1px;
     margin: 2rem 0;
-    background: linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border) 20%,
+      var(--border) 80%,
+      transparent
+    );
   }
 
   .article-body :global(img) {
