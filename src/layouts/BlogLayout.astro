@@ -40,21 +40,6 @@ const sorted = allPosts.sort((a, b) =>
   new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
 );
 
-function groupPosts(posts: typeof sorted) {
-  const now = new Date();
-  const groups: Record<string, typeof sorted> = {};
-
-  for (const post of posts) {
-    const diff = (now.valueOf() - new Date(post.data.date).valueOf()) / 86400000;
-    const label = diff < 1 ? '今天' : diff < 7 ? '本週' : diff < 30 ? '本月' : '更早';
-    (groups[label] ??= []).push(post);
-  }
-
-  return groups;
-}
-
-const groups = groupPosts(sorted);
-const ORDER = ['今天', '本週', '本月', '更早'];
 
 const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
 ---
