@@ -13,7 +13,9 @@ export default defineConfig({
   site: 'https://jasperhung.dev',
   integrations: [
     expressiveCode({
-      themes: ['monokai'],
+      themes: ['monokai', 'github-light'],
+      useDarkModeMediaQuery: false,
+      themeCSSSelector: (theme) => theme.type === 'dark' ? 'html.dark' : 'html.light',
       plugins: [pluginLineNumbers()],
       defaultProps: {
         showLineNumbers: true,

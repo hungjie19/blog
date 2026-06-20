@@ -10,17 +10,6 @@
     --sidebar:  #fafafa;
   }
 
-  @media (prefers-color-scheme: dark) {
-    html:not(.light) {
-      --bg:       #0f0f0f;
-      --surface:  #171717;
-      --border:   #262626;
-      --text:     #ededed;
-      --muted:    #a3a3a3;
-      --sidebar:  #171717;
-    }
-  }
-
   html.dark {
     --bg:       #0f0f0f;
     --surface:  #171717;

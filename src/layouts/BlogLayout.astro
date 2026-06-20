@@ -53,11 +53,11 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <meta name="description" content={pageDescription} />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
-  <!-- 防閃爍：在 CSS 載入前先套用已存的 theme -->
+  <!-- 防閃爍：在 CSS 載入前先套用 theme class（class 永遠存在，EC themeCSSSelector 才能正確切換）-->
   <script is:inline>
-    const t = localStorage.getItem('theme');
-    if (t === 'dark') document.documentElement.classList.add('dark');
-    else if (t === 'light') document.documentElement.classList.add('light');
+    const saved = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.add(saved ?? (prefersDark ? 'dark' : 'light'));
   </script>
   <link rel="alternate" type="application/rss+xml" title="Jasper cowork with AI" href={`${siteUrl}/rss.xml`} />
 
