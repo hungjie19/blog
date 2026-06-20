@@ -53,11 +53,13 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <meta name="description" content={pageDescription} />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
-  <!-- 防閃爍：在 CSS 載入前先套用 theme class（class 永遠存在，EC themeCSSSelector 才能正確切換）-->
+  <!-- 防閃爍：在 CSS 載入前先套用 theme class + EC data-theme -->
   <script is:inline>
     const saved = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.add(saved ?? (prefersDark ? 'dark' : 'light'));
+    const theme = saved ?? (prefersDark ? 'dark' : 'light');
+    document.documentElement.classList.add(theme);
+    if (theme === 'light') document.documentElement.setAttribute('data-theme', 'github-light');
   </script>
   <link rel="alternate" type="application/rss+xml" title="Jasper cowork with AI" href={`${siteUrl}/rss.xml`} />
 
@@ -333,9 +335,15 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   }
   document.getElementById('theme-btn')?.addEventListener('click', () => {
     const dark = isDark();
+    const next = dark ? 'light' : 'dark';
     document.documentElement.classList.remove('dark', 'light');
-    document.documentElement.classList.add(dark ? 'light' : 'dark');
-    localStorage.setItem('theme', dark ? 'light' : 'dark');
+    document.documentElement.classList.add(next);
+    if (next === 'light') {
+      document.documentElement.setAttribute('data-theme', 'github-light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('theme', next);
     updateThemeIcon();
   });
   updateThemeIcon();
