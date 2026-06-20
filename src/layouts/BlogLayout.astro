@@ -53,6 +53,12 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
   <meta name="description" content={pageDescription} />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+  <!-- 防閃爍：在 CSS 載入前先套用已存的 theme -->
+  <script is:inline>
+    const t = localStorage.getItem('theme');
+    if (t === 'dark') document.documentElement.classList.add('dark');
+    else if (t === 'light') document.documentElement.classList.add('light');
+  </script>
   <link rel="alternate" type="application/rss+xml" title="Jasper cowork with AI" href={`${siteUrl}/rss.xml`} />
 
   <!-- Open Graph -->
@@ -216,6 +222,25 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
             </a>
           </>
         )}
+        <button
+          id="theme-btn"
+          style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center;"
+          title="切換深色／淺色"
+          aria-label="切換主題"
+        >
+          <!-- moon (dark mode) -->
+          <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- sun (light mode) -->
+          <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
         <a
           href={`${base}rss.xml`}
           style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center; text-decoration: none;"
@@ -295,6 +320,26 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
 </style>
 
 <script>
+  // theme toggle
+  function isDark() {
+    return document.documentElement.classList.contains('dark') ||
+      (!document.documentElement.classList.contains('light') &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function updateThemeIcon() {
+    const dark = isDark();
+    (document.getElementById('icon-moon') as HTMLElement).style.display = dark ? 'block' : 'none';
+    (document.getElementById('icon-sun') as HTMLElement).style.display = dark ? 'none' : 'block';
+  }
+  document.getElementById('theme-btn')?.addEventListener('click', () => {
+    const dark = isDark();
+    document.documentElement.classList.remove('dark', 'light');
+    document.documentElement.classList.add(dark ? 'light' : 'dark');
+    localStorage.setItem('theme', dark ? 'light' : 'dark');
+    updateThemeIcon();
+  });
+  updateThemeIcon();
+
   document.getElementById('share-btn')?.addEventListener('click', () => {
     navigator.clipboard.writeText(window.location.href);
   });

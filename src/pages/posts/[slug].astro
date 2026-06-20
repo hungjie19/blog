@@ -77,11 +77,11 @@ const readingTime = `約 ${minutes} 分鐘`;
   .article-body :global(code:not(pre code)) {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-size: 0.9em;
-    background: rgba(255, 255, 255, 0.05);
-    border: 0.5px solid rgba(255, 255, 255, 0.15);
+    background: var(--surface);
+    border: 0.5px solid var(--border);
     border-radius: 0.4rem;
     padding: 1px 0.25rem;
-    color: rgb(244, 169, 169);
+    color: #e06c75;
     white-space: pre-wrap;
     font-variant-ligatures: none;
   }
@@ -95,7 +95,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     position: relative;
     margin: 1.5rem 0;
     padding: 20px 20px 20px 48px;
-    background: #292929;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
     font-style: italic;
@@ -166,7 +166,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     border: none;
     height: 1px;
     margin: 2rem 0;
-    background: linear-gradient(to right, transparent, rgba(255,255,255,0.25) 20%, rgba(255,255,255,0.25) 80%, transparent);
+    background: linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent);
   }
 
   .article-body :global(img) {
