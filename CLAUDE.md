@@ -60,3 +60,26 @@ Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
 
 - OG image：dynamic generation（先放著）
 - 系列文章 prev/next 導航：handoff 已記，等有系列文再做
+
+## 寫作 Checklist
+
+寫新文章時（使用者說「寫 blog」、「起草文章」），自動對照：
+
+**內容 SEO**
+- [ ] Title：關鍵字在前半段 + 故事鉤（技術 SEO 由 Astro layout 自動處理）
+- [ ] 開頭 100 字：關鍵字自然出現
+- [ ] Slug：英文 kebab-case，發布後不能改
+- [ ] `description` frontmatter：120–155 字元，寫給點擊率
+- [ ] H2/H3：放關鍵字變體，用完整陳述或問句
+- [ ] 內部連結：連到同系列其他篇
+- [ ] 圖片 alt text（放同層資料夾，相對路徑引用）
+
+**AEO（AI 搜尋引擎優化）**
+- [ ] 開頭有明確定義（「X 是什麼」）
+- [ ] FAQ section：3–5 個真實問題，直接給答案
+- [ ] 第一人稱真實經驗：保留，AEO 加分項
+
+**敘事結構**
+- [ ] 情境 → 問題 → 解法 → 為什麼這個解法好
+- [ ] 結語只談這篇，不做系列總結
+- [ ] 篇幅：400–600 字
