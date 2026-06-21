@@ -58,7 +58,7 @@ export const GET: APIRoute = async ({ props }) => {
 
   // Blog name (beside avatar)
   ctx.font = '400 40px Geist, CJK';
-  ctx.fillStyle = '#555555';
+  ctx.fillStyle = '#d4d4d4';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   ctx.fillText('Jasper cowork with AI', ax + ar * 2 + 18, ay + ar);
@@ -77,7 +77,7 @@ export const GET: APIRoute = async ({ props }) => {
 
   // URL
   ctx.font = '400 40px Geist, CJK';
-  ctx.fillStyle = '#3a3a3a';
+  ctx.fillStyle = '#a1a1aa';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   ctx.fillText('jasperhung.dev', W / 2, safeBottom - 30);
