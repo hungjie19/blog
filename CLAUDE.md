@@ -3,8 +3,9 @@
 ## 技術架構
 
 - Framework：Astro (SSG)
-- 部署：GitHub Pages，base path `/blog`
+- 部署：GitHub Pages（custom domain，無 base path）
 - 網址：`https://jasperhung.dev`
+- DNS：Cloudflare Registrar + Proxy，SSL/TLS Full
 - Package manager：pnpm
 
 ## 文章結構
@@ -47,10 +48,15 @@ tags:
 - sitemap：`@astrojs/sitemap`，build 後產生 `sitemap-index.xml`
 - `robots.txt`：已設定，指向 sitemap
 
-Raw markdown endpoint：`/blog/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
+Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
+
+## 已完成基礎建設
+
+- Cloudflare domain + DNS：`jasperhung.dev` 上線（2026-06-20）
+- Google Search Console：sitemap 已送出（2026-06-20）
+- Sidebar About 連結：sidebar nav 最上方（2026-06-21）
 
 ## 待做
 
 - OG image：dynamic generation（先放著）
-- Cloudflare domain + DNS（`jasperhung.dev`，handoff 已記）
-- Google Search Console：submit sitemap
+- 系列文章 prev/next 導航：handoff 已記，等有系列文再做
