@@ -56,9 +56,20 @@ Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
 - Google Search Console：sitemap 已送出（2026-06-20）
 - Sidebar About 連結：sidebar nav 最上方（2026-06-21）
 
+## OG Image
+
+### 設計工具
+`og-template.html` — 本地設計預覽用，用瀏覽器直接開啟。輸入 title → Download PNG 確認效果。
+不部署、不 serve，純討論設計用。avatar 已 base64 內嵌，離線可用。
+
+### Build-time 生成
+`src/pages/og/[slug].png.ts` — Astro build 時自動為每篇文章生成 `/og/[slug].png`。
+- 字體：`src/assets/fonts/` Geist（Latin） + CJK fallback（macOS: STHeiti, CI Ubuntu: Noto CJK）
+- CI 在 `pnpm build` 前執行 `apt-get install fonts-noto-cjk`
+- 設計改 `og-template.html` 調好後，翻譯成 canvas API 更新 `.png.ts`
+
 ## 待做
 
-- OG image：dynamic generation（先放著）
 - 系列文章 prev/next 導航：handoff 已記，等有系列文再做
 
 ## 寫作 Checklist
