@@ -1,0 +1,120 @@
+---
+interface Props {
+  headings: { depth: number; slug: string; text: string }[];
+}
+
+const { headings } = Astro.props;
+const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
+---
+
+{tocHeadings.length >= 2 && (
+  <aside class="toc" aria-label="目錄">
+    <div class="toc-label">目錄</div>
+    <nav>
+      {tocHeadings.map(h => (
+        <a href={`#${h.slug}`} class={`toc-link toc-h${h.depth}`}>
+          {h.text}
+        </a>
+      ))}
+    </nav>
+  </aside>
+)}
+
+<style>
+  .toc {
+    display: none;
+    position: fixed;
+    top: 72px;
+    right: 24px;
+    width: 180px;
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+  }
+
+  @media (min-width: 1440px) {
+    .toc { display: block; }
+  }
+
+  .toc-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toc-link {
+    display: block;
+    text-decoration: none;
+    padding: 3px 0;
+    line-height: 1.5;
+    transition: color 0.1s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .toc-h2,
+  .toc-h3 {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .toc-link:hover,
+  .toc-link.active {
+    color: var(--text);
+  }
+
+  .toc-link.active {
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+  const main = document.querySelector('main');
+
+  if (links.length && main) {
+    const ids = [...links].map(l => l.getAttribute('href')?.slice(1)).filter((id): id is string => !!id);
+    const targets = ids.map(id => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+
+    // Fix anchor scroll — main is the scroll container, not window
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const id = link.getAttribute('href')?.slice(1);
+        if (!id) return;
+        const target = document.getElementById(id);
+        if (!target) return;
+        const top = target.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 24;
+        main.scrollTo({ top, behavior: 'smooth' });
+      });
+    });
+
+    function updateActive() {
+      const mainRect = main.getBoundingClientRect();
+      const threshold = mainRect.height * 0.25;
+
+      // Last heading whose top edge is above 25% of main height
+      let activeId = targets[0]?.id;
+      for (const t of targets) {
+        if (t.getBoundingClientRect().top - mainRect.top <= threshold) {
+          activeId = t.id;
+        }
+      }
+
+      // At bottom → last heading wins
+      if (main.scrollTop + main.clientHeight >= main.scrollHeight - 50) {
+        activeId = targets[targets.length - 1]?.id ?? activeId;
+      }
+
+      links.forEach(l => l.classList.remove('active'));
+      if (activeId) document.querySelector<HTMLElement>(`.toc-link[href="#${activeId}"]`)?.classList.add('active');
+    }
+
+    main.addEventListener('scroll', updateActive, { passive: true });
+    updateActive();
+  }
+</script>

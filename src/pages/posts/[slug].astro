@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCardScene from "../../components/AuthorCardScene.astro";
+import TableOfContents from "../../components/TableOfContents.astro";
 
 export async function getStaticPaths() {
   const posts = await getCollection("blog");
@@ -12,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 
 const text = post.body ?? "";
 const chineseChars = (text.match(/[一-鿿]/g) ?? []).length;
@@ -74,6 +75,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     </div>
     <AuthorCardScene />
   </article>
+  <TableOfContents headings={headings} />
 </BlogLayout>
 
 <style>
