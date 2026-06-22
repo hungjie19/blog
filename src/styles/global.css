@@ -13,7 +13,7 @@
   html.dark {
     --bg:       #0f0f0f;
     --surface:  #171717;
-    --border:   #262626;
+    --border:   #333333;
     --text:     #ededed;
     --muted:    #a3a3a3;
     --sidebar:  #171717;
@@ -70,7 +70,7 @@
 }
 
 .admonition-content > :last-child { margin-bottom: 0; }
-.admonition-content p { margin: 0; font-size: 14px; }
+.admonition-content p { margin: 0; }
 
 .admonition[data-admonition-type="note"]      { --admonition-color: #60a5fa; }
 .admonition[data-admonition-type="tip"]       { --admonition-color: #86efac; }
