@@ -1,6 +1,6 @@
 ---
 title: "買了 domain，才算是認真在做一件事"
-date: 2026-06-20
+date: 2026-06-20T12:16:23+08:00
 description: "從 GitHub Pages 出發到個人品牌 domain 架設過程，還有那些走過才會遇到的坑。"
 tags:
   - blog

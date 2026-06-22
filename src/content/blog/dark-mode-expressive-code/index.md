@@ -1,6 +1,6 @@
 ---
 title: "讀起來更舒服：Dark Mode 切完，才發現 Code Block 沒跟上"
-date: 2026-06-22
+date: 2026-06-22T13:10:35+08:00
 description: "Dark Mode 切好了，但 code block 還是黑的。從 CSS class-based 架構、防閃爍 FOUC，到換掉手刻 code block——讓整個 blog 讀起來真正舒服。"
 tags:
   - dark-mode

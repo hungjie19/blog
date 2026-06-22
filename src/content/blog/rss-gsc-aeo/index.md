@@ -1,6 +1,6 @@
 ---
 title: "Blog 被找到的三種方式：RSS、GSC、AEO"
-date: 2026-06-22
+date: 2026-06-22T11:42:19+08:00
 description: "寫了文章沒人看等於白做。RSS 讓讀者訂閱、GSC 送給 Google 索引、AEO 讓 AI crawler 讀懂你——三種設定，一次說清楚。"
 tags:
   - rss

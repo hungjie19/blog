@@ -28,7 +28,7 @@ src/content/blog/
 ```yaml
 ---
 title: '文章標題'
-date: 2026-06-20
+date: 2026-06-22T13:00:00+08:00
 description: '一句話摘要，給 SEO meta description 用'
 tags:
   - tag1
@@ -36,7 +36,7 @@ tags:
 ---
 ```
 
-- `date`：發布日期，排序與 JSON-LD `datePublished` 都靠這個
+- `date`：ISO 8601，寫完文章 commit 前跑 `date +"%Y-%m-%dT%H:%M:%S+08:00"` 取當下時間填入；同一天多篇靠時間排序；排序與 JSON-LD `datePublished` 都靠這個
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
 
 ## SEO / AEO

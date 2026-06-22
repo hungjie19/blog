@@ -1,6 +1,6 @@
 ---
 title: '為什麼選 Astro 來架 Blog'
-date: 2026-06-21
+date: 2026-06-21T02:52:26+08:00
 description: '從框架選擇表到孤島架構、Vue 式語法、CSS scoping，一篇說清楚我為什麼不選 Next.js 的文章。'
 tags:
   - astro
