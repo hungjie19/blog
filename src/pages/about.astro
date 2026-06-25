@@ -6,15 +6,17 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
 <BlogLayout title="About">
   <div class="about-wrapper">
-    <img
-      src={`${base}author-card-about.jpg`}
-      alt="Jasper Hung coworking with AI"
-      class="about-hero"
-    />
-
-    <div class="about-identity">
-      <h1 class="about-name">Jasper Hung</h1>
-    </div>
+    <header class="about-header">
+      <img
+        src={`${base}author-avatar.png`}
+        alt="Jasper Hung"
+        class="about-avatar"
+      />
+      <div>
+        <h1 class="about-name">Jasper Hung</h1>
+        <p class="about-role">Coworking with AI</p>
+      </div>
+    </header>
 
     <div class="about-bio">
       <p>Software Engineer，從前端出發，對網站的設計與互動有一定的品味，主要用 React / TypeScript 做產品。</p>
@@ -34,27 +36,63 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     padding-top: 16px;
   }
 
-  .about-hero {
-    width: 100%;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    display: block;
-    margin-bottom: 28px;
+  .about-header {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 36px;
   }
 
-  .about-identity {
-    margin-bottom: 24px;
+  .about-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
   }
 
   .about-name {
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: 700;
+    line-height: 1.12;
     color: var(--text);
-    margin: 0 0 4px;
+    margin: 0 0 10px;
     letter-spacing: -0.02em;
   }
 
-.about-bio {
+  .about-role {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+    margin: 6px 0 0;
+  }
+
+  @media (max-width: 480px) {
+    .about-header {
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .about-avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 10px;
+    }
+
+    .about-name {
+      font-size: 1.6rem;
+    }
+
+    .about-role {
+      font-size: 1rem;
+    }
+  }
+
+  .about-bio {
     color: var(--text);
     font-size: 15px;
     line-height: 1.8;
@@ -67,7 +105,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
   .about-links {
     display: flex;
     gap: 16px;
-    margin-top: 24px;
+    margin-top: 20px;
   }
 
   .about-links a {

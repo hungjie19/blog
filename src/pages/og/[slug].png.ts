@@ -42,7 +42,7 @@ export const GET: APIRoute = async ({ props }) => {
   // Avatar (circle clip, object-fit: cover)
   // safe zone left:60 top:33, header pt:20 pl:20 → avatar at (80, 53)
   const ax = 80, ay = 53, ar = 36;
-  const avatarBuf = readFileSync(resolve(root, 'public/author-avatar.jpg'));
+  const avatarBuf = readFileSync(resolve(root, 'public/author-avatar.png'));
   const avatarImg = await loadImage(avatarBuf);
   const size = ar * 2;
   // Crop to square from center (cover behaviour)
