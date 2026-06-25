@@ -12,7 +12,7 @@ interface Props {
 const { title, activeSlug, description, date } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
-const pageTitle = title ? `${title} — Jasper cowork with AI` : 'Jasper cowork with AI';
+const pageTitle = title ? `${title} — Jasper Hung` : 'Jasper Hung';
 const pageDescription = description ?? 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。';
 const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}` : siteUrl;
 
@@ -29,7 +29,7 @@ const jsonLd = activeSlug
   : JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      name: 'Jasper cowork with AI',
+      name: 'Jasper Hung',
       url: siteUrl,
       author: { '@type': 'Person', name: 'Jasper Hung' },
     });
@@ -61,14 +61,14 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     document.documentElement.classList.add(theme);
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'github-light');
   </script>
-  <link rel="alternate" type="application/rss+xml" title="Jasper cowork with AI" href={`${siteUrl}/rss.xml`} />
+  <link rel="alternate" type="application/rss+xml" title="Jasper Hung" href={`${siteUrl}/rss.xml`} />
 
   <!-- Open Graph -->
   <meta property="og:type" content={activeSlug ? 'article' : 'website'} />
   <meta property="og:title" content={pageTitle} />
   <meta property="og:description" content={pageDescription} />
   <meta property="og:url" content={canonicalUrl} />
-  <meta property="og:site_name" content="Jasper cowork with AI" />
+  <meta property="og:site_name" content="Jasper Hung" />
   {activeSlug && <meta property="og:image" content={`${siteUrl}/og/${activeSlug}.png`} />}
   {activeSlug && <meta property="og:image:width" content="1200" />}
   {activeSlug && <meta property="og:image:height" content="630" />}
@@ -112,9 +112,10 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     <div style="border-bottom: 1px solid var(--border); flex-shrink: 0;">
       <a
         href={base}
-        style="display: block; padding: 16px; font-size: 16px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em;"
+        style="display: block; padding: 16px; text-decoration: none;"
       >
-        Jasper cowork with AI
+        <div style="font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1.2;">Jasper Hung</div>
+        <div style="font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 3px;">Coworking with AI</div>
       </a>
     </div>
 
@@ -212,7 +213,7 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
         href={base}
         style="display: none; font-size: 15px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; flex-shrink: 0;"
       >
-        Jasper cowork with AI
+        Jasper Hung
       </a>
 
       <!-- Title (article title, desktop only) -->

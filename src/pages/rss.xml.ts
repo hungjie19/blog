@@ -9,7 +9,7 @@ export async function GET(context: APIContext) {
   );
 
   return rss({
-    title: 'Jasper cowork with AI',
+    title: 'Jasper Hung',
     description: 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。',
     site: context.site!,
     items: sorted.map(post => ({

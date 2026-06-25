@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ props }) => {
   ctx.fillStyle = '#d4d4d4';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
-  ctx.fillText('Jasper cowork with AI', ax + ar * 2 + 18, ay + ar);
+  ctx.fillText('Jasper Hung', ax + ar * 2 + 18, ay + ar);
 
   // Title (vertically centered between header bottom and url top)
   const headerBottom = ay + ar * 2; // 125
