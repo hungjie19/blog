@@ -1,7 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import BlogLayout from "../../layouts/BlogLayout.astro";
-import AuthorCardScene from "../../components/AuthorCardScene.astro";
+import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
 
 export async function getStaticPaths() {
@@ -73,7 +73,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     <div class="article-body">
       <Content />
     </div>
-    <AuthorCardScene />
+    <AuthorCard />
   </article>
   <TableOfContents headings={headings} />
 </BlogLayout>
