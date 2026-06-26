@@ -13,21 +13,10 @@ const posts = (await getCollection('blog')).sort(
     {posts.map((post, i) => (
       <article class="feed-item" data-index={i}>
         <a href={`${base}posts/${post.id}`} class="feed-link">
-          <div class="feed-meta">
-            <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
-            <span class="feed-title">{post.data.title}</span>
-          </div>
+          <span class="feed-title">{post.data.title}</span>
 
           {post.data.description && (
             <p class="feed-desc">{post.data.description}</p>
-          )}
-
-          {post.data.tags.length > 0 && (
-            <div class="feed-tags">
-              {post.data.tags.map(tag => (
-                <span>#{tag}</span>
-              ))}
-            </div>
           )}
 
           {post.data.image && (
@@ -35,7 +24,16 @@ const posts = (await getCollection('blog')).sort(
           )}
         </a>
 
-        {i < posts.length - 1 && <hr class="feed-divider" />}
+        <div class="feed-meta">
+          <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
+          {post.data.tags.length > 0 && (
+            <div class="feed-tags">
+              {post.data.tags.map(tag => (
+                <a href={`${base}tags/${tag}`} class="feed-tag">#{tag}</a>
+              ))}
+            </div>
+          )}
+        </div>
       </article>
     ))}
   </div>
@@ -52,56 +50,73 @@ const posts = (await getCollection('blog')).sort(
     color: var(--text);
   }
 
-  .feed-meta {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
-  time {
-    font-size: 13px;
-    color: var(--muted);
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-  }
-
+  /* 1. 標題永遠是入口 */
   .feed-title {
+    display: block;
     font-size: 1.125rem;
     font-weight: 600;
     line-height: 1.35;
     letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 8px;
   }
 
-  .feed-link:hover .feed-title { opacity: 0.75; }
+  .feed-link:hover .feed-title { text-decoration: underline; }
 
+  /* 2. description 緊貼標題，當判斷輔助 */
   .feed-desc {
     font-size: 15px;
     color: var(--muted);
     line-height: 1.65;
-    margin: 0 0 10px;
-  }
-
-  .feed-tags {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-    font-size: 13px;
-    color: #60a5fa;
+    margin: 0 0 8px;
   }
 
   .feed-image {
     width: 100%;
     border-radius: 10px;
     border: 1px solid var(--border);
-    margin-top: 4px;
+    margin: 0 0 12px;
     display: block;
   }
 
-  .feed-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0;
+  /* 3. date / tags 是 metadata，放最後 */
+  .feed-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  time {
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .feed-tags {
+    display: flex;
+    gap: 8px;
+  }
+
+  .feed-tag {
+    color: var(--accent-muted);
+    text-decoration: none;
+  }
+  .feed-tag:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .feed-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+  }
+
+  .feed-item:not(:last-child) {
+    border-bottom: 1px solid var(--border);
   }
 
   .feed-item {
