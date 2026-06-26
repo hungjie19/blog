@@ -1,0 +1,66 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import { getTags } from '../../lib/tags';
+
+const posts = await getCollection('blog');
+const tags = getTags(posts);
+
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+---
+
+<BlogLayout title="Tags">
+  <div>
+    <div style="margin-bottom: 32px;">
+      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">
+        <a href={base} style="color: var(--muted); text-decoration: none;">所有文章</a>
+        <span style="margin: 0 6px;">›</span>
+        <span>標籤</span>
+      </div>
+      <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; letter-spacing: -0.01em;">Tags</h1>
+      <p style="margin: 8px 0 0; font-size: 13px; color: var(--muted);">{tags.length} 個標籤</p>
+    </div>
+
+    <div class="tags-cloud">
+      {tags.map(t => (
+        <a href={`${base}tags/${t.label}`} class="tag-pill">
+          <span class="tag-name">#{t.label}</span>
+          {t.count > 1 && <span class="tag-count">{t.count}</span>}
+        </a>
+      ))}
+    </div>
+  </div>
+</BlogLayout>
+
+<style>
+  /* wrap 的 chips：count 緊貼 tag、無底線、無滿版分隔列 */
+  .tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tag-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    text-decoration: none;
+    transition: background 150ms ease;
+  }
+
+  .tag-pill:hover { background: var(--border); }
+
+  .tag-name {
+    font-size: 14px;
+    color: var(--accent-muted);
+  }
+
+  .tag-count {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

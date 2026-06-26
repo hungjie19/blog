@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
 interface Props {
@@ -41,7 +42,7 @@ const sorted = allPosts.sort((a, b) =>
 );
 
 
-const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
+const allTags = getTags(sorted);
 ---
 
 <!DOCTYPE html>
@@ -163,11 +164,11 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     <!-- Tags -->
     {allTags.length > 0 && (
       <div style="padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0;">
-        <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;">Tags</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-          {allTags.map(tag => (
-            <a href={`${base}tags/${tag}`} class="meta-link" style="font-size: 14px;">
-              #{tag}
+        <a href={`${base}tags`} class="tags-heading">Tags</a>
+        <div class="sidebar-tags">
+          {allTags.map(t => (
+            <a href={`${base}tags/${t.label}`} class="meta-link sidebar-tag" style="font-size: 14px;">
+              #{t.label}
             </a>
           ))}
         </div>
@@ -337,6 +338,29 @@ const allTags = [...new Set(sorted.flatMap(p => p.data.tags))];
     background: var(--surface) !important;
     color: var(--text) !important;
   }
+
+  /* Sidebar Tags: 標題可點 → /tags */
+  .tags-heading {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    text-decoration: none;
+  }
+  .tags-heading:hover { color: var(--text); }
+
+  /* 最多 3 行：3*21(line-height) + 2*6(gap) = 75px，超出隱藏 */
+  .sidebar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 6px;
+    max-height: 75px;
+    overflow: hidden;
+  }
+  .sidebar-tag { line-height: 21px; }
 
   #share-btn:hover, a[title="Raw Markdown"]:hover {
     background: var(--surface) !important;
