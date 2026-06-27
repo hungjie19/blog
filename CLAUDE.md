@@ -28,6 +28,7 @@ src/content/blog/
 ```yaml
 ---
 title: '文章標題'
+ogTitle: 'OG Image|手動換行標題'
 date: 2026-06-22T13:00:00+08:00
 description: '一句話摘要，給 SEO meta description 用'
 tags:
@@ -38,6 +39,7 @@ tags:
 
 - `date`：ISO 8601，寫完文章 commit 前跑 `date +"%Y-%m-%dT%H:%M:%S+08:00"` 取當下時間填入；同一天多篇靠時間排序；排序與 JSON-LD `datePublished` 都靠這個
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
+- `ogTitle`：選填，只給 OG image 排版用；用 `|` 指定手動換行，不影響文章 H1 / SEO title / RSS
 
 ## SEO / AEO
 
@@ -60,13 +62,26 @@ Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
 
 ### 設計工具
 `og-template.html` — 本地設計預覽用，用瀏覽器直接開啟。輸入 title → Download PNG 確認效果。
-不部署、不 serve，純討論設計用。avatar 已 base64 內嵌，離線可用。
+不部署、不 serve，純討論設計用。預設值需對齊 production：Sans CJK、weight 600、中下 JH、底部 24px 藍色腰帶。
 
 ### Build-time 生成
-`src/pages/og/[slug].png.ts` — Astro build 時自動為每篇文章生成 `/og/[slug].png`。
-- 字體：`src/assets/fonts/` Geist（Latin） + CJK fallback（macOS: STHeiti, CI Ubuntu: Noto CJK）
-- CI 在 `pnpm build` 前執行 `apt-get install fonts-noto-cjk`
-- 設計改 `og-template.html` 調好後，翻譯成 canvas API 更新 `.png.ts`
+- `src/pages/og/[slug].png.ts` — Astro build 時自動為每篇文章生成 `/og/[slug].png`
+- `src/pages/og/default.png.ts` — 首頁、About、Tags 等非文章頁的 fallback OG image
+- `src/lib/og-image.ts` — 共用 Canvas renderer，文章 OG 與 default OG 都走這裡
+
+Production 規格：
+- 1200×630，黑底
+- 標題：Noto Sans CJK TC Medium（repo 內建 `src/assets/fonts/NotoSansCJKtc-Medium.otf`），canvas 使用 600
+- 文章圖：文章標題為主，支援 `ogTitle` 的 `|` 手動換行；沒有 `ogTitle` 時自動 balanced wrap
+- 通用圖：`Jasper Hung|Coworking|with AI`
+- 中下 JH mark：60px
+- 底部藍色腰帶：`#60a5fa`，24px，只放底部
+- 不放 avatar、作者名、網址；平台 link preview 會自動畫 favicon、domain、title
+
+Metadata：
+- `BlogLayout.astro` 文章頁使用 `/og/{slug}.png`
+- 非文章頁使用 `/og/default.png`
+- 所有頁面都使用 `twitter:card = summary_large_image`
 
 ## 待做
 
