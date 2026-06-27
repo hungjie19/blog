@@ -117,7 +117,7 @@ const allTags = getTags(sorted);
         style="display: block; padding: 16px; text-decoration: none;"
       >
         <div style="font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1.2;">Jasper Hung</div>
-        <div style="font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 3px;">Coworking with AI</div>
+        <div style="font-size: 13px; font-weight: 500; color: var(--muted); margin-top: 3px;">Coworking with AI</div>
       </a>
     </div>
 
@@ -129,7 +129,7 @@ const allTags = getTags(sorted);
           display: block;
           padding: 6px 12px;
           border-radius: 6px;
-          font-size: 13px;
+          font-size: 14px;
           color: var(--muted);
           background: transparent;
           text-decoration: none;
@@ -139,7 +139,7 @@ const allTags = getTags(sorted);
           transition: background 0.1s;
         `}
       >About</a>
-      <div style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px 4px;">Posts</div>
+      <div style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px 4px;">Posts</div>
       {sorted.map(post => (
         <a
           href={`${base}posts/${post.id}`}
@@ -147,7 +147,7 @@ const allTags = getTags(sorted);
             display: block;
             padding: 6px 12px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 14px;
             color: ${activeSlug === post.id ? 'var(--text)' : 'var(--muted)'};
             background: ${activeSlug === post.id ? 'var(--border)' : 'transparent'};
             text-decoration: none;
@@ -219,7 +219,7 @@ const allTags = getTags(sorted);
       </a>
 
       <!-- Title (article title, desktop only) -->
-      <span id="topbar-title" style="flex: 1; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <span id="topbar-title" style="flex: 1; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
         {title ?? ''}
       </span>
 
@@ -299,11 +299,11 @@ const allTags = getTags(sorted);
     width: 100%;
     max-width: 740px;
     margin: 0 auto;
-    padding: 32px 16px;
+    padding: 34px 24px 48px;
   }
 
   @media (min-width: 640px) {
-    .content-wrapper { padding: 40px 24px; }
+    .content-wrapper { padding: 40px 28px; }
   }
 
   @media (min-width: 1024px) {
@@ -343,7 +343,7 @@ const allTags = getTags(sorted);
   /* Sidebar Tags: 標題可點 → /tags */
   .tags-heading {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
