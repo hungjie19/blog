@@ -1,5 +1,6 @@
 ---
 title: "OG Image：設計思路與 Build-time 生成"
+ogTitle: "OG Image|設計思路與|Build-time 生成"
 date: 2026-06-22T15:00:00+08:00
 description: "LINE 分享截圖有圖才驚覺 OG image 必做。從規格研究、設計工具、safe zone 思路，到 Canvas API 踩的三個坑——build-time 自動生成的完整過程。"
 tags:

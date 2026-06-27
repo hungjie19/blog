@@ -1,30 +1,18 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
-import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
-import { readFileSync, existsSync } from 'node:fs';
+import { createCanvas, GlobalFonts, Path2D } from '@napi-rs/canvas';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
-GlobalFonts.registerFromPath(resolve(root, 'src/assets/fonts/Geist-Regular.woff2'), 'Geist');
-GlobalFonts.registerFromPath(resolve(root, 'src/assets/fonts/Geist-SemiBold.woff2'), 'Geist');
-
-// CJK fallback: macOS STHeiti → Linux Noto CJK (installed in CI)
-const cjkPaths = [
-  '/System/Library/Fonts/STHeiti Medium.ttc',
-  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-  '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc',
-];
-for (const p of cjkPaths) {
-  if (existsSync(p)) { GlobalFonts.registerFromPath(p, 'CJK'); break; }
-}
+GlobalFonts.registerFromPath(resolve(root, 'src/assets/fonts/NotoSansCJKtc-Medium.otf'), 'Noto Sans TC');
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
   return posts.map(post => ({
     params: { slug: post.id },
-    props: { title: post.data.title },
+    props: { title: post.data.ogTitle ?? post.data.title },
   }));
 }
 
@@ -39,51 +27,17 @@ export const GET: APIRoute = async ({ props }) => {
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, W, H);
 
-  // Avatar (circle clip, object-fit: cover)
-  // safe zone left:60 top:33, header pt:20 pl:20 → avatar at (80, 53)
-  const ax = 80, ay = 53, ar = 36;
-  const avatarBuf = readFileSync(resolve(root, 'public/author-avatar.png'));
-  const avatarImg = await loadImage(avatarBuf);
-  const size = ar * 2;
-  // Crop to square from center (cover behaviour)
-  const srcSize = Math.min(avatarImg.width, avatarImg.height);
-  const srcX = (avatarImg.width - srcSize) / 2;
-  const srcY = (avatarImg.height - srcSize) / 2;
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(ax + ar, ay + ar, ar, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.drawImage(avatarImg, srcX, srcY, srcSize, srcSize, ax, ay, size, size);
-  ctx.restore();
-
-  // Blog name (beside avatar)
-  ctx.font = '400 40px Geist, CJK';
-  ctx.fillStyle = '#d4d4d4';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  ctx.fillText('Jasper Hung', ax + ar * 2 + 18, ay + ar);
-
-  // Title (vertically centered between header bottom and url top)
-  const headerBottom = ay + ar * 2; // 125
-  const safeBottom = H - 57;        // 573
-  const urlZoneH = 60;
-  const titleCenterY = (headerBottom + safeBottom - urlZoneH) / 2;
-
-  const titleLayout = layoutTitle(ctx, title, 1000);
-  ctx.font = `600 ${titleLayout.fontSize}px Geist, CJK`;
+  const titleLayout = layoutTitle(ctx, title, 960, 458);
+  const titleCenterY = (76 + 534) / 2;
+  ctx.font = `600 ${titleLayout.fontSize}px "Noto Sans TC"`;
   ctx.fillStyle = '#f8fafc';
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
   drawWrapped(ctx, titleLayout.lines, W / 2, titleCenterY, titleLayout.lineHeight);
 
-  // URL
-  ctx.font = '400 40px Geist, CJK';
-  ctx.fillStyle = '#a1a1aa';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'center';
-  ctx.fillText('jasperhung.dev', W / 2, safeBottom - 30);
+  drawJHMark(ctx, W / 2, H - 34 - 30, 60);
 
-  // Bottom blue bar
+  // Bottom blue belt
   ctx.fillStyle = '#60a5fa';
   ctx.fillRect(0, H - 24, W, 24);
 
@@ -99,51 +53,71 @@ function layoutTitle(
   ctx: ReturnType<typeof createCanvas>['getContext'],
   text: string,
   maxWidth: number,
+  maxHeight: number,
 ) {
-  const sizes = [80, 76, 72, 68, 64];
-  for (const fontSize of sizes) {
-    ctx.font = `600 ${fontSize}px Geist, CJK`;
-    const greedyLines = greedyWrap(ctx, text, maxWidth);
-    if (greedyLines.length <= 2 || (greedyLines.length <= 3 && fontSize <= 72)) {
-      if (!hasOrphanLine(greedyLines)) {
-        return { fontSize, lineHeight: Math.round(fontSize * 1.2), lines: greedyLines };
-      }
+  for (let fontSize = 112; fontSize >= 40; fontSize -= 2) {
+    ctx.font = `600 ${fontSize}px "Noto Sans TC"`;
+    const lineHeight = Math.round(fontSize * 1.18);
+    const lines = text.includes('|')
+      ? splitManualLines(text)
+      : autoWrap(ctx, text, maxWidth, maxHeight, lineHeight);
+    if (!lines.length) continue;
 
-      const lines = balancedWrap(ctx, text, maxWidth, greedyLines.length);
-      if (lines) {
-        return { fontSize, lineHeight: Math.round(fontSize * 1.2), lines };
-      }
-    }
+    const widest = Math.max(...lines.map(line => ctx.measureText(line).width));
+    const totalHeight = lines.length * lineHeight;
+    if (widest <= maxWidth && totalHeight <= maxHeight) return { fontSize, lineHeight, lines };
   }
 
-  ctx.font = '600 64px Geist, CJK';
-  return { fontSize: 64, lineHeight: 77, lines: greedyWrap(ctx, text, maxWidth) };
+  const fontSize = 40;
+  const lineHeight = Math.round(fontSize * 1.18);
+  const lines = text.includes('|')
+    ? splitManualLines(text)
+    : autoWrap(ctx, text, maxWidth, maxHeight, lineHeight);
+  return { fontSize, lineHeight, lines };
 }
 
-function hasOrphanLine(lines: string[]) {
-  return lines.some(line => line.trim().length <= 1);
+function drawWrapped(
+  ctx: ReturnType<typeof createCanvas>['getContext'],
+  lines: string[],
+  x: number,
+  centerY: number,
+  lineHeight: number,
+) {
+  const startY = centerY - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, i) => ctx.fillText(line, x, startY + i * lineHeight));
 }
 
-function balancedWrap(
+function splitManualLines(text: string) {
+  return text.split('|').map(line => line.trim()).filter(Boolean);
+}
+
+function autoWrap(
   ctx: ReturnType<typeof createCanvas>['getContext'],
   text: string,
   maxWidth: number,
-  lineCount: number,
+  maxHeight: number,
+  lineHeight: number,
 ) {
   const tokens = segmentForWrap(text);
-  const rawWidth = ctx.measureText(text).width;
-  const targetWidth = Math.min(maxWidth * 0.9, rawWidth / lineCount);
-  return fitLineCount(ctx, tokens, maxWidth, targetWidth, lineCount);
+  const maxLines = Math.min(4, Math.floor(maxHeight / lineHeight));
+
+  for (let lineCount = 1; lineCount <= maxLines; lineCount++) {
+    const lines = fitLineCount(ctx, tokens, maxWidth, lineCount);
+    if (lines) return lines;
+  }
+
+  return [];
 }
 
 function fitLineCount(
   ctx: ReturnType<typeof createCanvas>['getContext'],
   tokens: string[],
   maxWidth: number,
-  targetWidth: number,
   lineCount: number,
 ) {
   const n = tokens.length;
+  const rawWidth = ctx.measureText(tokens.join('')).width;
+  const targetWidth = Math.min(maxWidth * 0.85, rawWidth / lineCount);
   const dp: Array<Array<{ cost: number; prev: number } | null>> = Array.from({ length: lineCount + 1 }, () => Array(n + 1).fill(null));
   dp[0][0] = { cost: 0, prev: -1 };
 
@@ -186,55 +160,6 @@ function fitLineCount(
   return lines;
 }
 
-function greedyWrap(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
-  text: string,
-  maxWidth: number,
-) {
-  const tokens = segmentForWrap(text);
-  return wrapTokens(ctx, tokens, maxWidth);
-}
-
-function wrapTokens(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
-  tokens: string[],
-  maxWidth: number,
-) {
-  const lines: string[] = [];
-  let current = '';
-
-  for (const token of tokens) {
-    const test = current + token;
-    if (ctx.measureText(test).width <= maxWidth) {
-      current = test;
-      continue;
-    }
-
-    if (current.trim()) {
-      lines.push(current.trimEnd());
-      current = token.trimStart();
-      continue;
-    }
-
-    lines.push(...splitLongToken(ctx, token, maxWidth));
-    current = '';
-  }
-
-  if (current.trim()) lines.push(current.trim());
-  return lines;
-}
-
-function drawWrapped(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
-  lines: string[],
-  x: number,
-  centerY: number,
-  lineHeight: number,
-) {
-  const startY = centerY - ((lines.length - 1) * lineHeight) / 2;
-  lines.forEach((line, i) => ctx.fillText(line, x, startY + i * lineHeight));
-}
-
 function segmentForWrap(text: string) {
   const tokens: string[] = [];
   let latin = '';
@@ -261,24 +186,38 @@ function isCjkOrCjkPunctuation(char: string) {
   return /[\u3000-\u303f\uff00-\uffef\u3400-\u9fff]/u.test(char);
 }
 
-function splitLongToken(
+function drawJHMark(
   ctx: ReturnType<typeof createCanvas>['getContext'],
-  token: string,
-  maxWidth: number,
+  centerX: number,
+  centerY: number,
+  size: number,
 ) {
-  const parts: string[] = [];
-  let current = '';
+  ctx.save();
+  ctx.translate(centerX - size / 2, centerY - size / 2);
+  ctx.scale(size / 1254, size / 1254);
+  ctx.translate(-12, 0);
+  ctx.translate(627, 627);
+  ctx.scale(1.32, 1.32);
+  ctx.translate(-627, -627);
+  ctx.fillStyle = '#60a5fa';
+  roundedRect(ctx, 265, 285, 435, 150, 16);
+  roundedRect(ctx, 560, 285, 140, 470, 0);
+  ctx.fill(new Path2D('M 264.5 748 A 217.5 217.5 0 0 0 482 965.5 A 217.5 217.5 0 0 0 699.5 748 L 559.5 748 A 77.5 77.5 0 0 1 482 825.5 A 77.5 77.5 0 0 1 404.5 748 Z'));
+  roundedRect(ctx, 265, 685, 140, 70, 0);
+  roundedRect(ctx, 830, 285, 140, 690, 16);
+  roundedRect(ctx, 690, 525, 150, 165, 0);
+  ctx.restore();
+}
 
-  for (const char of token) {
-    const test = current + char;
-    if (ctx.measureText(test).width > maxWidth && current) {
-      parts.push(current);
-      current = char;
-    } else {
-      current = test;
-    }
-  }
-
-  if (current) parts.push(current);
-  return parts;
+function roundedRect(
+  ctx: ReturnType<typeof createCanvas>['getContext'],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radius);
+  ctx.fill();
 }
