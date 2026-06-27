@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="6" fill="#0f0f0f"/>
-  <text x="16" y="23" font-family="Geist, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#60a5fa" text-anchor="middle" letter-spacing="-0.5">J</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="1254" height="1254" role="img" aria-label="JH monogram favicon">
+  <rect width="1254" height="1254" rx="232" fill="#0a0a0a"/>
+  <g fill="#60a5fa" transform="translate(-18 0) translate(627 627) scale(0.9) translate(-627 -627)">
+    <rect x="265" y="285" width="435" height="150" rx="16"/>
+    <rect x="560" y="285" width="140" height="470"/>
+    <path d="M 264.5 748
+             A 217.5 217.5 0 0 0 482 965.5
+             A 217.5 217.5 0 0 0 699.5 748
+             L 559.5 748
+             A 77.5 77.5 0 0 1 482 825.5
+             A 77.5 77.5 0 0 1 404.5 748 Z"/>
+    <rect x="265" y="685" width="140" height="70"/>
+    <rect x="830" y="285" width="140" height="690" rx="16"/>
+    <rect x="690" y="525" width="150" height="165"/>
+  </g>
 </svg>

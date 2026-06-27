@@ -53,6 +53,7 @@ const allTags = getTags(sorted);
   <title>{pageTitle}</title>
   <meta name="description" content={pageDescription} />
   <link rel="canonical" href={canonicalUrl} />
+  <link rel="icon" href={`${base}favicon.ico`} sizes="32x32" />
   <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
   <!-- 防閃爍：在 CSS 載入前先套用 theme class + EC data-theme -->
   <script is:inline>
