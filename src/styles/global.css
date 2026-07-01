@@ -5,6 +5,10 @@
     --bg:           #ffffff;
     --surface:      #f5f5f5;
     --border:       #e5e5e5;
+    --heading:      #0a0a0a;
+    --article-text: #262626;
+    --code-text:    #27272a;
+    --code-muted:   #737373;
     --text:         #0a0a0a;
     --muted:        #737373;
     --sidebar:      #fafafa;
@@ -16,6 +20,10 @@
     --bg:           #0f0f0f;
     --surface:      #171717;
     --border:       #333333;
+    --heading:      #f4f4f5;
+    --article-text: #d4d4d8;
+    --code-text:    #e4e4e7;
+    --code-muted:   #71717a;
     --text:         #ededed;
     --muted:        #a3a3a3;
     --sidebar:      #171717;

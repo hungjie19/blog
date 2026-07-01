@@ -75,7 +75,7 @@ const readingTime = `約 ${minutes} 分鐘`;
   .article-title {
     font-size: 2rem;
     font-weight: 650;
-    color: var(--text);
+    color: var(--heading);
     line-height: 1.25;
     letter-spacing: 0;
     text-wrap: pretty;
@@ -96,7 +96,7 @@ const readingTime = `約 ${minutes} 分鐘`;
   }
 
   .article-body {
-    color: var(--text);
+    color: var(--article-text);
     font-size: 18px;
     line-height: 1.8;
     font-family: inherit;
@@ -110,7 +110,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     margin: 2.5rem 0 1rem;
     letter-spacing: -0.02em;
     line-height: 1.25;
-    color: var(--text);
+    color: var(--heading);
   }
   .article-body :global(h2) {
     font-size: 1.75rem;
@@ -118,7 +118,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     margin: 2.25rem 0 0.75rem;
     letter-spacing: -0.015em;
     line-height: 1.3;
-    color: var(--text);
+    color: var(--heading);
   }
   .article-body :global(h3) {
     font-size: 1.5rem;
@@ -126,21 +126,21 @@ const readingTime = `約 ${minutes} 分鐘`;
     margin: 2rem 0 0.5rem;
     letter-spacing: -0.01em;
     line-height: 1.35;
-    color: var(--text);
+    color: var(--heading);
   }
   .article-body :global(h4) {
     font-size: 1.375rem;
     font-weight: 600;
     margin: 1.75rem 0 0.5rem;
     line-height: 1.4;
-    color: var(--text);
+    color: var(--heading);
   }
   .article-body :global(h5) {
     font-size: 1.25rem;
     font-weight: 600;
     margin: 1.5rem 0 0.5rem;
     line-height: 1.4;
-    color: var(--text);
+    color: var(--heading);
   }
   .article-body :global(h6) {
     font-size: 1.125rem;
@@ -148,14 +148,14 @@ const readingTime = `約 ${minutes} 分鐘`;
     margin: 1.25rem 0 0.5rem;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--text);
+    color: var(--heading);
   }
 
   .article-body :global(p) {
     margin: 0 0 1.2rem;
   }
   .article-body :global(a) {
-    color: var(--text);
+    color: var(--heading);
     text-decoration: underline;
     text-underline-offset: 3px;
   }
@@ -165,6 +165,7 @@ const readingTime = `約 ${minutes} 分鐘`;
 
   .article-body :global(strong) {
     font-weight: 600;
+    color: var(--heading);
   }
   .article-body :global(em) {
     font-style: italic;
@@ -187,8 +188,18 @@ const readingTime = `約 ${minutes} 分鐘`;
   }
 
   .article-body :global(.expressive-code) {
+    --ec-codeFg: var(--code-text) !important;
+    --ec-gtrFg: var(--code-muted) !important;
+    --ec-gtrHlFg: var(--code-text) !important;
+    --ec-lineNumbers-fg: var(--code-muted) !important;
+    --ec-lineNumbers-hlFg: var(--code-text) !important;
     margin: 1.25rem 0;
-    font-size: 14px;
+    font-size: 16px;
+  }
+
+  .article-body :global(.expressive-code pre[data-language="plaintext"] .ec-line span[style^="--"]) {
+    --0: var(--code-text) !important;
+    --1: var(--code-text) !important;
   }
 
   .article-body :global(blockquote) {
@@ -199,7 +210,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     border: 1px solid var(--border);
     border-radius: 10px;
     font-style: italic;
-    color: var(--text);
+    color: var(--article-text);
   }
 
   .article-body :global(blockquote)::before {
@@ -250,7 +261,7 @@ const readingTime = `約 ${minutes} 分鐘`;
   .article-body :global(table) {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 16px;
     margin: 1.25rem 0;
   }
 
@@ -344,6 +355,10 @@ const readingTime = `約 ${minutes} 分鐘`;
     .article-body :global(blockquote) {
       margin: 1.75rem 0;
       padding: 18px 18px 18px 42px;
+    }
+
+    .article-body :global(table) {
+      font-size: 14px;
     }
 
     .article-body :global(.expressive-code) {
