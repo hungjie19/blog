@@ -8,6 +8,16 @@
 - DNS：Cloudflare Registrar + Proxy，SSL/TLS Full
 - Package manager：pnpm
 
+## CSS / Tailwind 樣式架構
+
+- 新程式碼優先用 Tailwind utility class，不要新增 inline `style="..."`。
+- Design tokens 定義在 `src/styles/global.css` 的 `@theme {}`，讓 Tailwind v4 產生 utility（例如 `text-muted`、`bg-surface`、`border-border`）。
+- 顏色走 semantic token utility，不硬寫 hex，也避免 `style="color: var(--muted)"`。
+- 重複 UI 樣式放在 `@layer components` 或局部 scoped class，例如 nav link、icon button、tag pill、post item。
+- Markdown 文章內容的 typography 可保留在文章頁 scoped CSS，包含 `h1-h6`、`blockquote`、`table`、code、Expressive Code，但必須吃 token。
+- Dark mode 透過 `html.dark` 覆蓋 token 變數，utility 自動跟著切，不逐一手寫 `dark:`。
+- 字級以語意角色管理（article body、meta、code、sidebar、page title），不要在多個檔案散落同一用途的手寫 font-size。
+
 ## 文章結構
 
 每篇文章一個資料夾：

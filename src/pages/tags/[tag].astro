@@ -19,40 +19,28 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
 <BlogLayout title={`#${tag}`}>
   <div>
-    <div style="margin-bottom: 32px;">
-      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">
-        <a href={base} style="color: var(--muted); text-decoration: none; display: inline-block; padding: 8px 6px; margin: -8px -6px;">所有文章</a>
-        <span style="margin: 0 6px;">›</span>
-        <a href={`${base}tags`} style="color: var(--muted); text-decoration: none; display: inline-block; padding: 8px 6px; margin: -8px -6px;">標籤</a>
+    <div class="mb-8">
+      <div class="mb-2 text-[13px] text-muted">
+        <a href={base} class="-m-2 inline-block p-2 text-muted no-underline hover:text-text">所有文章</a>
+        <span class="mx-1.5">›</span>
+        <a href={`${base}tags`} class="-m-2 inline-block p-2 text-muted no-underline hover:text-text">標籤</a>
       </div>
-      <h1 style="
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--accent);
-        margin: 0;
-        letter-spacing: -0.01em;
-      ">#{tag}</h1>
-      <p style="margin: 8px 0 0; font-size: 13px; color: var(--muted);">{posts.length} 篇文章</p>
+      <h1 class="m-0 text-2xl font-bold tracking-[-0.01em] text-accent">#{tag}</h1>
+      <p class="m-0 mt-2 text-[13px] text-muted">{posts.length} 篇文章</p>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 1px;">
+    <div class="flex flex-col gap-px">
       {posts.map(post => (
         <a
           href={`${base}posts/${post.id}`}
-          style="
-            display: block;
-            padding: 16px 0;
-            border-bottom: 1px solid var(--border);
-            text-decoration: none;
-            color: var(--text);
-          "
+          class="block border-b border-border py-4 text-text no-underline"
         >
-          <div style="font-size: 15px; font-weight: 500; margin-bottom: 4px;">{post.data.title}</div>
-          <div style="font-size: 12px; color: var(--muted);">
+          <div class="mb-1 text-[15px] font-medium">{post.data.title}</div>
+          <div class="text-xs text-muted">
             {post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
           {post.data.description && (
-            <div style="font-size: 13px; color: var(--muted); margin-top: 4px; opacity: 0.8;">{post.data.description}</div>
+            <div class="mt-1 text-[13px] text-muted opacity-80">{post.data.description}</div>
           )}
         </a>
       ))}

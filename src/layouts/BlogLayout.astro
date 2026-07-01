@@ -42,8 +42,12 @@ const sorted = allPosts.sort((a, b) =>
   new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
 );
 
-
 const allTags = getTags(sorted);
+
+const navLinkClass =
+  'block overflow-hidden text-ellipsis whitespace-nowrap rounded-md px-3 py-1.5 text-sm no-underline transition-colors duration-100 hover:bg-surface hover:text-text';
+const iconButtonClass =
+  'flex cursor-pointer items-center rounded p-1 text-muted no-underline hover:bg-surface hover:text-text';
 ---
 
 <!DOCTYPE html>
@@ -94,69 +98,38 @@ const allTags = getTags(sorted);
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 </head>
-<body style="display:flex;height:100dvh;overflow:hidden;">
-  {activeSlug && <div id="reading-progress" style="position:fixed;top:0;left:0;height:3px;width:0%;background:var(--accent);z-index:1000;transition:width 0.08s linear;pointer-events:none;"></div>}
+<body class="flex h-dvh overflow-hidden bg-bg text-text">
+  {activeSlug && <div id="reading-progress" class="pointer-events-none fixed left-0 top-0 z-[1000] h-[3px] w-0 bg-accent transition-[width] duration-[80ms] ease-linear"></div>}
 
   <div id="sidebar-backdrop"></div>
 
   <!-- Sidebar -->
   <aside
     id="sidebar"
-    style="
-      width: 260px;
-      flex-shrink: 0;
-      background: var(--sidebar);
-      border-right: 1px solid var(--border);
-      flex-direction: column;
-      transition: transform 0.2s ease;
-    "
+    class="flex w-[260px] shrink-0 flex-col border-r border-border bg-sidebar transition-transform duration-200 ease-in-out"
   >
     <!-- Blog name -->
-    <div style="border-bottom: 1px solid var(--border); flex-shrink: 0;">
+    <div class="shrink-0 border-b border-border">
       <a
         href={base}
-        style="display: block; padding: 16px; text-decoration: none;"
+        class="block p-4 no-underline"
       >
-        <div style="font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1.2;">Jasper Hung</div>
-        <div style="font-size: 13px; font-weight: 500; color: var(--muted); margin-top: 3px;">Coworking with AI</div>
+        <div class="text-base font-bold leading-[1.2] tracking-[-0.02em] text-text">Jasper Hung</div>
+        <div class="mt-[3px] text-[13px] font-medium text-muted">Coworking with AI</div>
       </a>
     </div>
 
     <!-- Article list -->
-    <nav style="flex: 1; overflow-y: auto; padding: 8px 4px;">
+    <nav class="flex-1 overflow-y-auto px-1 py-2">
       <a
         href={`${base}about`}
-        style={`
-          display: block;
-          padding: 6px 12px;
-          border-radius: 6px;
-          font-size: 14px;
-          color: var(--muted);
-          background: transparent;
-          text-decoration: none;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          transition: background 0.1s;
-        `}
+        class={`${navLinkClass} bg-transparent text-muted`}
       >About</a>
-      <div style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px 4px;">Posts</div>
+      <div class="px-3 pb-1 pt-2 text-xs uppercase tracking-[0.06em] text-muted">Posts</div>
       {sorted.map(post => (
         <a
           href={`${base}posts/${post.id}`}
-          style={`
-            display: block;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: ${activeSlug === post.id ? 'var(--text)' : 'var(--muted)'};
-            background: ${activeSlug === post.id ? 'var(--border)' : 'transparent'};
-            text-decoration: none;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            transition: background 0.1s;
-          `}
+          class={`${navLinkClass} ${activeSlug === post.id ? 'bg-border text-text' : 'bg-transparent text-muted'}`}
         >
           {post.data.title}
         </a>
@@ -165,11 +138,11 @@ const allTags = getTags(sorted);
 
     <!-- Tags -->
     {allTags.length > 0 && (
-      <div style="padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0;">
+      <div class="shrink-0 border-t border-border p-3">
         <a href={`${base}tags`} class="tags-heading">Tags</a>
         <div class="sidebar-tags">
           {allTags.map(t => (
-            <a href={`${base}tags/${t.label}`} class="meta-link sidebar-tag" style="font-size: 14px;">
+            <a href={`${base}tags/${t.label}`} class="meta-link sidebar-tag text-sm">
               #{t.label}
             </a>
           ))}
@@ -179,30 +152,14 @@ const allTags = getTags(sorted);
   </aside>
 
   <!-- Main -->
-  <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
+  <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
 
     <!-- Topbar -->
-    <header style="
-      height: 48px;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      gap: 12px;
-    ">
+    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
       <!-- Mobile hamburger -->
       <button
         id="menu-btn"
-        style="
-          display: none;
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--muted);
-          padding: 4px;
-          flex-shrink: 0;
-        "
+        class="hidden shrink-0 cursor-pointer border-0 bg-transparent p-1 text-muted"
         aria-label="Menu"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -214,30 +171,30 @@ const allTags = getTags(sorted);
       <a
         id="mobile-blog-title"
         href={base}
-        style="display: none; font-size: 15px; font-weight: 700; color: var(--text); text-decoration: none; letter-spacing: -0.02em; flex-shrink: 0;"
+        class="hidden shrink-0 text-[15px] font-bold tracking-[-0.02em] text-text no-underline"
       >
         Jasper Hung
       </a>
 
       <!-- Title (article title, desktop only) -->
-      <span id="topbar-title" style="flex: 1; font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <span id="topbar-title" class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-muted">
         {title ?? ''}
       </span>
 
       <!-- Icons -->
-      <div style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
+      <div class="flex shrink-0 items-center gap-2">
         <button
           id="theme-btn"
-          style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center;"
+          class={`${iconButtonClass} border-0 bg-transparent`}
           title="切換深色／淺色"
           aria-label="切換主題"
         >
           <!-- moon (dark mode) -->
-          <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+          <svg id="icon-moon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
           <!-- sun (light mode) -->
-          <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+          <svg id="icon-sun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
             <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
             <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -247,10 +204,10 @@ const allTags = getTags(sorted);
         </button>
         {title && (
           <>
-            <span style="width: 1px; height: 16px; background: var(--border);" />
+            <span class="h-4 w-px bg-border" />
             <button
               id="share-btn"
-              style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center;"
+              class={`${iconButtonClass} border-0 bg-transparent`}
               title="複製連結"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -260,7 +217,7 @@ const allTags = getTags(sorted);
             </button>
             <a
               href={activeSlug ? `${base}posts/${activeSlug}.md` : '#'}
-              style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center; text-decoration: none;"
+              class={iconButtonClass}
               title="Raw Markdown"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -271,7 +228,7 @@ const allTags = getTags(sorted);
         )}
         <a
           href={`${base}rss.xml`}
-          style="background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 4px; display: flex; align-items: center; text-decoration: none;"
+          class={iconButtonClass}
           title="RSS Feed"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -284,7 +241,7 @@ const allTags = getTags(sorted);
     </header>
 
     <!-- Content -->
-    <main style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+    <main class="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
       <div class="content-wrapper">
         <slot />
       </div>
@@ -336,11 +293,6 @@ const allTags = getTags(sorted);
     #sidebar-backdrop.open { display: block; }
   }
 
-  nav a:hover {
-    background: var(--surface) !important;
-    color: var(--text) !important;
-  }
-
   /* Sidebar Tags: 標題可點 → /tags */
   .tags-heading {
     display: block;
@@ -363,11 +315,6 @@ const allTags = getTags(sorted);
     overflow: hidden;
   }
   .sidebar-tag { line-height: 21px; }
-
-  #share-btn:hover, a[title="Raw Markdown"]:hover {
-    background: var(--surface) !important;
-    color: var(--text) !important;
-  }
 </style>
 
 <script>

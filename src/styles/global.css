@@ -1,34 +1,49 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg:           #ffffff;
+  --color-surface:      #f5f5f5;
+  --color-border:       #e5e5e5;
+  --color-heading:      #0a0a0a;
+  --color-article-text: #262626;
+  --color-code-text:    #27272a;
+  --color-code-muted:   #737373;
+  --color-text:         #0a0a0a;
+  --color-muted:        #737373;
+  --color-sidebar:      #fafafa;
+  --color-accent:       #60a5fa;
+  --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
+}
+
 @layer base {
   :root {
-    --bg:           #ffffff;
-    --surface:      #f5f5f5;
-    --border:       #e5e5e5;
-    --heading:      #0a0a0a;
-    --article-text: #262626;
-    --code-text:    #27272a;
-    --code-muted:   #737373;
-    --text:         #0a0a0a;
-    --muted:        #737373;
-    --sidebar:      #fafafa;
-    --accent:       #60a5fa;
-    --accent-muted: color-mix(in srgb, var(--accent) 65%, var(--muted));
+    --bg:           var(--color-bg);
+    --surface:      var(--color-surface);
+    --border:       var(--color-border);
+    --heading:      var(--color-heading);
+    --article-text: var(--color-article-text);
+    --code-text:    var(--color-code-text);
+    --code-muted:   var(--color-code-muted);
+    --text:         var(--color-text);
+    --muted:        var(--color-muted);
+    --sidebar:      var(--color-sidebar);
+    --accent:       var(--color-accent);
+    --accent-muted: var(--color-accent-muted);
   }
 
   html.dark {
-    --bg:           #0f0f0f;
-    --surface:      #171717;
-    --border:       #333333;
-    --heading:      #f4f4f5;
-    --article-text: #d4d4d8;
-    --code-text:    #e4e4e7;
-    --code-muted:   #71717a;
-    --text:         #ededed;
-    --muted:        #a3a3a3;
-    --sidebar:      #171717;
-    --accent:       #60a5fa;
-    --accent-muted: color-mix(in srgb, var(--accent) 65%, var(--muted));
+    --color-bg:           #0f0f0f;
+    --color-surface:      #171717;
+    --color-border:       #333333;
+    --color-heading:      #f4f4f5;
+    --color-article-text: #d4d4d8;
+    --color-code-text:    #e4e4e7;
+    --color-code-muted:   #71717a;
+    --color-text:         #ededed;
+    --color-muted:        #a3a3a3;
+    --color-sidebar:      #171717;
+    --color-accent:       #60a5fa;
+    --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
   }
 
   html, body {

@@ -11,14 +11,14 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
 <BlogLayout title="Tags">
   <div>
-    <div style="margin-bottom: 32px;">
-      <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">
-        <a href={base} style="color: var(--muted); text-decoration: none;">所有文章</a>
-        <span style="margin: 0 6px;">›</span>
+    <div class="mb-8">
+      <div class="mb-2 text-[13px] text-muted">
+        <a href={base} class="text-muted no-underline hover:text-text">所有文章</a>
+        <span class="mx-1.5">›</span>
         <span>標籤</span>
       </div>
-      <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0; letter-spacing: -0.01em;">Tags</h1>
-      <p style="margin: 8px 0 0; font-size: 13px; color: var(--muted);">{tags.length} 個標籤</p>
+      <h1 class="m-0 text-2xl font-bold tracking-[-0.01em]">Tags</h1>
+      <p class="m-0 mt-2 text-[13px] text-muted">{tags.length} 個標籤</p>
     </div>
 
     <div class="tags-cloud">

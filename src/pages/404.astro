@@ -3,10 +3,10 @@ import BlogLayout from '../layouts/BlogLayout.astro';
 ---
 
 <BlogLayout title="404 — 找不到這頁">
-  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 16px;">
-    <p style="font-size: 6rem; font-weight: 700; color: var(--border); line-height: 1; margin: 0;">404</p>
-    <p style="font-size: 1.125rem; color: var(--text); margin: 0;">找不到這個頁面</p>
-    <p style="font-size: 0.875rem; color: var(--muted); margin: 0;">可能是連結失效，或從來就不存在。</p>
-    <a href="/" style="margin-top: 8px; font-size: 14px; color: var(--accent); text-decoration: none;">← 回首頁</a>
+  <div class="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+    <p class="m-0 text-8xl font-bold leading-none text-border">404</p>
+    <p class="m-0 text-lg text-text">找不到這個頁面</p>
+    <p class="m-0 text-sm text-muted">可能是連結失效，或從來就不存在。</p>
+    <a href="/" class="mt-2 text-sm text-accent no-underline hover:underline">← 回首頁</a>
   </div>
 </BlogLayout>
