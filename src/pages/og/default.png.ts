@@ -6,7 +6,7 @@ import { renderOgImage } from '../../lib/og-image';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 export const GET: APIRoute = async () => {
-  return new Response(renderOgImage('Jasper Hung|Coworking|with AI', root), {
+  return new Response(Uint8Array.from(renderOgImage('Jasper Hung|Coworking|with AI', root)), {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=31536000, immutable',

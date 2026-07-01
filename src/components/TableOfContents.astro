@@ -77,6 +77,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
   const main = document.querySelector('main');
 
   if (links.length && main) {
+    const scrollRoot = main;
     const ids = [...links].map(l => l.getAttribute('href')?.slice(1)).filter((id): id is string => !!id);
     const targets = ids.map(id => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
 
@@ -88,13 +89,13 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
         if (!id) return;
         const target = document.getElementById(id);
         if (!target) return;
-        const top = target.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 24;
-        main.scrollTo({ top, behavior: 'smooth' });
+        const top = target.getBoundingClientRect().top - scrollRoot.getBoundingClientRect().top + scrollRoot.scrollTop - 24;
+        scrollRoot.scrollTo({ top, behavior: 'smooth' });
       });
     });
 
     function updateActive() {
-      const mainRect = main.getBoundingClientRect();
+      const mainRect = scrollRoot.getBoundingClientRect();
       const threshold = mainRect.height * 0.25;
 
       // Last heading whose top edge is above 25% of main height
@@ -106,7 +107,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       }
 
       // At bottom → last heading wins
-      if (main.scrollTop + main.clientHeight >= main.scrollHeight - 50) {
+      if (scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 50) {
         activeId = targets[targets.length - 1]?.id ?? activeId;
       }
 
@@ -114,7 +115,7 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
       if (activeId) document.querySelector<HTMLElement>(`.toc-link[href="#${activeId}"]`)?.classList.add('active');
     }
 
-    main.addEventListener('scroll', updateActive, { passive: true });
+    scrollRoot.addEventListener('scroll', updateActive, { passive: true });
     updateActive();
   }
 </script>

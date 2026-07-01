@@ -6,6 +6,7 @@
   --color-border:       #e5e5e5;
   --color-heading:      #0a0a0a;
   --color-article-text: #262626;
+  --color-code-inline:  #c2410c;
   --color-code-text:    #27272a;
   --color-code-muted:   #737373;
   --color-text:         #0a0a0a;
@@ -22,6 +23,7 @@
     --border:       var(--color-border);
     --heading:      var(--color-heading);
     --article-text: var(--color-article-text);
+    --code-inline:  var(--color-code-inline);
     --code-text:    var(--color-code-text);
     --code-muted:   var(--color-code-muted);
     --text:         var(--color-text);
@@ -37,6 +39,7 @@
     --color-border:       #333333;
     --color-heading:      #f4f4f5;
     --color-article-text: #d4d4d8;
+    --color-code-inline:  #fb7185;
     --color-code-text:    #e4e4e7;
     --color-code-muted:   #71717a;
     --color-text:         #ededed;

@@ -1,4 +1,4 @@
-import { createCanvas, GlobalFonts, Path2D } from '@napi-rs/canvas';
+import { createCanvas, GlobalFonts, Path2D, type SKRSContext2D } from '@napi-rs/canvas';
 import { resolve } from 'node:path';
 
 const W = 1200;
@@ -39,7 +39,7 @@ function registerFonts(root: string) {
 }
 
 function layoutTitle(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   text: string,
   maxWidth: number,
   maxHeight: number,
@@ -66,7 +66,7 @@ function layoutTitle(
 }
 
 function drawWrapped(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   lines: string[],
   x: number,
   centerY: number,
@@ -81,7 +81,7 @@ function splitManualLines(text: string) {
 }
 
 function autoWrap(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   text: string,
   maxWidth: number,
   maxHeight: number,
@@ -99,7 +99,7 @@ function autoWrap(
 }
 
 function fitLineCount(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   tokens: string[],
   maxWidth: number,
   lineCount: number,
@@ -176,7 +176,7 @@ function isCjkOrCjkPunctuation(char: string) {
 }
 
 function drawJHMark(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   centerX: number,
   centerY: number,
   size: number,
@@ -199,7 +199,7 @@ function drawJHMark(
 }
 
 function roundedRect(
-  ctx: ReturnType<typeof createCanvas>['getContext'],
+  ctx: SKRSContext2D,
   x: number,
   y: number,
   width: number,

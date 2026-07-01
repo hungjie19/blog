@@ -89,7 +89,7 @@ const iconButtonClass =
   <meta name="twitter:image" content={ogImageUrl} />
 
   <!-- JSON-LD -->
-  <script type="application/ld+json" set:html={jsonLd} />
+  <script is:inline type="application/ld+json" set:html={jsonLd} />
 
   <!-- Raw markdown alternate (AEO: AI crawlers can read plain markdown directly) -->
   {activeSlug && <link rel="alternate" type="text/markdown" href={`${canonicalUrl}.md`} title="Raw Markdown" />}

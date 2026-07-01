@@ -17,7 +17,7 @@ export async function getStaticPaths() {
 export const GET: APIRoute = async ({ props }) => {
   const { title } = props as { title: string };
 
-  return new Response(renderOgImage(title, root), {
+  return new Response(Uint8Array.from(renderOgImage(title, root)), {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=31536000, immutable',

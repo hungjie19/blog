@@ -15,7 +15,6 @@ export default defineConfig({
     expressiveCode({
       themes: ['monokai', 'github-light'],
       useDarkModeMediaQuery: false,
-      themeCSSSelector: (theme) => theme.type === 'dark' ? 'html.dark' : 'html.light',
       plugins: [pluginLineNumbers()],
       defaultProps: {
         showLineNumbers: true,

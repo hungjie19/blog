@@ -26,15 +26,13 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     gap: 16px;
     margin-top: 48px;
     padding: 20px 22px;
-    border: 1px solid #e2e2e2;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: #f7f7f7;
+    background: var(--surface);
     box-shadow: none;
   }
 
   :global(html.dark) .author-bio-card {
-    background: #181818;
-    border-color: #303030;
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
   }
 
@@ -45,11 +43,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     object-fit: cover;
     object-position: center 50%;
     flex-shrink: 0;
-    border: 1px solid #dddddd;
-  }
-
-  :global(html.dark) .author-avatar {
-    border-color: #2d2d2d;
+    border: 1px solid var(--border);
   }
 
   .author-info {
