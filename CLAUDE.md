@@ -20,8 +20,13 @@ src/content/blog/
 ```
 
 - Slug 命名：英文 kebab-case，不加日期前綴（e.g. `cloudflare-dns-setup`）
-- 圖片在 markdown 裡用相對路徑引用：`![說明](./image.png)`
+- 圖片在 markdown 裡用相對路徑引用：`![說明](./image.jpg)`
 - Slug 發布後不要改（= URL 不能變）
+- **圖片壓縮**：放入文章前先壓縮，目標 200KB 以下。用 `sips` 轉成 JPEG 75%：
+  ```bash
+  sips -s format jpeg -s formatOptions 75 原檔.png --out 輸出.jpg
+  ```
+  壓完刪掉原始 PNG，markdown 引用 `.jpg`。
 
 ## Frontmatter 格式
 
@@ -108,3 +113,11 @@ Metadata：
 - [ ] 情境 → 問題 → 解法 → 為什麼這個解法好
 - [ ] 結語只談這篇，不做系列總結
 - [ ] 篇幅：400–600 字
+
+## Blog Writing Workflow
+
+When creating a new blog post from notes, summaries, session context, or rough ideas, use the `create-my-blog` skill.
+
+When substantially rewriting an existing post, consider `create-my-blog` if the task involves restructuring narrative, extracting a thesis, generating frontmatter, or turning raw notes into publishable prose.
+
+For light proofreading, typo fixes, title/description tuning, or targeted edits, do not force the skill; edit directly.
