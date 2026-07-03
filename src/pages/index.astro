@@ -83,7 +83,8 @@ const posts = (await getCollection('blog')).sort(
   .feed-meta {
     display: flex;
     align-items: baseline;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 6px 12px;
     font-size: 14px;
   }
 
@@ -96,12 +97,14 @@ const posts = (await getCollection('blog')).sort(
 
   .feed-tags {
     display: flex;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px 8px;
   }
 
   .feed-tag {
     color: var(--accent-muted);
     text-decoration: none;
+    white-space: nowrap;
   }
   .feed-tag:hover { color: var(--accent); }
 
