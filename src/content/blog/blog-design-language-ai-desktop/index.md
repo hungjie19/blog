@@ -3,9 +3,9 @@ title: "Blog 設計語言：從 AI Desktop 借來的 Layout"
 date: 2026-06-22T16:00:00+08:00
 description: "Blog 的 layout 從開始就決定了：跟 Claude、ChatGPT、Cursor 長一樣。不是巧合，是刻意的——既然內容是 AI cowork 記錄，形式本身就應該呼應這件事。"
 tags:
-  - design
-  - astro
-  - 建站
+  - Design
+  - Astro
+  - Site-Building
 ---
 
 開始構思 blog 的時候查了很多模板——經典的、簡約的，設計都很好。但那些模板有自己的原意，不一定是我想說的話。

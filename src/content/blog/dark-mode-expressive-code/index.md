@@ -3,10 +3,10 @@ title: "讀起來更舒服：Dark Mode 切完，才發現 Code Block 沒跟上"
 date: 2026-06-22T13:10:35+08:00
 description: "Dark Mode 切好了，但 code block 還是黑的。從 CSS class-based 架構、防閃爍 FOUC，到換掉手刻 code block——讓整個 blog 讀起來真正舒服。"
 tags:
-  - dark-mode
-  - expressive-code
-  - astro
-  - 建站
+  - Dark-Mode
+  - Expressive-Code
+  - Astro
+  - Site-Building
 ---
 
 現在不管是 App 還是作業系統，幾乎都有 dark mode。工程師族群尤其習慣開著深色模式工作——長時間盯著螢幕，眼睛比較不累。

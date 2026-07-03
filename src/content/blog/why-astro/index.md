@@ -3,9 +3,9 @@ title: '為什麼選 Astro 來架 Blog'
 date: 2026-06-21T02:52:26+08:00
 description: '從框架選擇表到孤島架構、Vue 式語法、CSS scoping，一篇說清楚我為什麼不選 Next.js 的文章。'
 tags:
-  - astro
-  - blog
-  - 建站
+  - Astro
+  - Blog
+  - Site-Building
 ---
 
 開始架 blog 之前，我花了一點時間選框架。不是因為選擇困難，而是選錯了之後換掉的代價太高——slug 一旦上線就不能改（= URL 不能變），框架綁定的風格也很難中途轉換。

@@ -5,8 +5,8 @@ date: 2026-07-02T00:22:59+08:00
 description: '從數位分身圖片生成的踩坑經驗出發，整理生圖 Prompt 的寫法：先定義意圖，再處理風格、主體、場景和限制，並對照 OpenAI、Google、Midjourney 的官方建議。'
 tags:
   - AI
-  - image-generation
-  - prompt-engineering
+  - Image-Generation
+  - Prompt-Engineering
   - GPT
 ---
 

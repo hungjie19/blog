@@ -5,7 +5,7 @@ date: 2026-06-27T12:47:00+08:00
 description: '從工程角度打造數位分身，記錄圖片生成 AI 如何在 Prompt、參考照片、風格一致性和模型美學之間失控，最後理解用文字駕馭圖片為什麼這麼難。'
 tags:
   - AI
-  - image-generation
+  - Image-Generation
   - LLM
   - GPT
   - Claude

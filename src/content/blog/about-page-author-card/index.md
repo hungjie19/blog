@@ -3,9 +3,9 @@ title: "Blog 個人識別層：從 favicon 到 AuthorCard 到 About 頁"
 date: 2026-06-22T14:30:00+08:00
 description: "搭建個人識別系統，從 favicon 延伸 AuthorCard 再到 About 頁。AI 生成圖選圖、About 文案怎麼寫，還有 iOS Safari 的 100dvh bug 一次說完。"
 tags:
-  - astro
-  - component
-  - 建站
+  - Astro
+  - Component
+  - Site-Building
 ---
 
 在構思還有什麼是 blog 新增元件的時候，第一個想到的就是作者卡片這個元件，因為 Medium 把作者欄發揮很成功，讓我覺得這個東西是必須的。

@@ -3,9 +3,9 @@ title: "買了 domain，才算是認真在做一件事"
 date: 2026-06-20T12:16:23+08:00
 description: "從 GitHub Pages 出發到個人品牌 domain 架設過程，還有那些走過才會遇到的坑。"
 tags:
-  - blog
-  - cloudflare
-  - 建站
+  - Blog
+  - Cloudflare
+  - Site-Building
 ---
 
 用 GitHub Pages 架 blog 的人最後都會遇到同一個問題：`hungjie19.github.io/blog` 這串網址，免費是很佛心，但這不代表你——只代表你用的平台。換 custom domain 是遲早的事，只是在拖「我到底會不會繼續寫」這個問題。

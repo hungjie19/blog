@@ -1,7 +1,7 @@
 ---
 title: Markdown 樣式全測試
 date: 2026-06-19T13:52:02+08:00
-tags: [test, markdown, style]
+tags: [Test, Markdown, Style]
 description: 測試所有 Markdown 元素的渲染效果
 ---
 

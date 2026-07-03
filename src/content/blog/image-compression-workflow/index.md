@@ -3,9 +3,9 @@ title: "搞定 Blog 圖片的三件事：管理、引用、壓縮"
 date: 2026-06-22T14:13:00+08:00
 description: "Markdown 插圖的兩個痛點：1. 路徑太長：用資料夾結構 + 相對路徑解決管理；2. 體積太重：用 macOS 內建 sips 解決壓縮，一行指令壓掉 90%，不用裝任何東西。"
 tags:
-  - workflow
-  - image-compression
-  - 建站
+  - Workflow
+  - Image-Compression
+  - Site-Building
 ---
 
 用 Markdown 寫部落格，插入圖片這件事一直讓我有點煩躁。

@@ -4,10 +4,10 @@ ogTitle: "OG Image|設計思路與|Build-time 生成"
 date: 2026-06-22T15:00:00+08:00
 description: "LINE 分享截圖有圖才驚覺 OG image 必做。從規格研究、設計工具、safe zone 思路，到 Canvas API 踩的三個坑——build-time 自動生成的完整過程。"
 tags:
-  - og-image
-  - astro
-  - seo
-  - 建站
+  - OG-Image
+  - Astro
+  - SEO
+  - Site-Building
 ---
 
 在討論 meta tag 的時候，我問：「除了 og:image，還有 title 跟 description 可以用吧？」
