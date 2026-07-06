@@ -3,16 +3,45 @@ import { getCollection, render } from "astro:content";
 import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
+import { seriesLabel } from "../../lib/series";
 
 export async function getStaticPaths() {
+  const NAV_EXCLUDE = ["markdown-style-test"];
   const posts = await getCollection("blog");
-  return posts.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
-  }));
+  const byDate = posts
+    .filter((p) => !NAV_EXCLUDE.includes(p.id))
+    .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+
+  return posts.map((post) => {
+    const toNav = (p: (typeof posts)[number] | undefined) =>
+      p ? { slug: p.id, title: p.data.title } : null;
+
+    const dateIndex = byDate.findIndex((p) => p.id === post.id);
+    const prevPost = dateIndex === -1 ? null : toNav(byDate[dateIndex - 1]);
+    const nextPost = dateIndex === -1 ? null : toNav(byDate[dateIndex + 1]);
+
+    let seriesName = null;
+    let seriesList = null;
+    if (post.data.series) {
+      seriesName = seriesLabel(post.data.series);
+      seriesList = posts
+        .filter((p) => p.data.series === post.data.series)
+        .sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0))
+        .map((p) => ({
+          slug: p.id,
+          title: p.data.title,
+          current: p.id === post.id,
+        }));
+    }
+
+    return {
+      params: { slug: post.id },
+      props: { post, seriesName, seriesList, prevPost, nextPost },
+    };
+  });
 }
 
-const { post } = Astro.props;
+const { post, seriesName, seriesList, prevPost, nextPost } = Astro.props;
 const { Content, headings } = await render(post);
 
 const text = post.body ?? "";
@@ -59,6 +88,54 @@ const readingTime = `約 ${minutes} 分鐘`;
     <div class="article-body">
       <Content />
     </div>
+    {
+      seriesList && (
+        <aside class="series-box" aria-label="系列文章">
+          <p class="series-box-title">
+            {seriesName} 系列（共 {seriesList.length} 篇）
+          </p>
+          <ol class="series-box-list">
+            {seriesList.map((item) =>
+              item.current ? (
+                <li class="series-box-current">
+                  {item.title}
+                  <span class="series-box-badge">目前這篇</span>
+                </li>
+              ) : (
+                <li>
+                  <a href={`/posts/${item.slug}/`}>{item.title}</a>
+                </li>
+              ),
+            )}
+          </ol>
+        </aside>
+      )
+    }
+    {
+      (prevPost || nextPost) && (
+        <nav class="post-nav" aria-label="文章導航">
+          {prevPost ? (
+            <a href={`/posts/${prevPost.slug}/`} class="post-nav-link">
+              <span class="post-nav-label">← 上一篇</span>
+              <span class="post-nav-title">{prevPost.title}</span>
+            </a>
+          ) : (
+            <span class="post-nav-spacer" />
+          )}
+          {nextPost ? (
+            <a
+              href={`/posts/${nextPost.slug}/`}
+              class="post-nav-link post-nav-next"
+            >
+              <span class="post-nav-label">下一篇 →</span>
+              <span class="post-nav-title">{nextPost.title}</span>
+            </a>
+          ) : (
+            <span class="post-nav-spacer" />
+          )}
+        </nav>
+      )
+    }
     <AuthorCard />
   </article>
   <TableOfContents headings={headings} />
@@ -296,6 +373,116 @@ const readingTime = `約 ${minutes} 分鐘`;
     max-width: 100%;
     border-radius: 8px;
     border: 1px solid var(--border);
+  }
+
+  .series-box {
+    margin-top: 2.5rem;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .series-box-title {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+  }
+
+  .series-box-list {
+    margin: 0;
+    padding-left: 1.35rem;
+    list-style-type: decimal;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .series-box-list li {
+    margin-bottom: 6px;
+  }
+
+  .series-box-list li:last-child {
+    margin-bottom: 0;
+  }
+
+  .series-box-list a {
+    color: var(--heading);
+    text-decoration: none;
+  }
+
+  .series-box-list a:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .series-box-current {
+    color: var(--muted);
+  }
+
+  .series-box-badge {
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .post-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 2.5rem;
+  }
+
+  .series-box + .post-nav {
+    margin-top: 12px;
+  }
+
+  .post-nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+  }
+
+  .post-nav-link:hover .post-nav-title {
+    opacity: 0.7;
+  }
+
+  .post-nav-next {
+    text-align: right;
+  }
+
+  .post-nav-label {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .post-nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--heading);
+    line-height: 1.4;
+  }
+
+  @media (max-width: 640px) {
+    .post-nav {
+      grid-template-columns: 1fr;
+    }
+
+    .post-nav-spacer {
+      display: none;
+    }
+
+    .post-nav-next {
+      text-align: left;
+    }
   }
 
   @media (max-width: 640px) {

@@ -49,12 +49,16 @@ description: '一句話摘要，給 SEO meta description 用'
 tags:
   - tag1
   - tag2
+series: openmemory
+seriesOrder: 1
 ---
 ```
 
 - `date`：ISO 8601，寫完文章 commit 前跑 `date +"%Y-%m-%dT%H:%M:%S+08:00"` 取當下時間填入；同一天多篇靠時間排序；排序與 JSON-LD `datePublished` 都靠這個
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
 - `ogTitle`：選填，只給 OG image 排版用；用 `|` 指定手動換行，不影響文章 H1 / SEO title / RSS
+- `series` + `seriesOrder`：選填，同系列文章填相同 `series` ID（英文 kebab-case）與 `seriesOrder` 排序數字。**開新系列要在 `src/lib/series.ts` 的 `SERIES` 註冊 ID → 顯示名稱**（未註冊 fallback 顯示 ID）。文章底部自動出現系列 box，列出全系列（按 `seriesOrder` 排序、目前篇高亮），與發文時間無關，系列可以之後再補篇
+- 文章底部另有全站「上一篇/下一篇」導航：純按 `date` 時間排序、跨所有文章（上一篇 = 較舊），與系列正交、互不干擾；`markdown-style-test` 排除在外（`[slug].astro` 的 `NAV_EXCLUDE`）
 
 ## SEO / AEO
 
@@ -97,10 +101,6 @@ Metadata：
 - `BlogLayout.astro` 文章頁使用 `/og/{slug}.png`
 - 非文章頁使用 `/og/default.png`
 - 所有頁面都使用 `twitter:card = summary_large_image`
-
-## 待做
-
-- 系列文章 prev/next 導航：handoff 已記，等有系列文再做
 
 ## 寫作 Checklist
 
