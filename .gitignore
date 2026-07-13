@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# local-only writing decisions (Writing PRD), never published, kept out of the .md glob Astro's content collection scans
+**/.writing-prd.yaml
