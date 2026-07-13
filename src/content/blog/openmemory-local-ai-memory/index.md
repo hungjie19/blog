@@ -1,0 +1,87 @@
+---
+title: 'OpenMemory：我怎麼選跨 session、跨 LLM 的長期記憶方案'
+ogTitle: 'OpenMemory|跨 session、跨 LLM 的長期記憶'
+date: 2026-07-13T18:55:03+08:00
+series: openmemory
+seriesOrder: 1
+description: 'AI 工具能記住使用者輪廓，卻常遺漏跨 session 的專案決策與協作細節。這篇從 GitHub 社群方案出發，依本地／雲端、AI 接入、寫入與搜尋方式比較 OpenMemory、claude-mem 等工具，再與 Notion、Obsidian 對照，說明我為何選擇可自架、跨 LLM 共用的 OpenMemory。'
+tags:
+  - AI
+  - Cross-Memory
+  - Knowledge-Management
+  - OpenMemory
+  - Semantic-Search
+---
+
+現在的 AI 工具，多半記得我大概是誰、偏好什麼語氣。但一開新的對話視窗，它們往往不記得更實際的細節：這個專案為什麼選 pnpm、上次排除過什麼方案、某個規則是在什麼情況下訂下來的。
+
+一個做法是[把對話保存下來作為自己的知識筆記](/posts/session-is-knowledge/)。完整脈絡留在自己手上，這件事很重要；但它主要解決了保存，還沒有解決搜尋。需要接續舊脈絡時，仍要靠人找出那份筆記，再手動貼進新的對話視窗。
+
+這個方法已經很好用，只是我還想往前一步：能不能有一層更自動化的能力，讓 AI 在需要時自己查找跨 session 的長期記憶？於是我先從 GitHub 上的社群方案開始調查。
+
+## 第一輪：GitHub 上的長期記憶方案
+
+這是我當時拿來比較的候選清單，後來再加上 claude-mem。星數截至 2026-07-13；它只代表社群關注度，不是功能勝負。表格中的能力保留我當時的實際比較情境，產品之後可能已經更新。
+
+| 方案 | 本地 | 雲端 | 接到 AI 的方式 | 寫入方式 | 搜尋方式 |
+|---|---|---|---|---|---|
+| [OpenMemory / Mem0](https://github.com/mem0ai/mem0)<br>60,718 ⭐ | ✅ | ✅ | MCP / API | AI 依規則存取 | 語意搜尋 |
+| [OMEGA](https://github.com/omega-memory/omega-memory)<br>184 ⭐ | ✅ | — | MCP + hooks | 自動與主動皆可 | 語意 + 關鍵字 |
+| [Supermemory](https://github.com/supermemoryai/supermemory)<br>28,347 ⭐ | ✅ | ✅ | Plugin / MCP / API | 自動萃取 | Hybrid search |
+| [Zep / Graphiti](https://github.com/getzep/graphiti)<br>28,663 ⭐ | ✅ | ✅ | MCP / SDK | 應用自行整合 | 圖譜 + 語意 |
+| [Letta](https://github.com/letta-ai/letta)<br>23,771 ⭐ | ✅ | ✅ | SDK / Agent | Agent 維護 state | Agent memory search |
+| [claude-mem](https://github.com/thedotmack/claude-mem)<br>87,028 ⭐ | ✅ | — | Plugin + hooks | Hooks 自動記錄 | 關鍵字 + 語意 |
+
+這一輪裡，OpenMemory 最接近我想要的樣子：資料可以自己部署、不同 LLM 能透過 MCP 或 API 共用，還有 UI 可以回頭檢查記憶。它不是只把對話記錄下來，而是先萃取出偏好、決策和限制，再讓 AI 用語意搜尋找回來。
+
+claude-mem 是後來才加入的強勁候選。它不是單純的 keyword tool，而是用 hooks 自動記錄工具操作、壓縮成 observation，並結合 keyword 和向量檢索，在新 session 注入相關脈絡。
+
+但我最後沒有選它，正是因為它像一台 AI 協作的行車記錄器：每次工具操作都自動錄下來，再替你壓縮。這對不想管理記憶的人很方便；對我來說，記憶應該是可以策展的。哪些偏好、決策和限制值得留下，哪些短暫嘗試不該變成長期背景，應該可以由自己的規則控制。
+
+## 第二輪：給人看的筆記，還是給 AI 找的記憶？
+
+選出 OpenMemory 之後，我才想到另一類關鍵產品：筆記工具。查資料時看到 [Notion 3.0](https://www.notion.com/zh-tw/blog/introducing-notion-3-0)，也重新認識了被很多人當作「第二大腦」的 [Obsidian](https://obsidian.md/)。
+
+它們解的不是同一件事。把三者放在一起後，「給人看」和「給 AI 找」的差別才變得很明顯。
+
+| | Notion | Obsidian | OpenMemory |
+|---|---|---|---|
+| 內容格式 | 結構化頁面、資料庫 | Markdown 原文與連結 | 短記憶、metadata 與語意索引 |
+| 主要維護者 | 使用者與團隊 | 使用者 | AI 協助萃取，使用者決定規則 |
+| 搜尋方式 | 頁面／資料庫搜尋與 AI 功能 | 關鍵字、檔案與連結；可透過 MCP 交給 AI 讀取 | 語意搜尋，可再搭配 metadata 篩選 |
+| 資料位置 | 雲端 | 本地 | 本地 |
+| 主要給誰用 | 人為主，AI 可讀 | 人與 AI 都可讀 | AI 優先，人透過 UI 審查 |
+
+Notion 適合共享的需求、spec 與團隊文件；資料在雲端，也需要人持續整理。Obsidian 是很單純的本機 Markdown 筆記工具，能透過 MCP 變成 AI 可讀的知識庫；沒有額外建立向量索引時，它的核心搜尋仍是關鍵字搜尋。
+
+OpenMemory 則應該只放能替未來 AI 指路的記憶，例如「這個 repo 用 pnpm」或「這個決策已經比較過」。完整對話、設計理由和引用來源仍留在 Notion 或 Obsidian。它們沒有互相取代：筆記保存全文，memory layer 負責讓 AI 在恰當的時候找回線索。
+
+## 向量搜尋是什麼？
+
+可以把它想成一種比較會聽懂意思的搜尋。
+
+如果你對電腦說：「我想找有輪子、會跑的東西！」它不會只去找剛好寫著「車車」的玩具。它會去找有輪子的角落，把小汽車、消防車和波力一起找出來。
+
+同樣地，你說「想找會汪汪叫的朋友」，它不只看有沒有出現「汪汪」這兩個字，也知道你大概是在找「小狗」。
+
+### 電腦實際怎麼做到？
+
+向量搜尋不只比對一模一樣的字，而是把文字轉成一串代表意思的數字，這串數字叫做 embedding。你可以把它想成內容在一張巨大地圖上的座標：意思越接近，座標距離通常越近。
+
+所以搜尋「腳踏車」時，傳統搜尋主要找出真的寫了「腳踏車」的文章；向量搜尋則可能連「單車」、「自行車」或 `bicycle` 都一起找回來。
+
+放回這篇的情境也一樣。就算我記憶裡寫的是「這個 blog 使用 Astro 架設」，之後問 AI「我的 blog 套件叫什麼？」，它也有機會找回這條規則，並回答：「Astro」。
+
+不過這不是魔法翻譯。結果仍會受 embedding model、資料品質與查詢方式影響；它找回的是「看起來意思接近」的內容，最後仍要由人或 AI 判斷是否真的適用。
+
+這就是我想體驗的地方。OpenMemory 不只把一堆文字存起來，而是先做語意解析，再把適合留下來的記憶送進可查詢的索引。下一篇會把[本地自架與 MCP 串接的過程](/posts/openmemory-local-setup/)拆開來寫。
+
+## 最後為什麼是 OpenMemory
+
+Mem0 有兩條路：想快速開始可以用 hosted 的 Platform；想自己掌握資料和部署，則可以走 Open Source / self-hosted。這篇選後者，因為我需要的是不同 AI 工具可以共用、也能自己審查的基礎設施。
+
+OpenMemory 的 UI 是很實際的加分項。記憶寫進去之後，不會變成摸不到的黑盒子；我可以看到它留下了什麼，必要時刪掉或調整策略。部署在本機也不等於所有成本都消失：LLM 和 embedding 用哪個 provider、是否要出網、成本怎麼算，都還是部署者的選擇。
+
+在我當時的需求裡，這是最好的平衡：它不像筆記工具一樣要求我每次手動餵背景，也不像行車記錄器一樣先把所有東西錄下來再說。它是一層能跨 session、跨 LLM 共用的記憶服務，而完整脈絡仍留在我看得懂、找得到的文件裡。
+
+真正麻煩的從來不是 AI 忘了我的名字，而是它忘了我們一起做過的判斷。把這些判斷留成一層可查的 memory，下一次對話才比較像接著做，而不是再辦一次 onboarding。
