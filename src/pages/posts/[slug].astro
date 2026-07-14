@@ -141,6 +141,46 @@ const readingTime = `約 ${minutes} 分鐘`;
   <TableOfContents headings={headings} />
 </BlogLayout>
 
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import PhotoSwipeDynamicCaption from 'photoswipe-dynamic-caption-plugin';
+  import 'photoswipe/style.css';
+  import 'photoswipe-dynamic-caption-plugin/photoswipe-dynamic-caption-plugin.css';
+
+  const gallery = document.querySelector('.article-body');
+  if (gallery) {
+    const images = gallery.querySelectorAll<HTMLImageElement>('img:not(a img)');
+
+    for (const img of images) {
+      const link = document.createElement('a');
+      link.href = img.currentSrc || img.src;
+      link.className = 'lightbox-trigger';
+      link.dataset.pswpWidth = img.getAttribute('width') ?? '';
+      link.dataset.pswpHeight = img.getAttribute('height') ?? '';
+
+      const captionEl = img.closest('figure')?.querySelector('figcaption');
+      if (captionEl) {
+        const captionContent = document.createElement('div');
+        captionContent.className = 'pswp-caption-content';
+        captionContent.hidden = true;
+        captionContent.textContent = captionEl.textContent ?? '';
+        link.appendChild(captionContent);
+      }
+
+      img.replaceWith(link);
+      link.appendChild(img);
+    }
+
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: '.article-body',
+      children: 'a.lightbox-trigger',
+      pswpModule: () => import('photoswipe'),
+    });
+    new PhotoSwipeDynamicCaption(lightbox, { type: 'below' });
+    lightbox.init();
+  }
+</script>
+
 <style>
   .article-header {
     margin-bottom: 34px;
@@ -372,6 +412,16 @@ const readingTime = `約 ${minutes} 分鐘`;
     max-width: 100%;
     border-radius: 8px;
     border: 1px solid var(--border);
+  }
+
+  .article-body :global(a.lightbox-trigger) {
+    display: inline-block;
+    text-decoration: none;
+    cursor: zoom-in;
+  }
+
+  .article-body :global(.image-figure) {
+    margin: 0;
   }
 
   .article-body :global(.image-caption) {

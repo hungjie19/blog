@@ -37,6 +37,13 @@ src/content/blog/
   sips -s format jpeg -s formatOptions 75 原檔.png --out 輸出.jpg
   ```
   壓完刪掉原始 PNG，markdown 引用 `.jpg`。
+- **圖片說明（選填）**：圖片語法後緊接一行 `<p class="image-caption">圖：說明文字</p>`（class name 固定，不可改），例如：
+  ```markdown
+  ![alt text](./image.jpg)
+
+  <p class="image-caption">圖：說明文字。</p>
+  ```
+  build time 由 `src/plugins/rehype-figure-caption.ts`（rehype plugin，註冊在 `astro.config.mjs`）自動把「圖片段落 + 緊接的 `.image-caption` 段落」合併成 `<figure><img>...<figcaption></figure>`，不用改寫作習慣。文章頁的 lightbox（PhotoSwipe + dynamic-caption-plugin，邏輯在 `src/pages/posts/[slug].astro`）會從 `figcaption` 讀取說明文字顯示在放大圖片下方；沒寫這行則 fallback 用 alt text。
 
 ## Frontmatter 格式
 

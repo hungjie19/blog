@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import remarkDirective from 'remark-directive';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
+import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
 import sitemap from '@astrojs/sitemap';
 import expressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
@@ -31,6 +32,7 @@ export default defineConfig({
   ],
   markdown: {
     remarkPlugins: [remarkDirective, remarkAdmonitions],
+    rehypePlugins: [rehypeFigureCaption],
   },
   vite: {
     plugins: [tailwindcss()]

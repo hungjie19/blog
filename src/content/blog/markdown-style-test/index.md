@@ -128,7 +128,9 @@ git push origin main
 
 ## 圖片
 
-![Astro Logo](https://astro.build/assets/press/astro-icon-dark.png)
+![Docker Desktop 顯示 OpenMemory 的服務正在運行](./test-image.jpg)
+
+<p class="image-caption">圖：這是用來測試 rehype-figure-caption plugin 的說明文字。</p>
 
 ---
 
