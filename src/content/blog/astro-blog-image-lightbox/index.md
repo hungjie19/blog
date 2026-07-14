@@ -1,0 +1,104 @@
+---
+title: 'Astro Blog 圖片燈箱：從查 lightbox 套件到包成 figure/figcaption'
+ogTitle: 'Astro Blog 圖片燈箱|從查 lightbox 套件|到包成 figure/figcaption'
+date: 2026-07-14T15:35:01+08:00
+description: '昨天插圖才發現 Astro blog 沒有內建圖片燈箱。我從候選套件、GitHub stars 與官網 demo 開始比較，最後選了支援手指縮放的方案，並把圖片說明文字整理成可維護的 figure/figcaption 結構。'
+tags:
+  - Astro
+  - Lightbox
+  - PhotoSwipe
+  - Rehype
+  - Site-Building
+---
+
+昨天在文章裡插圖片時，我才第一次意識到一件很基本的事：Astro blog 沒有內建圖片燈箱。圖片能顯示沒錯，但讀者點開之後不能放大，手機上也沒有手指縮放，放了幾張操作截圖之後，這個缺口就變得很明顯。
+
+所以今天一開始，我不是先寫 code，而是先跟 AI 一起查 Astro 有沒有現成的 lightbox 套件可以接。
+
+## 先把候選方案列出來
+
+第一輪我想做的事很單純：先找出 Astro 生態裡有哪些現成方案，再決定要不要自己包。
+
+我當時整理的候選清單如下：
+
+| Repo                                                                                        | Stars | Demo                                            |
+| ------------------------------------------------------------------------------------------- | ----- | ----------------------------------------------- |
+| [SaintSin/astro-pandabox](https://github.com/SaintSin/astro-pandabox)                       | 51 ⭐  | [Demo](https://astro-lightbox.netlify.app/)     |
+| [petrovicz/astro-photoswipe](https://github.com/petrovicz/astro-photoswipe)                 | 22 ⭐  | [Demo](https://astro-photoswipe.petrovicz.com/) |
+| [Matb85/components-pack](https://github.com/Matb85/components-pack)                         | 15 ⭐  | -                                               |
+| [scottaw66/astro-photoswipe](https://github.com/scottaw66/astro-photoswipe)                 | 5 ⭐   | -                                               |
+| [jonasfroeller/astro.image.lightbox](https://github.com/jonasfroeller/astro.image.lightbox) | 4 ⭐   | -                                               |
+
+## 二選一
+
+我後來主要在兩套之間看得比較久。
+
+第一套是 [astro-pandabox](https://github.com/SaintSin/astro-pandabox)。它提供了基礎的 lightbox 功能，接法比較簡單因為是官方推薦方式，對「先有燈箱就好」這個目標來說是成立的。
+
+第二套是 [astro-photoswipe](https://github.com/petrovicz/astro-photoswipe)。它背後用的是 PhotoSwipe，所以除了點開放大之外，手機上的手指縮放也一起有了。這件事對一般照片可能不算關鍵，但對 blog 裡的 UI 截圖、設定畫面、Terminal 輸出來說差很多，因為讀者常常不是只想看一張大圖，而是想放大某個區塊讀細節。
+
+另一個讓我比較放心的點，是 [PhotoSwipe](https://photoswipe.com/) 本身就是很老牌的圖片燈箱套件。它在前端世界已經存在很多年了，主打的一直都是觸控操作，像是滑動、手指縮放和雙擊放大這些體驗，本來就是它最有代表性的能力。現在的 v5 版本也已經改成 ES module，支援 dynamic import。對我來說，這代表它不是一個只會在 demo 裡好看的小工具，而是一個被用很久、也持續跟上現代前端寫法的成熟方案。既然我這次最在意的就是手機上能不能自然放大圖片，那我就直接先裝這一套來試。
+
+最後我的選擇很直接：如果只是補一個「能點開」的效果，第一套就夠了；但如果要讓圖片真的變得比較好讀，PhotoSwipe 這條路比較完整。
+
+## 真正安裝時，才發現 demo 不等於可直接套用
+
+開始動手之後，我很快就發現一個常見落差：repo demo 可以跑，不代表它可以直接套進自己的文章系統。
+
+`petrovicz/astro-photoswipe` 展示的是相簿型用法，比較像先有一組圖片資料，再把它渲染成 gallery。但我的 blog 不是相簿頁，而是 markdown 文章裡自然穿插圖片。這兩種資料來源長得不一樣，接法也不一樣。
+
+所以後來沒有照抄 demo，而是改成另外一個方向：讓前端 script 去掃文章內容裡的圖片，再把它們接進 PhotoSwipe。這樣文章作者還是照原本的 markdown 習慣寫圖，不需要為了燈箱另外維護一份 gallery 結構。
+
+## 燈箱也應該要顯示文字說明
+
+燈箱可以用了之後，下一個冒出來的問題就不是圖片本身，而是圖片說明文字。
+
+我在測 `pandabox` 的時候，有注意到進入燈箱後，底下會帶一段 caption。我後來覺得這件事其實蠻重要的，因為圖片一旦被放大，讀者不一定還看得出它原本在文章脈絡裡是在講什麼。再加上燈箱本來就可以左右切換圖片，如果每一張圖都沒有說明文字，讀起來就會有點斷掉。
+
+後來跟 AI 一起往下查，才發現 PhotoSwipe 本體不負責 caption，但官方有維護 [dynamic-caption-plugin](https://github.com/dimsemenov/photoswipe-dynamic-caption-plugin)。裝上去之後，圖片放大時就可以把說明文字顯示在左下方，功能本身是成立的。
+
+真正卡住的是後面的微調。我原本想把 caption 文字改成置中，但它底下那個 caption 外框寬度是套件自己算的，而且這套定位邏輯又跟圖片縮放、手勢操作綁在一起。再繼續硬調下去，感覺只會開始跟 PhotoSwipe 原本的行為打架，所以最後就沒有為了這個小地方繼續折騰，先接受它待在左下角。
+
+問題也因此變得更具體：不是「能不能顯示 caption」，而是「我要怎麼把 markdown 裡原本的圖片說明，穩定地帶進燈箱裡」。
+
+## alt 不一定要等於圖片說明
+
+做到這裡之後，我才比較明確地意識到一件事：`alt` 不一定等於圖片說明。
+
+`alt` 比較像是替代文字，重點是當圖片看不到、或需要輔助工具解讀時，這張圖至少還有一個文字版本；圖片說明則是在補充這張圖放在文章裡，到底想讓讀者看到什麼。兩者有時候會接近，但不應該直接當成同一欄資料。
+
+一旦把這兩件事拆開來看，後面的資料結構問題就很自然冒出來了。
+
+## 打包成元件嗎？還是整理成 figure/figcaption 結構？
+
+討論要不要包成元件，主要是因為這件事慢慢變成不只是一張圖而已，而是三個不同的資訊要一起出現：
+
+1. 圖片 URL
+2. 圖片 alt
+3. 圖片說明
+
+所以那時候很自然就會想到：是不是乾脆包成一個 component，例如 `<Figure />`，把這三個欄位都變成 props，這樣資料結構最清楚，前端也最好綁。
+
+但代價也很明顯。如果真的走 component 路線，等於之後每次插圖都要改寫成另一套語法。這件事在 `.mdx` 當然做得到，可是對我來說，Markdown 原本那種直接插圖、直接補一段說明的寫法，其實才是我想保留的工作流。
+
+所以後來討論的重點就不是「component 好不好」，而是「有沒有一種折衷做法，可以讓結構變清楚，但寫文章的人幾乎不用改習慣」。
+
+最後的答案就是不要把作者端改成 component，而是在 build time 想辦法把既有內容整理成正確結構。也就是說，寫作時還是維持原本的 Markdown 寫法，但在進入頁面之前，用 `rehype plugin` 自動把這種寫法：
+
+```md
+![alt text](./image.jpg)
+
+<p class="image-caption">圖：說明文字。</p>
+```
+
+整理成語意更完整的 [`<figure>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/figure) 和 `<figcaption>`。MDN 對 `<figure>` 的定義很接近我這次想補的東西：圖片、圖片說明和內容可以被當成同一個單位引用。這樣前端在做 lightbox caption 綁定時，就有一個穩定的 DOM 結構可以讀；寫文章的人則不需要改掉原本熟悉的 Markdown 習慣。
+
+這也是我這次最想留下來的部分。表面上看起來像是在裝一個 lightbox 套件，實際上比較像是在補一條內容流程：作者怎麼寫圖、頁面怎麼長出正確結構、燈箱又怎麼把這些資訊接回去。
+
+## 心得
+
+這次最有意思的地方，是一開始真的只是想查「Astro 有沒有現成套件」。結果一路做下來，最後留下的價值反而不是我選了哪一個，而是把原本分散的幾件事收成同一條流程：圖片可以放大、手機上可以手指縮放、燈箱裡有 caption，而且 Markdown 原本直接寫圖的習慣也不用被迫改成元件語法。
+
+某種程度上，這也要歸功於這些成熟的工具。PhotoSwipe 讓燈箱和觸控縮放可以很順地接進來，`rehype` 則讓我不用去破壞原本的寫作方式，就能把圖片、alt 和說明文字整理成更完整的結構。最後做出來的，不只是「Astro blog 終於有燈箱了」，而是一套之後寫文章時可以自然沿用的做法。
+
+有些功能平常不會特別想到，但一旦開始認真放圖片、寫說明、在手機上自己點開來看，就會發現它其實是閱讀體驗的一部分。這次的圖片燈箱，對我來說大概就是這種東西。
