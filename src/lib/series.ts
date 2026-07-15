@@ -3,6 +3,7 @@
 export const SERIES: Record<string, string> = {
   openmemory: 'OpenMemory',
   'session-is': 'Session is',
+  spokenly: 'Spokenly 語音聽寫',
 };
 
 export function seriesLabel(id: string): string {
