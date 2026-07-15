@@ -3,7 +3,17 @@ import type { Element, ElementContent, Root } from "hast";
 import rehypeRaw from "rehype-raw";
 import type { Plugin } from "unified";
 
-const parseRaw = rehypeRaw();
+// MDX 文章會含 import 與 Astro component 節點；rehype-raw 處理手寫 caption
+// 時必須保留它們，否則會因 mdxjsEsm node 無法編譯而中斷。
+const parseRaw = rehypeRaw({
+	passThrough: [
+		"mdxjsEsm",
+		"mdxFlowExpression",
+		"mdxTextExpression",
+		"mdxJsxFlowElement",
+		"mdxJsxTextElement",
+	],
+});
 
 function isImageParagraph(node: Element): Element | undefined {
 	if (node.tagName !== "p") return undefined;

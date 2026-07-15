@@ -1,0 +1,62 @@
+---
+interface Props {
+  side: 'left' | 'right';
+  who?: string;
+}
+
+const { side, who } = Astro.props;
+const speaker = who === 'gemini' ? 'Gemini' : who;
+---
+
+<div class:list={['chat-bubble', `chat-bubble-${side}`]}>
+  {speaker && <div class="chat-bubble-speaker">{speaker}</div>}
+  <div class="chat-bubble-message">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .chat-bubble {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: fit-content;
+    max-width: 80%;
+  }
+
+  .chat-bubble-right {
+    margin-left: auto;
+    align-items: flex-end;
+  }
+
+  .chat-bubble-left {
+    margin-right: auto;
+  }
+
+  .chat-bubble-message {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    border-bottom-left-radius: 0.25rem;
+    background: var(--surface);
+    color: var(--article-text);
+    line-height: 1.65;
+  }
+
+  .chat-bubble-speaker {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .chat-bubble-right .chat-bubble-message {
+    border-color: transparent;
+    border-bottom-right-radius: 0.25rem;
+    border-bottom-left-radius: 1rem;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+</style>

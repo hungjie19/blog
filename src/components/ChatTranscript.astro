@@ -1,0 +1,30 @@
+---
+interface Props {
+  note?: string;
+}
+
+const { note = '以下為當時對話的整理，非逐字稿' } = Astro.props;
+---
+
+<section class="chat-transcript" aria-label="Gemini 對話整理">
+  <p class="chat-transcript-note">{note}</p>
+  <div class="chat-transcript-messages"><slot /></div>
+</section>
+
+<style>
+  .chat-transcript {
+    margin: 2rem 0;
+  }
+
+  .chat-transcript-note {
+    margin: 0 0 0.65rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  .chat-transcript-messages {
+    display: grid;
+    gap: 0.7rem;
+  }
+</style>

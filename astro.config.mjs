@@ -4,6 +4,7 @@ import remarkDirective from 'remark-directive';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
 import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
 import sitemap from '@astrojs/sitemap';
+import mdx from '@astrojs/mdx';
 import expressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 
@@ -28,6 +29,7 @@ export default defineConfig({
         },
       },
     }),
+    mdx(),
     sitemap(),
   ],
   markdown: {
