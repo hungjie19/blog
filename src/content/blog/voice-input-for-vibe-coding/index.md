@@ -6,7 +6,7 @@ description: 'Vibe Coding 不只是寫好 prompt。當長時間和 AI 討論，�
 tags:
   - AI
   - Vibe-Coding
-  - Voice-Input
+  - Dictation
   - macOS-Dictation
   - Typeless
 series: spokenly
