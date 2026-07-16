@@ -1,6 +1,6 @@
 ---
-title: 'Spokenly 的歷史紀錄，竟然成了我調校 AI 指令的養分'
-ogTitle: 'Spokenly 的歷史紀錄|竟然成了我調校 AI 指令的養分'
+title: 'Spokenly 的歷史紀錄，竟然成了我調校 Prompt 的養分'
+ogTitle: 'Spokenly 的歷史紀錄|竟然成了我調校 Prompt 的養分'
 date: 2026-07-16T00:10:00+08:00
 description: 'Spokenly 的 History 同時留下原始轉寫與 AI 潤飾結果。我把這些紀錄交給 LLM 分析，找出固定誤辨，再把 Typeless 的閱讀感拆成三個可持續調校的旋鈕。'
 tags:
