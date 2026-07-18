@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Standard Word 的兩條歷史脈絡</title>
+  <desc id="desc">電報與打字競賽各自將長短不一的文字標準化，最後匯流為 Standard Word、WPM 與 Spokenly Dashboard。</desc>
+  <style>
+    .title { fill: #111827; font: 700 38px 'Noto Sans TC', sans-serif; }
+    .subtitle { fill: #6b7280; font: 400 20px 'Noto Sans TC', sans-serif; }
+    .label { fill: #1f2937; font: 700 26px 'Noto Sans TC', sans-serif; }
+    .body { fill: #4b5563; font: 400 21px 'Noto Sans TC', sans-serif; }
+    .small { fill: #6b7280; font: 400 18px 'Noto Sans TC', sans-serif; }
+    .accent { fill: #2563eb; font: 700 28px 'Noto Sans TC', sans-serif; }
+    .resultBody { fill: #4b5563; font: 400 18px 'Noto Sans TC', sans-serif; }
+    .card { fill: #f8fafc; stroke: #d1d5db; stroke-width: 2; }
+    .question { fill: #eff6ff; stroke: #60a5fa; stroke-width: 2; }
+    .result { fill: #eff6ff; stroke: #2563eb; stroke-width: 2.5; }
+    .line { fill: none; stroke: #9ca3af; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .arrow { fill: #9ca3af; }
+    @media (prefers-color-scheme: dark) {
+      .title { fill: #f9fafb; } .subtitle, .small { fill: #9ca3af; }
+      .label { fill: #f3f4f6; } .body { fill: #d1d5db; }
+      .card { fill: #111827; stroke: #4b5563; }
+      .question { fill: #172554; stroke: #60a5fa; }
+      .result { fill: #172554; stroke: #60a5fa; }
+      .accent { fill: #93c5fd; }
+      .resultBody { fill: #dbeafe; }
+    }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" class="arrow"/>
+    </marker>
+  </defs>
+
+  <text x="600" y="60" text-anchor="middle" class="title">同一個問題，兩條歷史脈絡</text>
+  <text x="600" y="96" text-anchor="middle" class="subtitle">長短不一的文字，要怎麼公平比較？</text>
+
+  <rect x="70" y="155" width="410" height="165" rx="18" class="card"/>
+  <text x="105" y="205" class="label">1875 國際電報規則</text>
+  <text x="105" y="248" class="body">固定字元群組</text>
+  <text x="105" y="282" class="body">處理計費與傳輸量</text>
+
+  <rect x="720" y="155" width="410" height="165" rx="18" class="card"/>
+  <text x="755" y="205" class="label">1900 年代初打字競賽</text>
+  <text x="755" y="248" class="body">5-stroke word equivalent</text>
+  <text x="755" y="282" class="body">比較輸入速度</text>
+
+  <path d="M275 320 L275 390 L490 390" class="line" marker-end="url(#arrowhead)"/>
+  <path d="M925 320 L925 390 L710 390" class="line" marker-end="url(#arrowhead)"/>
+
+  <rect x="410" y="345" width="380" height="115" rx="18" class="question"/>
+  <text x="600" y="390" text-anchor="middle" class="label">同一個標準化問題</text>
+  <text x="600" y="425" text-anchor="middle" class="body">把不等長文字換成可比較的尺</text>
+
+  <path d="M600 460 L600 520" class="line" marker-end="url(#arrowhead)"/>
+
+  <rect x="360" y="540" width="480" height="100" rx="18" class="result"/>
+  <text x="600" y="583" text-anchor="middle" class="accent">Standard Word / WPM</text>
+  <text x="600" y="617" text-anchor="middle" class="resultBody">Spokenly Dashboard 的鍵盤輸入等價量</text>
+
+  <text x="600" y="688" text-anchor="middle" class="small">兩條脈絡概念相似；不表示電報規則直接演化成打字測速規則。</text>
+</svg>
