@@ -30,6 +30,8 @@ jobs:
       - name: Install CJK fonts (for OG image generation)
         run: sudo apt-get install -y fonts-noto-cjk
       - run: pnpm build
+        env:
+          PUBLIC_UMAMI_WEBSITE_ID: ${{ secrets.PUBLIC_UMAMI_WEBSITE_ID }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
