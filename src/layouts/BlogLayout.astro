@@ -133,6 +133,8 @@ const iconButtonClass =
         <a
           href={`${base}posts/${post.id}`}
           class={`${navLinkClass} ${activeSlug === post.id ? 'bg-border text-text' : 'bg-transparent text-muted'}`}
+          data-umami-event="click-post-sidebar"
+          data-umami-event-destination={post.id}
         >
           {post.data.title}
         </a>
@@ -367,10 +369,32 @@ const iconButtonClass =
   const main = document.querySelector('main');
   const bar = document.getElementById('reading-progress');
   if (main && bar) {
+    let sent50 = false;
+    let sent100 = false;
     main.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = main;
       const pct = scrollHeight <= clientHeight ? 100 : (scrollTop / (scrollHeight - clientHeight)) * 100;
       (bar as HTMLElement).style.width = pct + '%';
+      if (!sent50 && pct >= 50) {
+        sent50 = true;
+        (window as any).umami?.track('reading-depth', { percent: 50 });
+      }
+      if (!sent100 && pct >= 100) {
+        sent100 = true;
+        (window as any).umami?.track('reading-depth', { percent: 100 });
+      }
     });
   }
+
+  // 文章正文外連結追蹤（Markdown 內容無法手動加 data-umami-event）
+  document.querySelector('.article-body')?.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest('a');
+    if (!link || !link.href) return;
+    try {
+      const url = new URL(link.href);
+      if (url.hostname !== window.location.hostname) {
+        (window as any).umami?.track('click-outbound-link', { url: link.href });
+      }
+    } catch {}
+  });
 </script>

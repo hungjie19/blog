@@ -12,7 +12,7 @@ const posts = (await getCollection('blog')).sort(
   <div class="feed">
     {posts.map((post, i) => (
       <article class="feed-item" data-index={i}>
-        <a href={`${base}posts/${post.id}`} class="feed-link">
+        <a href={`${base}posts/${post.id}`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
           <span class="feed-title">{post.data.title}</span>
 
           {post.data.description && (
