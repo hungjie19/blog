@@ -17,13 +17,13 @@ const { tag, posts } = Astro.props;
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 
-<BlogLayout title={`#${tag}`}>
+<BlogLayout title={`#${tag}`} canonicalPath={`/tags/${tag}/`}>
   <div>
     <div class="mb-8">
       <div class="mb-2 text-[13px] text-muted">
         <a href={base} class="-m-2 inline-block p-2 text-muted no-underline hover:text-text">所有文章</a>
         <span class="mx-1.5">›</span>
-        <a href={`${base}tags`} class="-m-2 inline-block p-2 text-muted no-underline hover:text-text">標籤</a>
+        <a href={`${base}tags/`} class="-m-2 inline-block p-2 text-muted no-underline hover:text-text">標籤</a>
       </div>
       <h1 class="m-0 text-2xl font-bold tracking-[-0.01em] text-accent">#{tag}</h1>
       <p class="m-0 mt-2 text-[13px] text-muted">{posts.length} 篇文章</p>
@@ -32,7 +32,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     <div class="flex flex-col gap-px">
       {posts.map(post => (
         <a
-          href={`${base}posts/${post.id}`}
+          href={`${base}posts/${post.id}/`}
           class="block border-b border-border py-4 text-text no-underline"
         >
           <div class="mb-1 text-[15px] font-medium">{post.data.title}</div>

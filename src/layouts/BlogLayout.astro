@@ -8,14 +8,16 @@ interface Props {
   activeSlug?: string;
   description?: string;
   date?: string;
+  canonicalPath?: string;
 }
 
-const { title, activeSlug, description, date } = Astro.props;
+const { title, activeSlug, description, date, canonicalPath } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
 const pageTitle = title ? `${title} — Jasper Hung` : 'Jasper Hung';
 const pageDescription = description ?? 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。';
-const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}` : siteUrl;
+const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}/` : `${siteUrl}${canonicalPath ?? '/'}`;
+const mdUrl = `${siteUrl}/posts/${activeSlug}.md`;
 const ogImageUrl = activeSlug ? `${siteUrl}/og/${activeSlug}.png` : `${siteUrl}/og/default.png`;
 
 const jsonLd = activeSlug
@@ -92,7 +94,7 @@ const iconButtonClass =
   <script is:inline type="application/ld+json" set:html={jsonLd} />
 
   <!-- Raw markdown alternate (AEO: AI crawlers can read plain markdown directly) -->
-  {activeSlug && <link rel="alternate" type="text/markdown" href={`${canonicalUrl}.md`} title="Raw Markdown" />}
+  {activeSlug && <link rel="alternate" type="text/markdown" href={mdUrl} title="Raw Markdown" />}
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -124,14 +126,14 @@ const iconButtonClass =
     <!-- Article list -->
     <nav class="flex-1 overflow-y-auto px-1 py-2">
       <a
-        href={`${base}about`}
+        href={`${base}about/`}
         class={`${navLinkClass} bg-transparent text-muted`}
         data-umami-event="click-about-sidebar"
       >About</a>
       <div class="px-3 pb-1 pt-2 text-xs uppercase tracking-[0.06em] text-muted">Posts</div>
       {sorted.map(post => (
         <a
-          href={`${base}posts/${post.id}`}
+          href={`${base}posts/${post.id}/`}
           class={`${navLinkClass} ${activeSlug === post.id ? 'bg-border text-text' : 'bg-transparent text-muted'}`}
           data-umami-event="click-post-sidebar"
           data-umami-event-destination={post.id}
@@ -144,10 +146,10 @@ const iconButtonClass =
     <!-- Tags -->
     {allTags.length > 0 && (
       <div class="shrink-0 border-t border-border p-3">
-        <a href={`${base}tags`} class="tags-heading">Tags</a>
+        <a href={`${base}tags/`} class="tags-heading">Tags</a>
         <div class="sidebar-tags">
           {allTags.map(t => (
-            <a href={`${base}tags/${t.label}`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
+            <a href={`${base}tags/${t.label}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
               #{t.label}
             </a>
           ))}

@@ -9,7 +9,7 @@ const tags = getTags(posts);
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 
-<BlogLayout title="Tags">
+<BlogLayout title="Tags" canonicalPath="/tags/">
   <div>
     <div class="mb-8">
       <div class="mb-2 text-[13px] text-muted">
@@ -23,7 +23,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
     <div class="tags-cloud">
       {tags.map(t => (
-        <a href={`${base}tags/${t.label}`} class="tag-pill">
+        <a href={`${base}tags/${t.label}/`} class="tag-pill">
           <span class="tag-name">#{t.label}</span>
           {t.count > 1 && <span class="tag-count">{t.count}</span>}
         </a>

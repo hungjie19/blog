@@ -77,7 +77,7 @@ const readingTime = `約 ${minutes} 分鐘`;
         <span>{readingTime}</span>
         {
           post.data.tags.map((tag) => (
-            <a href={`/tags/${tag}`} class="meta-link" data-umami-event="click-tag-pill">
+            <a href={`/tags/${tag}/`} class="meta-link" data-umami-event="click-tag-pill">
               #{tag}
             </a>
           ))

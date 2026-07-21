@@ -12,7 +12,7 @@ const posts = (await getCollection('blog')).sort(
   <div class="feed">
     {posts.map((post, i) => (
       <article class="feed-item" data-index={i}>
-        <a href={`${base}posts/${post.id}`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
+        <a href={`${base}posts/${post.id}/`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
           <span class="feed-title">{post.data.title}</span>
 
           {post.data.description && (
@@ -29,7 +29,7 @@ const posts = (await getCollection('blog')).sort(
           {post.data.tags.length > 0 && (
             <div class="feed-tags">
               {post.data.tags.map(tag => (
-                <a href={`${base}tags/${tag}`} class="feed-tag">#{tag}</a>
+                <a href={`${base}tags/${tag}/`} class="feed-tag">#{tag}</a>
               ))}
             </div>
           )}
