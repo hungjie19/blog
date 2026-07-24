@@ -4,6 +4,7 @@ export const SERIES: Record<string, string> = {
   openmemory: 'OpenMemory',
   'session-is': 'Session is',
   spokenly: 'Spokenly 語音聽寫',
+  'remote-control': 'Remote Control 方法地圖',
 };
 
 export function seriesLabel(id: string): string {

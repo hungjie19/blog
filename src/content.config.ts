@@ -12,6 +12,7 @@ const blog = defineCollection({
     ogTitle: z.string().optional(),
     series: z.string().optional(),
     seriesOrder: z.number().optional(),
+    seriesType: z.enum(['series', 'collection']).optional(),
   }),
 });
 

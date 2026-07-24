@@ -43,6 +43,7 @@ export async function getStaticPaths() {
 
 const { post, seriesName, seriesList, prevPost, nextPost } = Astro.props;
 const { Content, headings } = await render(post);
+const isSeriesCollection = post.data.seriesType === "collection";
 
 const text = post.body ?? "";
 const chineseChars = (text.match(/[一-鿿]/g) ?? []).length;
@@ -92,22 +93,41 @@ const readingTime = `約 ${minutes} 分鐘`;
       seriesList && (
         <aside class="series-box" aria-label="系列文章">
           <p class="series-box-title">
-            {seriesName} 系列（共 {seriesList.length} 篇）
+            {isSeriesCollection ? `${seriesName}（共 ${seriesList.length} 篇）` : `${seriesName} 系列（共 ${seriesList.length} 篇）`}
           </p>
-          <ol class="series-box-list">
-            {seriesList.map((item) =>
-              item.current ? (
-                <li class="series-box-current">
-                  {item.title}
-                  <span class="series-box-badge">目前這篇</span>
-                </li>
-              ) : (
-                <li>
-                  <a href={`/posts/${item.slug}/`} data-umami-event="click-series-nav">{item.title}</a>
-                </li>
-              ),
-            )}
-          </ol>
+          {
+            isSeriesCollection ? (
+              <ul class="series-box-list series-box-list-collection">
+                {seriesList.map((item) =>
+                  item.current ? (
+                    <li class="series-box-current">
+                      {item.title}
+                      <span class="series-box-badge">目前這篇</span>
+                    </li>
+                  ) : (
+                    <li>
+                      <a href={`/posts/${item.slug}/`} data-umami-event="click-series-nav">{item.title}</a>
+                    </li>
+                  ),
+                )}
+              </ul>
+            ) : (
+              <ol class="series-box-list">
+                {seriesList.map((item) =>
+                  item.current ? (
+                    <li class="series-box-current">
+                      {item.title}
+                      <span class="series-box-badge">目前這篇</span>
+                    </li>
+                  ) : (
+                    <li>
+                      <a href={`/posts/${item.slug}/`} data-umami-event="click-series-nav">{item.title}</a>
+                    </li>
+                  ),
+                )}
+              </ol>
+            )
+          }
         </aside>
       )
     }
@@ -463,6 +483,11 @@ const readingTime = `約 ${minutes} 分鐘`;
 
   .series-box-list li:last-child {
     margin-bottom: 0;
+  }
+
+  .series-box-list-collection {
+    padding-left: 1.35rem;
+    list-style-type: disc;
   }
 
   .series-box-list a {
