@@ -37,6 +37,7 @@ src/content/blog/
   sips -s format jpeg -s formatOptions 75 原檔.png --out 輸出.jpg
   ```
   壓完刪掉原始 PNG，markdown 引用 `.jpg`。
+- **圖片浮水印**：任何要放進文章的 raster 圖片（截圖、照片、生成圖）都要先燒入右下角 `jasperhung.dev` 浮水印，再引用輸出的檔案；不要只用 CSS 疊字。從 repo root 執行 `pnpm watermark <image>`，它預設產生同層的 `-watermarked` 檔，並依右下角背景自動選淺／深色文字。需要固定顏色時用 `--tone light` 或 `--tone dark`；確認原圖可被取代時才用 `--overwrite`。
 - **圖片說明（選填）**：圖片語法後緊接一行 `<p class="image-caption">圖：說明文字</p>`（class name 固定，不可改），例如：
   ```markdown
   ![alt text](./image.jpg)

@@ -10,7 +10,8 @@
     "check": "astro check",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "watermark": "node scripts/watermark-image.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^6.0.3",
