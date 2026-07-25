@@ -1,0 +1,95 @@
+---
+title: 'Tailscale 開了，手機還是連不上本機 dev server：問題不在 DNS'
+ogTitle: 'Tailscale 開了，手機還是連不上|本機 dev server'
+date: 2026-07-25T14:59:00+08:00
+description: '手機已連上 Tailscale，卻打不開 Mac 上的本機網站？這次實測發現，關鍵通常不是 DNS，而是 dev server 是否監聽所有網卡。'
+tags:
+  - Tailscale
+  - Astro
+  - Remote-Access
+  - Blog
+series: remote-control
+seriesType: collection
+---
+
+我想在手機上看剛寫到一半的部落格。Mac 和 iPhone 都已經打開 Tailscale，照理說兩台裝置已經在同一張私有網路裡；但手機輸入 Mac 的位址，本機 dev server 還是完全打不開。
+
+一開始我把注意力全放在 VPN 和 DNS。後來才發現，Tailscale 其實早就完成它的工作；卡住的是更靠近網站程式的那一層。
+
+## 問題其實回到 Mac 本機的 dev server 設定
+
+[Tailscale](https://tailscale.com/) 會把登入同一個帳號的裝置放進一張私有網路。它讓手機能安全找到 Mac，不必設定公網 IP 或路由器的 port forwarding。
+
+但「找到這台電腦」和「這台電腦上的網站是否接受外部連線」是兩件事。Astro 使用的 Vite dev server 預設只聽 Mac 自己的 `localhost`，所以問題最後回到 Mac 本機的 dev server 設定，而不是 Tailscale 的連線或 DNS。
+
+## 把對外連線設定寫進專案
+
+不需要每次啟動時手動加 flag。把設定寫進專案後，之後執行原本的 `pnpm dev` 就會自動生效。
+
+### Vite：最通用的設定
+
+如果專案直接使用 Vite，在 `vite.config.js` 加上：
+
+```js
+export default {
+  server: {
+    host: '0.0.0.0',
+  },
+}
+```
+
+這裡的 `0.0.0.0` 是告訴 dev server 接收所有網卡的連線；`host: true` 也是相同意思的簡寫。
+
+### Astro：設定檔或啟動指令，擇一即可
+
+Astro 也使用 Vite。若想把行為明確放在 Astro 設定裡，可以在 `astro.config.mjs` 既有的 `defineConfig({ ... })` 裡加上：
+
+```js
+server: {
+  host: true,
+},
+```
+
+另一個選擇是不動設定檔，直接把 `--host` 寫進 `package.json` 的啟動指令：
+
+```json
+{
+  "scripts": {
+    "dev": "astro dev --host"
+  }
+}
+```
+
+這和 `server: { host: true }` 的效果相同。兩種方式選一種就好；我會選擇把它寫進 `package.json`，因為之後照常執行 `pnpm dev` 就會自動對外監聽。重啟後，終端機顯示 `100.x.x.x` 的 Network 位址；手機輸入這個位址加上 port，網站就開起來了。
+
+### Slidev：保留一般模式，另開 remote 指令
+
+Slidev 已經有 `--remote` 旗標，不需要再寫 Vite 設定。若會常常用手機看簡報，可以在 `package.json` 增加一條專用指令：
+
+```json
+{
+  "scripts": {
+    "dev:remote": "slidev slides/coworking-with-ai.md --remote"
+  }
+}
+```
+
+之後執行 `pnpm dev:remote` 就會啟動可讓手機連入的簡報，並提供 QR code 作為遙控器配對入口。我會保留原本的 `dev` 指令，因為 `--remote` 也會讓同一個 Wi-Fi 上的裝置可以嘗試連線。
+
+## 本地不是有個 DNS 設定檔嗎？
+
+我一度想到改 `/etc/hosts`，以為 Mac 有沒有一個地方能一次讓所有本機服務對外開放。答案是沒有：它只影響 Mac 自己如何把名稱查成 IP 位址，對手機連進 Mac 沒有幫助。
+
+同一個 `0.0.0.0` 也很容易讓人混淆。寫在 server 設定檔時，它代表「監聽所有網卡」；寫在 hosts 檔時，則常用來把某個網域導到無法連線的位址，以達到封鎖效果。服務要不要對外接收連線，仍是每個程式啟動時各自決定的設定，沒有系統層級的總開關。
+
+## MagicDNS 是名稱，不是連線權限
+
+既然 Tailscale 有 [MagicDNS](https://tailscale.com/kb/1081/magicdns)，我也試著用 Mac 的名稱取代那串 IP。它確實很適合「不想記 IP」的情境：在 Tailscale 管理頁啟用後，裝置會有一個可在自己的私有網路內使用的名稱。
+
+不過這條路又遇到另一個關卡。Vite 會檢查瀏覽器請求中的網站名稱，避免一類把使用者導向錯誤網站的攻擊；因此要使用 MagicDNS 網域，還要把該名稱加進 `allowedHosts`。這不是 DNS 壞掉，也不是 Tailscale 沒連上，而是網站程式多了一層安全檢查。
+
+## 結論：直接用 Tailscale IP
+
+最後我保留 `host: true`，日常直接用 Tailscale IP 開網站。這台 Mac 的 Tailscale 位址很穩定，暫時比多加一個網域白名單更省事；MagicDNS 則留給 SSH 或裝置更多時再用。
+
+這次排查繞了 VPN、DNS 和手機設定一大圈，最後答案卻是最樸素的那一層：程式到底在聽哪一張網卡。Tailscale 已經把路鋪好了；要不要開門，還是得由跑著網站的程式自己決定。
