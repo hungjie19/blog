@@ -100,7 +100,9 @@ const iconButtonClass =
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <script defer src="https://cloud.umami.is/script.js" data-website-id={import.meta.env.PUBLIC_UMAMI_WEBSITE_ID}></script>
+  {import.meta.env.PROD && (
+    <script defer src="https://cloud.umami.is/script.js" data-website-id={import.meta.env.PUBLIC_UMAMI_WEBSITE_ID}></script>
+  )}
 </head>
 <body class="flex h-dvh overflow-hidden bg-bg text-text">
   {activeSlug && <div id="reading-progress" class="pointer-events-none fixed left-0 top-0 z-[1000] h-[3px] w-0 bg-accent transition-[width] duration-[80ms] ease-linear"></div>}
