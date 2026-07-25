@@ -13,6 +13,9 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://jasperhung.dev',
+  server: {
+    host: true,
+  },
   integrations: [
     expressiveCode({
       themes: ['monokai', 'github-light'],
