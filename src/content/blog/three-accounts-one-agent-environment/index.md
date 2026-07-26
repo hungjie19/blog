@@ -1,8 +1,8 @@
 ---
-title: '三個 AI 帳號，一套工作環境：我怎麼避免 Agent 設定漂移'
-ogTitle: '三個 AI 帳號|一套工作環境'
+title: '三個 AI 帳號，一套工作環境：Single Source of Truth'
+ogTitle: '三個 AI 帳號，一套工作環境|Single Source of Truth'
 date: 2026-07-26T01:05:43+08:00
-description: '同時使用個人 Claude、公司 Claude 與 Codex，不必維護三套 Agent 設定。這篇整理我如何把登入與額度分開，讓 Skills、規則與工作方法維持單一來源。'
+description: '同時使用個人 Claude、company 帳號與 Codex，不必維護三套工作環境。把登入與額度分開後，Skills、MCP、規則與 Agent 都能維持各自的單一來源。'
 tags:
   - AI
   - Claude
