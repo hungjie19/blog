@@ -9,6 +9,8 @@ tags:
   - Codex
   - Skill
   - Workflow
+series: agent-workflow
+seriesOrder: 4
 ---
 
 我有一段時間很容易看到好用的 Skill 就安裝。設計、研究、規劃、review，先收下再說。直到某次想替 subagent 瘦身，才發現它還沒開始做事，context 就已經先付出一筆不小的開機費。

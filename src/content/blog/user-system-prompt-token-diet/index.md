@@ -9,6 +9,8 @@ tags:
   - Codex
   - Prompt-Engineering
   - Workflow
+series: agent-workflow
+seriesOrder: 5
 ---
 
 研究完 Skill 的啟動成本後，我才回頭看另一個更根本的地方：每次開 Agent 時，究竟有哪些規則值得一起帶進 context？

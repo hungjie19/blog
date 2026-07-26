@@ -3,7 +3,7 @@ import { getCollection, render } from "astro:content";
 import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
-import { seriesLabel } from "../../lib/series";
+import { getSeries, seriesLabel, sortSeriesEntries } from "../../lib/series";
 
 export async function getStaticPaths() {
   const NAV_EXCLUDE = ["markdown-style-test"];
@@ -22,11 +22,14 @@ export async function getStaticPaths() {
 
     let seriesName = null;
     let seriesList = null;
+    let seriesType = null;
     if (post.data.series) {
-      seriesName = seriesLabel(post.data.series);
-      seriesList = posts
-        .filter((p) => p.data.series === post.data.series)
-        .sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0))
+      const series = getSeries(post.data.series);
+      seriesName = series?.title ?? seriesLabel(post.data.series);
+      seriesType = series?.type ?? "series";
+      seriesList = sortSeriesEntries(
+        posts.filter((p) => p.data.series === post.data.series),
+      )
         .map((p) => ({
           slug: p.id,
           title: p.data.title,
@@ -36,14 +39,14 @@ export async function getStaticPaths() {
 
     return {
       params: { slug: post.id },
-      props: { post, seriesName, seriesList, prevPost, nextPost },
+      props: { post, seriesName, seriesList, seriesType, prevPost, nextPost },
     };
   });
 }
 
-const { post, seriesName, seriesList, prevPost, nextPost } = Astro.props;
+const { post, seriesName, seriesList, seriesType, prevPost, nextPost } = Astro.props;
 const { Content, headings } = await render(post);
-const isSeriesCollection = post.data.seriesType === "collection";
+const isSeriesCollection = seriesType === "collection";
 
 const text = post.body ?? "";
 const chineseChars = (text.match(/[一-鿿]/g) ?? []).length;

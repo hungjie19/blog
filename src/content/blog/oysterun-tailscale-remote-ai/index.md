@@ -9,7 +9,7 @@ tags:
   - Remote-Control
   - Tailscale
 series: remote-control
-seriesType: collection
+seriesOrder: 6
 ---
 
 Claude Code 與 Codex 都有自己的遠端方案，但我有一個帳號無法直接用 Claude 的內建 Remote Control。於是我開始找另一條路，最後碰到 Oysterun。

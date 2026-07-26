@@ -8,7 +8,7 @@ tags:
   - Remote-Control
   - AI-Workflow
 series: remote-control
-seriesType: collection
+seriesOrder: 4
 ---
 
 我第一次從手機用 Codex 接著處理一段工作，回到 Mac 前卻愣了一下：原本打開的桌面對話還停在剛剛的地方，手機上新增的內容沒有立刻出現在眼前。

@@ -8,7 +8,7 @@ tags:
   - Remote-Control
   - Workflow
 series: remote-control
-seriesType: collection
+seriesOrder: 5
 ---
 
 我第一次注意到 Claude Dispatch 時，對它的印象很簡單：手機上有一個獨立的入口，丟一件事進去，它就替我推送到一個 Cowork session 裡做。

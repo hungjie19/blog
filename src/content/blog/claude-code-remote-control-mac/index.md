@@ -8,7 +8,7 @@ tags:
   - Remote-Control
   - MacOS
 series: remote-control
-seriesType: collection
+seriesOrder: 2
 ---
 
 第一次用 Claude Code 的 Remote Control，是我人在外面、卻還想知道 Mac 上那條工作做到哪裡的時候。

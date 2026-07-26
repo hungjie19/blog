@@ -8,7 +8,7 @@ tags:
   - MacOS
   - Remote-Access
 series: remote-control
-seriesType: collection
+seriesOrder: 3
 ---
 
 把手機和 Mac 放進同一個 Tailscale 網路、開好 SSH 後，理論上已經可以從外面連回家了。但第一次在手機上真的打開 terminal，我才發現「連得上」只是開始。

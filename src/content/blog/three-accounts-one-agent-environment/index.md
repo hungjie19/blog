@@ -9,6 +9,8 @@ tags:
   - Codex
   - Skill
   - Workflow
+series: agent-workflow
+seriesOrder: 1
 ---
 
 同時用個人 Claude、公司 Claude 和 Codex 之後，我一開始根本不考慮維護三套設定。

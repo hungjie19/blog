@@ -9,6 +9,8 @@ tags:
   - Codex
   - MCP
   - Workflow
+series: agent-workflow
+seriesOrder: 2
 ---
 
 我一直很喜歡 Claude 的 Agent 設計，因為它的心智模型很直覺：先定義一個角色，再決定要讓它接手主對話，或在背景當一個專職 subagent。角色本身不需要跟著使用方式重寫一次。

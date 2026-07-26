@@ -9,7 +9,7 @@ tags:
   - Remote-Access
   - Blog
 series: remote-control
-seriesType: collection
+seriesOrder: 7
 ---
 
 我想在手機上看剛寫到一半的部落格。Mac 和 iPhone 都已經打開 Tailscale，照理說兩台裝置已經在同一張私有網路裡；但手機輸入 Mac 的位址，本機 dev server 還是完全打不開。

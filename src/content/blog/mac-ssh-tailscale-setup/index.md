@@ -8,7 +8,7 @@ tags:
   - MacOS
   - Remote-Access
 series: remote-control
-seriesType: collection
+seriesOrder: 1
 ---
 
 有次人在外面，想從手機回 Mac 看一下正在跑的東西。不是要開遠端桌面，只是想進 terminal 查狀態、跑一個指令。

@@ -9,6 +9,8 @@ tags:
   - Codex
   - Skill
   - Workflow
+series: agent-workflow
+seriesOrder: 3
 ---
 
 替 Agent 寫 instruction 時，很容易有一個直覺：既然這個 Agent 要做 code review，就把 review 的流程、輸出格式、檢查清單全貼進它的檔案；另一個 Agent 也要 review，就再貼一次。
