@@ -1,0 +1,90 @@
+---
+title: 'User System Prompt 的 Token Diet：哪些 instruction 應該常駐？'
+ogTitle: 'User System Prompt 的 Token Diet|哪些 instruction 應該常駐？'
+date: 2026-07-26T15:20:15+08:00
+description: '把 CLAUDE.md 與 AGENTS.md 當成自己能控制的最高常駐 instruction layer 後，我用 Token Diet 重新判斷哪些規則該留下、哪些該延後讀取。'
+tags:
+  - AI
+  - Claude
+  - Codex
+  - Prompt-Engineering
+  - Workflow
+---
+
+研究完 Skill 的啟動成本後，我才回頭看另一個更根本的地方：每次開 Agent 時，究竟有哪些規則值得一起帶進 context？
+
+對模型公司而言，System Prompt 是產品內建、使用者看不見的那一層。但對我自己來說，`~/.claude/CLAUDE.md` 與 `~/.codex/AGENTS.md` 才是能控制的最高常駐 instruction layer。我把它叫作 User System Prompt。
+
+它不該是一份越寫越完整的使用手冊，而是每個 session 都必須先知道的工作規格。
+
+## `/doctor` 先讓我看見：該盤點的不是一個檔案
+
+Claude Code 可以直接在對話中輸入 `/doctor`；Codex 則要在系統終端執行 `codex doctor`。兩邊都有健檢入口，只是操作風格不同。
+
+我一開始用它們檢查 Skill 與環境設定，後來才發現同一套思路也能拿來看 instruction：不是問「這段文字有沒有用」，而是問「它值得每一輪都在場嗎？」
+
+這個差別很大。某條規則再重要，如果它只會在特定專案、特定工具或低頻任務出現，塞進全域檔案就等於讓每一輪無條件替它付 token。
+
+## 一份 instruction 文件，就是一棵樹
+
+我現在會讓每份 `CLAUDE.md` 或 `AGENTS.md` 只保留一個 `# H1`。它定義整份文件的最高範圍；底下的 `## H2` 是並列分支，`### H3` 才是某個分支底下的子規則。
+
+```text
+# Global Instructions
+├─ ## Entering A Project
+├─ ## 記憶：查詢與主動記錄
+├─ ## 變更與 commit 提示
+└─ ## 多帳號與 LLM 架構
+```
+
+如果同一份檔案又出現另一個 `# H1`，語意上就像長出第二棵並列的樹。Markdown 當然仍能渲染，Agent 也未必會因此失效；但「這份文件到底是什麼的最高規格」會變得模糊。遇到這種情況，通常代表那一段更適合拆成另一份 reference、Skill 或 project instruction。
+
+## H2 不是排版，是讓 Agent 找得到規則的入口
+
+這類 instruction 通常不是我逐字寫出來的，而是我和 LLM 討論後，請它幫我補進既有檔案。每次都只要求「改必要的部分」很合理：它會盡量不碰原本的結構，然後在最後補上一條新規則。局部看都正確，但規則累積久了，描述就會愈來愈長，整份文件也會變成一串只會往下長的條列。
+
+所以健檢的目的不只是刪字，而是反過來整理 decision path：哪些情境屬於同一件事、先判斷什麼、符合條件後要做什麼。Markdown 的階層正好能把這些 If/Else 變成清楚的資訊架構。模型不會像人一樣看到字變大，卻能辨認 `#`、`##`、bullet、粗體與 code span 這些模式，把它們當成一份有區段、有名稱、有從屬關係的文件。
+
+`#` 定義這是一份什麼層級的工作規格；每個 `##` 則應該對應一個能被明確辨認的意圖或高頻行為，例如「進入專案」「查詢記憶」「提交變更」。粗體可以幫助辨識關鍵限制，code span 可以保留路徑與指令的字面意義；但真正決定規則能否被遵守的，仍是清楚的條件與動作，例如「When X, do Y before Z」。
+
+如同前面的範例，`###` 只用來補充同一個 H2 底下、每次都必須一起看到的子規則。它不是把長篇操作手冊繼續往下塞的地方；低頻細節應該離開主 context。
+
+## 第一個判斷：它是不是定義觸發條件？
+
+我後來找到一個很好用的判斷法：如果一段文字是在定義「什麼時候該做某件事」，它就不能被藏進一份要先判斷相關性才會讀取的 reference。
+
+這是典型的雞生蛋問題。假如「需要跨 session 查詢記憶時，先做搜尋」這條規則被移出去，Agent 就失去了判斷「現在該不該去讀那份規則」的依據。
+
+反過來說，如果觸發條件本來就很明確，例如使用者直接問 GitHub repo、特定設定檔或多帳號架構，那份詳細手冊就很適合外移。主檔只要留下三件事：這份 reference 在講什麼、什麼情況要讀、它在哪裡。這就是「路由表 vs 操作手冊」：H2 留下誰該做什麼，完整的格式、欄位與步驟才下放到 reference、Skill 或專職 Agent。
+
+## 拆檔後，怎麼做到漸進式揭露？
+
+把檔案拆出去有兩種完全不同的載入方式。第一種是 `@path` import：它把大檔拆成好維護的數個檔案，但 Claude Code 會在啟動時把 import 展開到 context；token 成本沒有消失。[官方文件](https://code.claude.com/docs/en/memory)也明確說明 imported files 會在啟動時一起載入。這是「拆檔」，不是漸進式揭露。
+
+第二種才是按需讀取：主檔只留下帶情境的 routing，例如「處理多帳號設定時，讀取 `/Users/your-name/.claude/reference/accounts.md`」。等任務真的相關時，Agent 才用 `Read` 取得全文。只有路徑不夠；必須連同它的用途與觸發情境一起保留，才不會把 routing 本身也藏起來。
+
+這裡還有一個我用 Single Source of Truth 後才踩到的細節：我的另一個帳號是用 symlink 指向主要帳號的 instruction 檔。共享檔裡若只寫 `reference/accounts.md` 這種相對路徑，另一個帳號讀到同一份 instruction 時，自己的設定資料夾未必存在那個 `reference/`，最後就找不到檔案。
+
+因此，共享 instruction 裡的 on-demand reference 要寫成**來源檔真正所在位置的絕對路徑**，而不是相對於目前帳號的路徑。symlink 讓多個帳號共用同一份規則；絕對路徑才讓它們在需要讀取細節時，也回到同一個真實來源。
+
+我做過一次這樣的拆分：三段低頻參考資料從全域檔案移出後，每次 session 約少了 400 到 450 tokens。數字不算驚人，但更重要的是，我因此學會了漸進式揭露的觀念與運作方式：未來新增一份低頻指南，不必再讓每一次對話一起變胖。
+
+## 讓另一個 LLM 當 instruction reviewer
+
+常駐規則最麻煩的不是長，而是它很容易被寫得模糊、互相矛盾，或把一次性的例外誤升格成全域習慣。
+
+所以我不再只讓同一個 Agent 自己整理自己。我會把修改後的 `CLAUDE.md` 或 `AGENTS.md` 交給另一個 LLM，請它只做 reviewer：先看每個 H2 是否只服務一個意圖，再找出無法驗證的措辭、衝突的優先順序，以及其實應該降級成 Skill 或 reference 的段落。
+
+這不是要第二個模型替我決定規則，而是避免把一個理解錯誤直接固化到每次 session 的最上層。
+
+## 我的 Token Diet 分層
+
+| 層級 | 內容類型 | 該放哪裡 |
+|---|---|---|
+| H1／H2 | 每次都要遵守的判斷規則與路由 | 全域 `CLAUDE.md`／`AGENTS.md` |
+| H3 | 同一意圖下、仍需常駐的短子規則 | H2 之下 |
+| 專案範圍 | 只對特定專案或檔案有效的規則 | project instruction 或 path-scoped rule |
+| 工作流程 | 可重複執行的多步驟做法 | Skill |
+| 低頻資料 | 背景、完整指南與決策歷史 | reference，需要時 `Read` |
+
+我現在不追求把 User System Prompt 壓到最短，而是讓每一行都有留下來的理由。這比單純減少 token 更舒服：每次開新的 Agent，都知道它帶著的是工作規格，不是一整個塞不下的抽屜。 
