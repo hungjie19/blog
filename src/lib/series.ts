@@ -12,31 +12,37 @@ export const seriesLists = {
     title: "OpenMemory",
     description: "把本地記憶接進 AI 工作流程後，如何建立可長期使用的記憶策略。",
     type: "series",
+    cover: "/images/series/openmemory.jpg",
   },
   "session-is": {
     title: "Session is",
     description: "把一次 AI 對話與任務，沉澱成下次仍能使用的知識與 Skill。",
     type: "series",
+    cover: "/images/series/session-is.jpg",
   },
   spokenly: {
     title: "Spokenly 語音聽寫",
     description: "從語音輸入工具選擇到成本與自訂流程的實作紀錄。",
     type: "series",
+    cover: "/images/series/spokenly.jpg",
   },
   "remote-control": {
     title: "Remote Control 方法地圖",
     description: "從 Tailscale、SSH 到 AI Agent 的各種遠端工作方式。",
     type: "collection",
+    cover: "/images/series/remote-control.jpg",
   },
   "agent-workflow": {
     title: "Agent Workflow",
     description: "把多帳號、Agent、Skills 與工作規則收斂成一套可持續演化的個人工作系統。",
     type: "collection",
+    cover: "/images/series/agent-workflow.jpg",
   },
   "summon-agent": {
     title: "Summon Agent",
     description: "把 Agent、帳號與工作目錄組成可操作的召喚流程，最後延伸到手機接手。",
     type: "series",
+    cover: "/images/series/summon-agent.jpg",
   },
 } satisfies Record<string, SeriesList>;
 
