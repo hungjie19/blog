@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { FileText, Hash, Layers, UserRound } from '@lucide/astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -45,9 +46,13 @@ const sorted = allPosts.sort((a, b) =>
 );
 
 const allTags = getTags(sorted);
+const isAboutPage = canonicalPath === '/about/';
+const isSeriesPage = canonicalPath?.startsWith('/series/') ?? false;
 
 const navLinkClass =
   'block overflow-hidden text-ellipsis whitespace-nowrap rounded-md px-3 py-1.5 text-sm no-underline transition-colors duration-100 hover:bg-surface hover:text-text';
+const exploreNavLinkClass =
+  'flex items-center gap-2 rounded-md border-l-2 border-transparent px-3 py-1.5 text-sm font-medium no-underline transition-colors duration-100 hover:bg-surface hover:text-text';
 const iconButtonClass =
   'flex cursor-pointer items-center rounded p-1 text-muted no-underline hover:bg-surface hover:text-text';
 ---
@@ -112,32 +117,52 @@ const iconButtonClass =
   <!-- Sidebar -->
   <aside
     id="sidebar"
-    class="flex w-[260px] shrink-0 flex-col border-r border-border bg-sidebar transition-transform duration-200 ease-in-out"
+    class="relative flex shrink-0 flex-col border-r border-border bg-sidebar transition-[transform,width] duration-200 ease-in-out"
   >
     <!-- Blog name -->
     <div class="shrink-0 border-b border-border">
-      <a
-        href={base}
-        class="block p-4 no-underline"
-      >
-        <div class="text-base font-bold leading-[1.2] tracking-[-0.02em] text-text">Jasper Hung</div>
-        <div class="mt-[3px] text-[13px] font-medium text-muted">Coworking with AI</div>
-      </a>
+      <div class="flex items-center">
+        <a
+          href={base}
+          class="flex min-w-0 flex-1 items-center gap-3 p-4 no-underline"
+        >
+          <img src={`${base}favicon.svg`} alt="" class="h-8 w-8 shrink-0 rounded-[7px]" />
+          <div class="min-w-0">
+            <div class="text-base font-bold leading-[1.2] tracking-[-0.02em] text-text">Jasper Hung</div>
+            <div class="mt-[3px] text-[13px] font-medium text-muted">Coworking with AI</div>
+          </div>
+        </a>
+      </div>
     </div>
 
-    <!-- Article list -->
-    <nav class="flex-1 overflow-y-auto px-1 py-2">
+    <!-- Fixed navigation -->
+    <nav class="flex shrink-0 flex-col gap-1 px-1 py-2" aria-label="網站導覽">
       <a
         href={`${base}about/`}
-        class={`${navLinkClass} bg-transparent text-muted`}
+        class={`${exploreNavLinkClass} ${isAboutPage ? 'border-accent bg-surface text-text' : 'bg-transparent text-muted'}`}
         data-umami-event="click-about-sidebar"
-      >About</a>
+      >
+        <UserRound class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+        <span>About</span>
+      </a>
       <a
         href={`${base}series/`}
-        class={`${navLinkClass} bg-transparent text-muted`}
+        class={`${exploreNavLinkClass} ${isSeriesPage ? 'border-accent bg-surface text-text' : 'bg-transparent text-muted'}`}
         data-umami-event="click-series-sidebar"
-      >Series</a>
-      <div class="px-3 pb-1 pt-2 text-xs uppercase tracking-[0.06em] text-muted">Posts</div>
+      >
+        <Layers class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+        <span>Series</span>
+      </a>
+      <div class="sidebar-posts-row">
+        <a href={base} class={`${exploreNavLinkClass} flex-1 bg-transparent text-muted`} data-umami-event="click-posts-sidebar">
+          <FileText class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+          <span>Posts</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- Scrollable article list -->
+    <nav class="min-h-0 flex-1 overflow-y-auto px-1 pb-2" aria-label="文章列表">
       {sorted.map(post => (
         <a
           href={`${base}posts/${post.id}/`}
@@ -152,9 +177,12 @@ const iconButtonClass =
 
     <!-- Tags -->
     {allTags.length > 0 && (
-      <div class="shrink-0 border-t border-border p-3">
-        <a href={`${base}tags/`} class="tags-heading">Tags</a>
-        <div class="sidebar-tags">
+      <div class="shrink-0 border-t border-border px-1 pb-4 pt-2">
+        <a href={`${base}tags/`} class={`${exploreNavLinkClass} bg-transparent text-muted`} data-umami-event="click-tags-sidebar">
+          <Hash class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+          <span>Tags</span>
+        </a>
+        <div class="sidebar-tags px-3 pt-2">
           {allTags.map(t => (
             <a href={`${base}tags/${t.label}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
               #{t.label}
@@ -185,9 +213,10 @@ const iconButtonClass =
       <a
         id="mobile-blog-title"
         href={base}
-        class="hidden shrink-0 text-[15px] font-bold tracking-[-0.02em] text-text no-underline"
+        class="hidden shrink-0 items-center gap-2 text-[15px] font-bold tracking-[-0.02em] text-text no-underline"
       >
-        Jasper Hung
+        <img src={`${base}favicon.svg`} alt="" class="h-5 w-5 rounded-[5px]" />
+        <span>Jasper Hung</span>
       </a>
 
       <!-- Title (article title, desktop only) -->
@@ -285,7 +314,15 @@ const iconButtonClass =
     .content-wrapper { padding: 48px 32px; }
   }
 
-  #sidebar { display: flex; }
+  #sidebar {
+    display: flex;
+    width: var(--sidebar-width, 260px);
+  }
+
+  .sidebar-posts-row {
+    display: flex;
+    align-items: center;
+  }
 
   @media (max-width: 768px) {
     #sidebar {
@@ -298,7 +335,7 @@ const iconButtonClass =
     }
     #sidebar.open { display: flex; }
     #menu-btn { display: flex !important; }
-    #mobile-blog-title { display: block !important; flex: 1; }
+    #mobile-blog-title { display: flex !important; flex: 1; }
     #topbar-title { display: none; }
     #sidebar-backdrop {
       display: none;
@@ -310,25 +347,17 @@ const iconButtonClass =
     #sidebar-backdrop.open { display: block; }
   }
 
-  /* Sidebar Tags: 標題可點 → /tags */
-  .tags-heading {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 8px;
-    text-decoration: none;
+  @media (max-width: 1279px) {
+    #sidebar { width: 260px !important; }
   }
-  .tags-heading:hover { color: var(--text); }
 
-  /* 最多 3 行：3*21(line-height) + 2*6(gap) = 75px，超出隱藏 */
+  /* 最多 3 行；額外保留 descender 與瀏覽器次像素計算的空間，超出隱藏 */
   .sidebar-tags {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
     gap: 6px;
-    max-height: 75px;
+    max-height: 84px;
     overflow: hidden;
   }
   .sidebar-tag { line-height: 21px; }
