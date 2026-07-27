@@ -20,11 +20,13 @@ export async function getStaticPaths() {
     const prevPost = dateIndex === -1 ? null : toNav(byDate[dateIndex - 1]);
     const nextPost = dateIndex === -1 ? null : toNav(byDate[dateIndex + 1]);
 
+    let seriesId = null;
     let seriesName = null;
     let seriesList = null;
     let seriesType = null;
     if (post.data.series) {
       const series = getSeries(post.data.series);
+      seriesId = post.data.series;
       seriesName = series?.title ?? seriesLabel(post.data.series);
       seriesType = series?.type ?? "series";
       seriesList = sortSeriesEntries(
@@ -39,12 +41,12 @@ export async function getStaticPaths() {
 
     return {
       params: { slug: post.id },
-      props: { post, seriesName, seriesList, seriesType, prevPost, nextPost },
+      props: { post, seriesId, seriesName, seriesList, seriesType, prevPost, nextPost },
     };
   });
 }
 
-const { post, seriesName, seriesList, seriesType, prevPost, nextPost } = Astro.props;
+const { post, seriesId, seriesName, seriesList, seriesType, prevPost, nextPost } = Astro.props;
 const { Content, headings } = await render(post);
 const isSeriesCollection = seriesType === "collection";
 
@@ -95,9 +97,10 @@ const readingTime = `約 ${minutes} 分鐘`;
     {
       seriesList && (
         <aside class="series-box" aria-label="系列文章">
-          <p class="series-box-title">
+          <a href={`/series/${seriesId}/`} class="series-box-title" data-umami-event="click-series-overview-post">
             {isSeriesCollection ? `${seriesName}（共 ${seriesList.length} 篇）` : `${seriesName} 系列（共 ${seriesList.length} 篇）`}
-          </p>
+            <span aria-hidden="true"> →</span>
+          </a>
           {
             isSeriesCollection ? (
               <ul class="series-box-list series-box-list-collection">
@@ -465,12 +468,16 @@ const readingTime = `約 ${minutes} 分鐘`;
   }
 
   .series-box-title {
+    display: inline-block;
     margin: 0 0 10px;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--muted);
+    text-decoration: none;
   }
+
+  .series-box-title:hover { color: var(--text); }
 
   .series-box-list {
     margin: 0;
