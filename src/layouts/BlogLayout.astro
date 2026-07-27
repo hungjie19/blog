@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { FileText, Hash, Layers, UserRound } from '@lucide/astro';
+import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, Layers, UserRound } from '@lucide/astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -158,6 +158,17 @@ const iconButtonClass =
           <FileText class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
           <span>Posts</span>
         </a>
+        <button
+          id="sidebar-width-btn"
+          class="sidebar-width-btn"
+          type="button"
+          title="展開 sidebar"
+          aria-label="展開 sidebar"
+          aria-pressed="false"
+        >
+          <ArrowRightFromLine id="sidebar-width-expand-icon" class="h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+          <ArrowLeftToLine id="sidebar-width-collapse-icon" class="hidden h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+        </button>
       </div>
     </nav>
 
@@ -191,6 +202,7 @@ const iconButtonClass =
         </div>
       </div>
     )}
+    <div id="sidebar-resize-handle" class="sidebar-resize-handle" aria-hidden="true"></div>
   </aside>
 
   <!-- Main -->
@@ -319,9 +331,55 @@ const iconButtonClass =
     width: var(--sidebar-width, 260px);
   }
 
+  .sidebar-width-btn,
+  .sidebar-resize-handle {
+    display: none;
+  }
+
   .sidebar-posts-row {
     display: flex;
     align-items: center;
+    gap: 12px;
+  }
+
+  @media (min-width: 1280px) {
+    .sidebar-width-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .sidebar-width-btn:hover { background: var(--surface); color: var(--text); }
+    .sidebar-width-btn:active { transform: scale(0.96); }
+
+    .sidebar-resize-handle {
+      display: block;
+      position: absolute;
+      top: 0;
+      right: -3px;
+      z-index: 10;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+    }
+    .sidebar-resize-handle:hover::after,
+    #sidebar.is-resizing .sidebar-resize-handle::after {
+      content: '';
+      display: block;
+      width: 2px;
+      height: 100%;
+      margin: 0 auto;
+      background: var(--accent);
+    }
+    #sidebar.is-resizing { transition: none; }
   }
 
   @media (max-width: 768px) {
@@ -403,6 +461,73 @@ const iconButtonClass =
   }
   document.getElementById('menu-btn')?.addEventListener('click', toggleSidebar);
   document.getElementById('sidebar-backdrop')?.addEventListener('click', toggleSidebar);
+
+  const sidebar = document.getElementById('sidebar');
+  const sidebarWidthButton = document.getElementById('sidebar-width-btn') as HTMLButtonElement | null;
+  const sidebarResizeHandle = document.getElementById('sidebar-resize-handle');
+  const sidebarExpandIcon = document.getElementById('sidebar-width-expand-icon');
+  const sidebarCollapseIcon = document.getElementById('sidebar-width-collapse-icon');
+  const sidebarMinWidth = 260;
+  const sidebarMaxWidth = 500;
+  const sidebarBreakpoint = window.matchMedia('(min-width: 1280px)');
+  const sidebarStorageKey = 'sidebar-width';
+  let sidebarWidth = sidebarMinWidth;
+
+  function clampSidebarWidth(width: number) {
+    return Math.min(sidebarMaxWidth, Math.max(sidebarMinWidth, width));
+  }
+
+  function updateSidebarWidthButton() {
+    const expanded = sidebarWidth > sidebarMinWidth;
+    sidebarWidthButton?.setAttribute('aria-pressed', String(expanded));
+    if (sidebarWidthButton) {
+      sidebarWidthButton.title = expanded ? '收合 sidebar' : '展開 sidebar';
+      sidebarWidthButton.setAttribute('aria-label', sidebarWidthButton.title);
+    }
+    sidebarExpandIcon?.classList.toggle('hidden', expanded);
+    sidebarCollapseIcon?.classList.toggle('hidden', !expanded);
+  }
+
+  function applySidebarWidth(width: number, persist = false) {
+    sidebarWidth = clampSidebarWidth(width);
+    sidebar?.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
+    updateSidebarWidthButton();
+    if (persist) localStorage.setItem(sidebarStorageKey, String(sidebarWidth));
+  }
+
+  const savedSidebarWidth = Number(localStorage.getItem(sidebarStorageKey));
+  if (Number.isFinite(savedSidebarWidth) && savedSidebarWidth >= sidebarMinWidth) {
+    applySidebarWidth(savedSidebarWidth);
+  } else {
+    updateSidebarWidthButton();
+  }
+
+  sidebarWidthButton?.addEventListener('click', () => {
+    applySidebarWidth(sidebarWidth > sidebarMinWidth ? sidebarMinWidth : sidebarMaxWidth, true);
+  });
+
+  sidebarResizeHandle?.addEventListener('pointerdown', event => {
+    if (!sidebarBreakpoint.matches || !sidebar) return;
+    const startX = event.clientX;
+    const startWidth = sidebar.getBoundingClientRect().width;
+    sidebar.classList.add('is-resizing');
+    sidebarResizeHandle.setPointerCapture(event.pointerId);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      applySidebarWidth(startWidth + moveEvent.clientX - startX);
+    };
+    const onPointerUp = () => {
+      sidebar.classList.remove('is-resizing');
+      applySidebarWidth(sidebarWidth, true);
+      sidebarResizeHandle.removeEventListener('pointermove', onPointerMove);
+      sidebarResizeHandle.removeEventListener('pointerup', onPointerUp);
+      sidebarResizeHandle.removeEventListener('pointercancel', onPointerUp);
+    };
+
+    sidebarResizeHandle.addEventListener('pointermove', onPointerMove);
+    sidebarResizeHandle.addEventListener('pointerup', onPointerUp);
+    sidebarResizeHandle.addEventListener('pointercancel', onPointerUp);
+  });
 
   const main = document.querySelector('main');
   const bar = document.getElementById('reading-progress');
