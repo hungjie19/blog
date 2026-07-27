@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import { getSeries, seriesLists, sortSeriesEntries } from '../../lib/series';
+
+export function getStaticPaths() {
+  return Object.keys(seriesLists).map(id => ({ params: { id } }));
+}
+
+const id = Astro.params.id!;
+const series = getSeries(id);
+
+if (!series) throw new Error(`Unknown series: ${id}`);
+
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+const posts = sortSeriesEntries((await getCollection('blog')).filter(post => post.data.series === id));
+const isCollection = series.type === 'collection';
+const ListTag = isCollection ? 'ul' : 'ol';
+---
+
+<BlogLayout
+  title={series.title}
+  description={series.description}
+  canonicalPath={`/series/${id}/`}
+>
+  <article>
+    <header>
+      {series.cover && (
+        <img
+          src={`${base}${series.cover.slice(1)}`}
+          alt={`${series.title} 系列封面`}
+          class="aspect-[16/9] w-full rounded-[10px] border border-border object-cover"
+        />
+      )}
+      <h1 class="mb-0 mt-6 text-3xl font-bold tracking-[-0.02em] text-text">{series.title}</h1>
+      <p class="mb-0 mt-3 max-w-[38rem] text-base leading-relaxed text-muted">{series.description}</p>
+      <p class="mb-0 mt-5 text-sm text-accent-muted">{posts.length} 篇文章</p>
+    </header>
+
+    <section class="mt-8" aria-labelledby="article-list-title">
+      <h2 id="article-list-title" class="sr-only">文章目錄</h2>
+      <ListTag class:list={['m-0 list-none border-t border-border p-0', !isCollection && 'series-article-list']}>
+        {posts.map((post, index) => (
+          <li class="border-b border-border">
+            <a
+              href={`${base}posts/${post.id}/`}
+              class="group block py-5 no-underline"
+              data-umami-event="click-series-post"
+              data-umami-event-destination={post.id}
+            >
+              <div class="flex items-baseline gap-3">
+                {!isCollection && <span class="shrink-0 text-sm tabular-nums text-muted">{String(index + 1).padStart(2, '0')}</span>}
+                <h3 class="m-0 text-base font-semibold leading-snug tracking-[-0.01em] text-text group-hover:text-accent">{post.data.title}</h3>
+              </div>
+              {post.data.description && <p class:list={['mb-0 mt-2 text-sm leading-relaxed text-muted', !isCollection && 'pl-8']}>{post.data.description}</p>}
+            </a>
+          </li>
+        ))}
+      </ListTag>
+    </section>
+  </article>
+</BlogLayout>
