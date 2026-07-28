@@ -10,16 +10,18 @@ interface Props {
   description?: string;
   date?: string;
   canonicalPath?: string;
+  ogImageUrl?: string;
 }
 
-const { title, activeSlug, description, date, canonicalPath } = Astro.props;
+const { title, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
 const pageTitle = title ? `${title} — Jasper Hung` : 'Jasper Hung';
 const pageDescription = description ?? 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。';
 const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}/` : `${siteUrl}${canonicalPath ?? '/'}`;
 const mdUrl = `${siteUrl}/posts/${activeSlug}.md`;
-const ogImageUrl = activeSlug ? `${siteUrl}/og/${activeSlug}.png` : `${siteUrl}/og/default.png`;
+const ogImageUrl = customOgImageUrl
+  ?? (activeSlug ? `${siteUrl}/og/${activeSlug}.png` : `${siteUrl}/og/default.png`);
 
 const jsonLd = activeSlug
   ? JSON.stringify({
