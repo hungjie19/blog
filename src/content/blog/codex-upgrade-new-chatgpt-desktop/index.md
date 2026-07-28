@@ -120,4 +120,4 @@ Work 則沿用 Codex 的 usage structure：Work、Codex 和 Workspace Agents 共
 
 這會不會只是過渡期，還要繼續觀察。但我猜最後合理的方向，仍會是一個整合的桌面 App：使用者不用先想自己該開 GPT 還是 Codex，而是先說要做什麼，再由產品把對話、任務與本機工作接起來。
 
-最後兩家的設計看起來幾乎是在互相致敬：都把基本對話和可接管工具的 agent 工作收進同一張日常工作桌。OpenAI 叫 Work，Anthropic 沿用 Cowork；coding 則留成獨立的專業工作桌。兩邊都朝同一個方向走——使用者先說需求，再由介面和 agent 決定這是一段一般對話，還是一個該啟動工具、執行多步驟的工作。[Claude 的 Cowork 官方說明](https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile)也確認 Chat 與 Cowork 現在共用 Home。
+最後查了時間線才發現，兩家的產品地圖剛好在同一週收斂成相似的結構：Claude 先在 [7 月 7 日](https://claude.com/docs/cowork/changelog)把 Chat 與 Cowork 收進 Home；兩天後，[OpenAI 在 7 月 9 日](https://help.openai.com/en/articles/6825453-chatgpt-release-notes)發表把 Chat、Work、Codex 放進同一個桌面 App 的設計，coding 也跟 Claude 一樣留成獨立的專業工作桌。公開資訊不足以判斷兩者是否互相影響，但它們確實在處理同一件事：使用者先說需求，再由介面和 agent 決定這是一段一般對話，還是一個該啟動工具、執行多步驟的工作。[Claude 的 Cowork 官方說明](https://support.claude.com/en/articles/15520349-use-claude-cowork-on-web-desktop-and-mobile)也確認 Chat 與 Cowork 現在共用 Home。
