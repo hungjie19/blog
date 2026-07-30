@@ -22,6 +22,7 @@ const ListTag = isCollection ? 'ul' : 'ol';
   title={series.title}
   description={series.description}
   canonicalPath={`/series/${id}/`}
+  ogImageUrl={series.cover ? `https://jasperhung.dev${series.cover}` : undefined}
 >
   <article>
     <header>
