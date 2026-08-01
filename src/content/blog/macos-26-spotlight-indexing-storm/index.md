@@ -1,0 +1,74 @@
+---
+title: 'macOS 26 異常 CPU 飆高：一條指令觸發 Spotlight 啟動掃描'
+ogTitle: 'macOS 26 異常 CPU 飆高|一條指令觸發 Spotlight 啟動掃描'
+date: 2026-08-01T21:26:04+08:00
+description: '照文件執行遞迴 chmod 後，Mac 的 CPU 飆高、風扇持續運轉。這次從 Spotlight 索引排查，到一次排除所有 Git 開發專案。'
+tags:
+  - MacOS
+  - Spotlight
+  - Troubleshooting
+  - Workflow
+---
+
+我接手一個專案後，文件要求在部署流程中執行一條遞迴修改權限的指令。這是文件既有步驟，我沒有特別懷疑，就照著做：
+
+```bash
+chmod -R ug+rwx storage bootstrap/cache
+```
+
+指令跑完沒多久，Mac 開始發燙，風扇持續轉，整台機器摸起來很燙。這篇記錄的不是「不要照文件做」，而是一次很實際的追查：一條看似合理的遞迴 `chmod`，怎麼把我帶到 Spotlight、圖片搜尋，以及最後把所有 Git 專案排除索引的決定。
+
+這條指令會遞迴修改 `storage` 和 `bootstrap/cache` 底下的權限；不只資料夾，裡面的圖片檔也一起被改到。當下的需求確實是讓應用程式可寫入這些位置，所以我只是照文件操作。
+
+後來回頭看，這個動作同時留下了兩個線索。第一個是 Git：大量檔案的 mode 從 `100644` 變成 `100755`，內容沒改，`git status` 卻把它們視為修改。第二個是系統：同一批檔案的權限 metadata 被大量更新，而 Mac 隨即進入高負載與高溫狀態。
+
+當時我還不知道兩件事有沒有關係，只知道要先弄清楚到底是哪個背景工作在吃 CPU。
+
+## 監控後看到的，是 Spotlight 正在工作
+
+我另外開了一個 Agent session，專門監控系統狀態。我在 Activity Monitor 看到整體 CPU 一度來到 60–70%；Agent 進一步監控後，發現 `mds`、`mds_stores` 和多個 `mdworker_shared` 同時運作，這些都是 Spotlight 的索引程序。
+
+## Spotlight 在替圖片做什麼？
+
+Spotlight 的工作不是保護檔案，也不是備份。它是在替搜尋準備索引：讀取檔案 metadata、讓圖片可以被內容關鍵字找到，截圖或掃描 PDF 也可能透過 OCR 變得可搜尋。
+
+這對「照片」App 或日常文件很有用；例如要找某張海邊照片，直接輸入描述就能找到。
+
+## 開發專案需要嗎？
+我接著想：放在專案裡的產品圖、規格圖與開發素材，真的需要透過 Spotlight 找到嗎？這裡的圖片被重新處理，對我的開發工作沒有實質價值，卻可能在檔案權限大量變動後帶來不必要的 CPU 負擔。
+
+問題於是從「怎麼讓 CPU 降下來」變成更明確的一句：能不能讓 Spotlight 不要索引開發專案？
+
+## 為什麼一開始會懷疑 macOS 26？
+
+這不是只因為我剛好升級了系統。Apple 把 macOS Tahoe 26 稱為 Spotlight「最大的一次更新」：它把檔案、資料夾、App、訊息等結果整合並依相關性排序，加入第三方雲端文件、Apps／Files／Actions／Clipboard 瀏覽，以及透過 App Intents 執行動作的能力。[Apple 的 macOS Tahoe 26 發表](https://www.apple.com/ca/newsroom/2025/06/macos-tahoe-26-makes-the-mac-more-capable-productive-and-intelligent-than-ever/)
+
+同時，網路上確實已有相近的異常回報。Macworld 一位編輯在升級 Tahoe 後遇到反覆卡頓，追到 `corespotlightd` 長時間超過 100% CPU、偶爾接近 200%；他關閉 Spotlight 相關選項後，卡頓停止。[Macworld 的個案紀錄](https://www.macworld.com/article/2999630/macos-tahoe-freezing-crashing-macbook-pro-fix.html) Apple Community 也有使用者回報升級 26.0.1 後，`mds_stores` 持續占用超過 85% CPU。[Apple Community 討論](https://discussions.apple.com/thread/256157703)
+
+這些是公開個案，不等於 Apple 已證實「macOS 26 會提高圖片掃描機率」，更不能單獨證明我的問題就是系統 bug。不過當監控畫面正好出現 Spotlight 的索引程序時，它們足以讓 Agent 把 Spotlight 列為優先排查方向，而不是憑空猜一個名字。
+
+剛升級 macOS 時，Spotlight 在一兩天內重新建立索引本來就可能發生，所以第一個猜測是：這會不會只是 macOS 26 更新後的正常背景工作？但這台機器已經升級一段時間，而且高峰剛好接在遞迴改權限之後，值得繼續追。
+
+## 兩種排除方式：系統 UI，或標記檔
+
+第一種：做法是從 macOS 的 Spotlight 隱私權設定中，將指定資料夾加入排除清單。
+
+:::note
+操作路徑：
+
+「 → 系統設定 → Spotlight → Search Privacy（或 Spotlight Privacy）→ ＋」
+
+再選擇要排除的資料夾或磁碟。這很適合只想排除一兩個資料夾，也最容易從系統介面確認設定。[Apple 的操作說明](https://support.apple.com/en-au/guide/mac-help/mchl1bb43b84/mac)
+:::
+
+第二種：做法是在要排除的資料夾中放入 `.metadata_never_index`。它是空白標記檔，告訴 Spotlight 不要為這個資料夾建立索引；日後移除它，就能讓索引恢復。對開發專案而言，這比逐一調整每個子資料夾更容易維護。
+
+一開始我想在單一 repo 的圖片資料夾放這個檔案，但馬上想到：我所有開發專案都不需要 Spotlight。每個 repo 都加一次，反而會讓設定散落在專案中，還會多出不該 commit 的檔案。
+
+## 最後的設定：在 ~/git 一次排除所有專案
+
+最後我把 `.metadata_never_index` 放在 `~/git` 的最上層。這個資料夾本身不是 Git repo，卻是所有開發專案的共同父層；一個標記檔就能涵蓋底下所有 repo，也不會污染任何一個工作目錄。
+
+設定後，我重新執行原本那條 `chmod -R ug+rwx` 做測試，再每 8 秒觀察一次 CPU 和 load average。這次 `mds` 與 `mds_stores` 都維持在低使用率，畫面上雖然還看得到短暫出現的 `mdworker_shared`，但沒有再出現持續的高 CPU 峰值；機器仍會稍微升溫，卻不再像剛才那樣燙。
+
+最後再依 Git 記錄的 mode 還原權限，確認工作目錄乾淨。這一步也讓整件事收得很完整：照文件補權限可以，但要知道它會碰到整棵資料夾；而對我來說，開發專案不需要 Spotlight 這層圖片搜尋，乾脆在 `~/git` 一次排除，是最省心的結果。
