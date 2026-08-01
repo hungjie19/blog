@@ -4,6 +4,7 @@ ogTitle: 'Luma 的極簡活動頁|為什麼反而更完整？'
 date: 2026-08-02T01:03:51+08:00
 description: 'Luma 看起來只是一張簡潔的活動頁，卻把報名、通知、收款與推廣串成完整流程。從它的設計選擇，看見真正的簡單不是功能少。'
 tags:
+  - Luma
   - Design
   - Product-Design
   - Event-Management
