@@ -111,3 +111,20 @@ tags: [tag-system, blog, changelog]
 - `~/.claude/skills/create-my-blog/SKILL.md:121`：再次修正，這次不再假設任何預設大小寫（連「預設 lowercase」都不寫死），明確標註「不要憑記憶套用大小寫規則，一定要讀 `tag-rules.md`」，避免下次規則變動又跟消費端脫鉤
 
 **原因**：規則如果只保護「看起來像專有名詞」的 tag，卻放任其他 tag 維持隨機大小寫，會讓 tag 頁面呈現不一致（部分 pill 大寫開頭、部分全小寫），使用者判斷既然這是 user-facing 顯示（`tag-rules.md` 已在決策 #8 補充記錄這點），一致的視覺呈現比「哪個字算專有名詞」的語意判斷更重要，值得一次性遷移而非逐步累積例外清單。
+
+### 11. 第二次完整 audit：corpus 從 16 篇成長到 48 篇，修正 3 處 drift + 3 項裁決 + 1 項治理文件過時
+
+**日期**：2026-08-02
+**內容**：距上次 audit（2026-07-03）已成長至 48 篇文章（47 篇 `.md` + 1 篇 `.mdx`），重新全量掃描。發現並處理：
+
+1. **corpus source 文件過時**：`index.md` 記載的掃描範圍是 `src/content/blog/**/index.md`，但 `src/content.config.ts` 實際用 Astro loader glob `**/*.{md,mdx}`，且 `local-whisper-dictation-cost/index.mdx` 是唯一一篇 `.mdx` 文章，先前的手動掃描（含這次 audit 初期）曾因此漏看它的 5 個 tags。已修正 `index.md` 的 corpus source 段落為 `src/content/blog/**/index.{md,mdx}` 並加註原因。
+2. **小寫殘留**：`agent-project-instructions` 4 個 tag（`agent`、`codex`、`claude-code`、`workflow`）全部小寫，違反既有 Title Case 規則。已改為 `Agent`、`Codex`、`Claude-Code`、`Workflow`。
+3. **`macOS-Dictation` 退役**：`voice-input-for-vibe-coding` 同時掛 `Dictation` 與 `macOS-Dictation` 兩個 tag，後者不僅與同篇既有的 `Dictation` 語意重複，開頭又是小寫 `m`（Apple 官方寫法），違反本站「tag 必須大寫開頭」規則。使用者確認直接刪除 `macOS-Dictation`，不新造替代詞。
+4. **`MacOS` 正式定案**：6 篇文章已自行協調出 `MacOS`（大寫 M）寫法，跟 Apple 官方 `macOS`（小寫 m）不同，但從未寫入 `tag-rules.md` 封閉清單。使用者確認維持 `MacOS` 為永久例外並正式登記，不改回 Apple 官方寫法。
+5. **`AI-Workflow` 拆分**：`codex-remote-connections-vs-claude-code` 用了合併 tag `AI-Workflow`，是全語料庫唯一一次合併寫法（其餘 20+ 篇都拆成 `AI` + `Workflow` 兩個獨立 tag）。使用者確認拆開以維持一致性，該篇 tag 數從 4 個變成 5 個（仍在 3–5 範圍內）。
+6. **`Remote-Control`（5 篇）vs `Remote-Access`（3 篇）**：語意相近但不完全重疊——前者是「操控/派工 AI agent」，後者是「SSH/Tailscale 連線存取機器」。使用者確認維持兩個獨立 tag，不合併。
+7. **新專有名詞補登記**：`Codex`（12 篇）、`OpenAI`、`ChatGPT`、`PhotoSwipe`（各 1 篇）大小寫皆已正確一致，僅補寫入 `tag-rules.md` § Normalization 封閉清單與 `canonical-tags.md` 對應分組，未動任何 frontmatter。
+
+已更新 `tag-rules.md`（封閉清單擴充、新增「不合併正交概念」選字守則）、`canonical-tags.md`（AI & tools / Tech stack proper nouns 分組擴充、新增 Remote-Control vs Remote-Access 分家說明）、`aliases.md`（新增 3 筆 confirmed mapping、2 筆 retired-without-replacement）、`generated/tag-inventory.md`、`generated/tag-candidates.md`（皆已依決策後狀態重新產生）。
+
+**原因**：`.mdx` 文件的 corpus 缺口若不修正，之後每次 audit 與 `create-my-blog` 寫作時都會用同一份過時的 glob 規則，持續漏看該篇文章；已發生一次差點漏算的實例，值得直接修正 source of truth 而非依賴人工記得排除。其餘 3 項小寫/合併 drift 屬於「維持現狀 vs. 改動」判斷明確、影響文章數小（各 1 篇）的安全修正；`MacOS`、`Remote-Control`/`Remote-Access`、新專有名詞登記則是「多篇文章已形成穩定慣例，但治理文件沒跟上」的追認型決策——先詢問使用者裁決，避免又落入決策 #6 「auto-mode 保守推進、事後才被使用者推翻」的重工模式。

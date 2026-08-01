@@ -4,10 +4,10 @@ ogTitle: 'Agent 換專案時|為什麼不一定會讀|CLAUDE.md'
 date: 2026-07-22T00:55:02+08:00
 description: 'Agent 能去另一個 repo 工作，卻不一定會讀專案規則。這篇整理原因，以及用全域規則補上的做法。'
 tags:
-  - agent
-  - codex
-  - claude-code
-  - workflow
+  - Agent
+  - Codex
+  - Claude-Code
+  - Workflow
 ---
 
 我常常在同一個 Agent session 裡做完一件事，打個 `/clear`，接著叫它去另一個 repo 處理下一件事。

@@ -18,8 +18,10 @@ This file is the single source of routing for blog tag governance. Writers (`cre
 Full existing tag inventory for this repo comes from scanning frontmatter directly:
 
 ```
-src/content/blog/**/index.md
+src/content/blog/**/index.{md,mdx}
 ```
+
+Both extensions are real content — `src/content.config.ts` loads the collection with glob pattern `**/*.{md,mdx}`, and at least one published post (`local-whisper-dictation-cost`) is `.mdx`. A scan that only matches `index.md` silently misses `.mdx` posts and their tags (`tag-audit.md` decision #11).
 
 Read the `tags:` field of each post's frontmatter. Do **not** use `mcp__obsidian__list_all_tags` — that only sees the Obsidian vault, not this Astro repo (see `tag-audit.md` decision #2).
 

@@ -6,7 +6,8 @@ tags:
   - Codex
   - Claude-Code
   - Remote-Control
-  - AI-Workflow
+  - AI
+  - Workflow
 series: remote-control
 seriesOrder: 4
 ---

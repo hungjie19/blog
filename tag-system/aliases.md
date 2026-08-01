@@ -29,10 +29,14 @@ Single thesaurus file for this repo. Three sections. The alias column in "Confir
 | `RSS` | `rss` |
 | `AEO` | `aeo` |
 | `Knowledge-Management` | `knowledge-management` |
+| `Agent` | `agent` |
+| `Codex` | `codex` |
+| `Claude-Code` | `claude-code` |
 
 ## Retired without replacement
 
-_(none yet)_
+- `macOS-Dictation` — retired 2026-08-02 (`tag-audit.md` decision #11). Was a redundant compound tag co-occurring with the plain `Dictation` tag on the same post (voice-input-for-vibe-coding); also violated the capital-letter-start rule (Apple's lowercase-m casing). No replacement tag — `Dictation` already covers the concept.
+- `AI-Workflow` — retired 2026-08-02 (`tag-audit.md` decision #11). Was a one-off merge of two tags (`AI`, `Workflow`) that exist separately everywhere else in the corpus (codex-remote-connections-vs-claude-code). No replacement compound — use `AI` + `Workflow` separately.
 
 ## Pending decision
 

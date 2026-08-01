@@ -7,7 +7,6 @@ tags:
   - AI
   - Vibe-Coding
   - Dictation
-  - macOS-Dictation
   - Typeless
 series: spokenly
 seriesOrder: 1
