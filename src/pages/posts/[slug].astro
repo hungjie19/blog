@@ -400,7 +400,10 @@ const readingTime = `約 ${minutes} 分鐘`;
   }
 
   .article-body :global(table) {
-    width: 100%;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     border-collapse: collapse;
     font-size: 16px;
     margin: 1.25rem 0;
@@ -414,12 +417,14 @@ const readingTime = `約 ${minutes} 分鐘`;
     color: var(--muted);
     border-bottom: 1px solid var(--border);
     padding: 6px 12px 6px 0;
+    overflow-wrap: anywhere;
   }
 
   .article-body :global(td) {
     border-bottom: 1px solid var(--border);
     padding: 8px 12px 8px 0;
     vertical-align: top;
+    overflow-wrap: anywhere;
   }
 
   .article-body :global(hr) {
