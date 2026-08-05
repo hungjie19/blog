@@ -1,8 +1,8 @@
 ---
-title: 'Skills 裝太多之後：我怎麼決定預載、按需讀取，還是移除？'
-ogTitle: 'Skills 裝太多之後|預載、按需讀取，還是移除？'
+title: 'Skills 裝太多之後：內建健檢 doctor 怎麼幫我決定預載、按需讀取，還是移除？'
+ogTitle: 'Skills 裝太多之後|健檢 doctor 怎麼決定去留？'
 date: 2026-07-26T15:04:04+08:00
-description: 'Skill 不是裝得越多越好。我從 subagent 的啟動 context 成本出發，重新分辨預載、按需讀取、共同 reference 與移除四種去處。'
+description: 'Skill 不是裝得越多越好。我用 Claude Code 內建的 /doctor 健檢盤點裝了什麼，再從 subagent 啟動時的 context 成本出發，重新分辨預載、按需讀取、共同 reference 與移除四種去處。'
 tags:
   - AI
   - Claude
