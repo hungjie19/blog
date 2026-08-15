@@ -12,6 +12,10 @@ series: remote-control
 seriesOrder: 7
 ---
 
+<KeyTakeaways>
+  <p>手機已經連上 Tailscale，卻打不開 Mac 的本機 dev server，該往哪裡查？關鍵通常不是 DNS 或 VPN，而是 dev server 預設只聽 localhost，要在 Vite／Astro 設定或啟動指令加上對外監聽；改用 MagicDNS 名稱則還要把該網域加進 Vite 的 allowedHosts。</p>
+</KeyTakeaways>
+
 我想在手機上看剛寫到一半的部落格。Mac 和 iPhone 都已經打開 Tailscale，照理說兩台裝置已經在同一張私有網路裡；但手機輸入 Mac 的位址，本機 dev server 還是完全打不開。
 
 一開始我把注意力全放在 VPN 和 DNS。後來才發現，Tailscale 其實早就完成它的工作；卡住的是更靠近網站程式的那一層。

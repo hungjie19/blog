@@ -13,6 +13,10 @@ series: agent-workflow
 seriesOrder: 1
 ---
 
+<KeyTakeaways>
+  <p>同時用個人 Claude、公司 Claude 和 Codex，需要維護三套設定嗎？我把帳號、runtime 設定、工作規格分成三層，只讓工作規格用 symlink 指回 ~/.claude 這個共同來源；但 Claude 的 settings.json 與 Codex 的 config.toml 這類原生 runtime 設定不硬合併，登入憑證與對話歷史也不進 Git。</p>
+</KeyTakeaways>
+
 同時用個人 Claude、公司 Claude 和 Codex 之後，我一開始根本不考慮維護三套設定。
 
 我的直覺是：第一個 Claude 帳號已經調好的全域規則、Skills、MCP、Plugin 和 Agents，其他帳號應該都直接跟著它。帳號變多，只是多了登入身分與可用額度，不該讓我重新養三個版本的 AI 工作環境。

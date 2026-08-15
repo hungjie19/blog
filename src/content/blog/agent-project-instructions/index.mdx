@@ -10,6 +10,10 @@ tags:
   - Workflow
 ---
 
+<KeyTakeaways>
+  <p>Agent 換到另一個專案工作，會不會自動套用該專案的 CLAUDE.md 或 AGENTS.md 規則？不會，因為切換目錄不等於重新讀取規則，需要在全域規則額外加一條「先讀規則」的指令；這是以 Claude Code 與 Codex 實測的結果，不保證適用其他 Agent 工具。</p>
+</KeyTakeaways>
+
 我常常在同一個 Agent session 裡做完一件事，打個 `/clear`，接著叫它去另一個 repo 處理下一件事。
 
 直覺上，既然都叫它去那個專案了，它應該會先讀那邊的 `CLAUDE.md` 或 `AGENTS.md` 吧？後來我才發現，事情沒有這麼直覺。

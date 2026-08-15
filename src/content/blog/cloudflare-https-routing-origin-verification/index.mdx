@@ -10,6 +10,10 @@ tags:
   - Troubleshooting
 ---
 
+<KeyTakeaways>
+  <p>Google Search Console 顯示頁面重新導向，是不是網站索引壞掉了？不是，問題出在漏掉全站 HTTP→HTTPS 導向，而不是 sitemap 或 canonical 設定；這是 Cloudflare Proxy 搭配 GitHub Pages 這個特定架構下才會出現的檢查步驟。</p>
+</KeyTakeaways>
+
 Google Search Console 把幾個網址列成「頁面會重新導向」，而且驗證修正失敗。第一眼很容易懷疑 sitemap、canonical，甚至覺得網站索引壞掉了。
 
 但沿著 sitemap、response header 和憑證一路檢查後，問題落在另一個地方：網站的 URL 格式其實已經整理好，漏掉的是全站 HTTP→HTTPS 導向。這也順手拆開了一個常被混在一起的問題：Cloudflare 和 GitHub Pages 各自處理哪一段 HTTPS。

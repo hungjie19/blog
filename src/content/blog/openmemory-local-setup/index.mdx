@@ -13,6 +13,10 @@ tags:
   - Self-Hosted
 ---
 
+<KeyTakeaways>
+  <p>OpenMemory 本地自架要設定哪些東西？用 Docker 啟動 API、Qdrant、Dashboard 三個服務，把 MCP endpoint 加進 Claude Code，再填一把模型 provider 的 API key，最後用水果清單 DEMO 驗證語意搜尋真的通了；自架不等於完全離線，記憶萃取與 Embedding 預設仍呼叫雲端模型。</p>
+</KeyTakeaways>
+
 上一篇選定 OpenMemory，是因為我想要一層能跨 session、跨 LLM 共用的記憶服務。接下來就不談比較了，直接把它裝起來。
 
 整個流程表面上只有 Docker、clone repo、填 API key 三件事；真正讓我停下來想的，反而是最後一件。既然服務都跑在本機，為什麼還需要一把雲端 API key？

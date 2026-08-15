@@ -11,6 +11,10 @@ series: remote-control
 seriesOrder: 1
 ---
 
+<KeyTakeaways>
+  <p>想從手機 SSH 回家裡的 Mac，一定要處理公網 IP 和 port forwarding 嗎？先用 Tailscale 把手機和 Mac 加進同一個 tailnet，再開啟 macOS 的遠端登入即可；連線只走這個私有網路，而 Mac 進入睡眠仍會讓連線中斷，需要另外處理。</p>
+</KeyTakeaways>
+
 有次人在外面，想從手機回 Mac 看一下正在跑的東西。不是要開遠端桌面，只是想進 terminal 查狀態、跑一個指令。
 
 這件事聽起來很像「開 SSH 就好」，但我很快就卡在另一題：手機到底要連到哪裡？家裡的公網 IP 會變，路由器也沒有替我開 port。最後讓這條路變得簡單的，不是 SSH 本身，而是先裝了 Tailscale。

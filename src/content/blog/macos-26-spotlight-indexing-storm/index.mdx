@@ -10,6 +10,10 @@ tags:
   - Workflow
 ---
 
+<KeyTakeaways>
+  <p>照文件跑完遞迴 `chmod` 後，Mac 為什麼開始發燙？監控發現是 Spotlight 的 `mds`、`mds_stores` 因大量權限變動而重建索引，最後在 `~/git` 最上層放一個 `.metadata_never_index`，一次排除底下所有專案；前提是開發專案本來就不需要 Spotlight 的圖片與全文搜尋。</p>
+</KeyTakeaways>
+
 我接手一個專案後，文件要求在部署流程中執行一條遞迴修改權限的指令。這是文件既有步驟，我沒有特別懷疑，就照著做：
 
 ```bash

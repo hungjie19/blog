@@ -9,6 +9,10 @@ tags:
   - Troubleshooting
 ---
 
+<KeyTakeaways>
+  <p>升級 macOS 26 後 Mac 莫名發燙，該從哪裡查起？先看哪個程式真的在吃 CPU，這次追到的是 BetterDisplay 4.3.4 的「快取的 App 選單」持續佔用約 43% CPU，關閉後立刻回到 0%；若是使用虛擬螢幕、看到 ColorSync 程序忙碌，則屬於另一個問題，不適用這個修法。</p>
+</KeyTakeaways>
+
 升到 macOS 26 後，Mac 偶爾會莫名發燙。我一開始以為是 Android 模擬器忘了關，畢竟它確實很會吃資源；這一次檢查後，模擬器根本沒有在跑。
 
 於是我請 AI 協助把當下的 CPU 使用率排出來，才發現 BetterDisplay 持續吃了約 43% CPU，累積執行時間也長得不太尋常。這讓人有點意外，因為我平常只是用它讓 2K 外接螢幕上的文字更清楚，幾乎感覺不到它的存在。

@@ -13,6 +13,10 @@ series: agent-workflow
 seriesOrder: 5
 ---
 
+<KeyTakeaways>
+  <p>哪些規則值得每個 session 都常駐在 CLAUDE.md 與 AGENTS.md？定義「什麼時候該做某件事」的觸發條件必須留在主檔，完整格式與低頻細節則下放到 reference、Skill 或專案規則，需要時才讀取；要注意 @path import 會在啟動時一起展開進 context，那是拆檔，不是漸進式揭露。</p>
+</KeyTakeaways>
+
 研究完 Skill 的啟動成本後，我才回頭看另一個更根本的地方：每次開 Agent 時，究竟有哪些規則值得一起帶進 context？
 
 對模型公司而言，System Prompt 是產品內建、使用者看不見的那一層。但對我自己來說，`~/.claude/CLAUDE.md` 與 `~/.codex/AGENTS.md` 才是能控制的最高常駐 instruction layer。我把它叫作 User System Prompt。

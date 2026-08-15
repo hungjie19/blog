@@ -13,6 +13,10 @@ series: summon-agent
 seriesOrder: 1
 ---
 
+<KeyTakeaways>
+  <p>需要另一位 AI 協作者時，為什麼不用 sub-agent？因為我要的是能隨時走進去接手、暫停後仍在的獨立現場，於是做了 summon-agent Skill：用 cmux CLI 開 workspace、啟動 runtime 並套上 Agent 角色，Agent 與帳號分開選；但這套輪詢式流程，對已經知道所有選項的情境仍嫌太多步。</p>
+</KeyTakeaways>
+
 一開始我想解決的不是「怎麼多開一個 AI」，而是怎麼在需要時，叫出一位有明確職責的協作者。
 
 例如我已經在主對話規劃完需求，接下來想交給一位 AI 做 code review，或處理前端實作。直接在原本的對話裡繼續做當然可以，但我更想要的是另一個能獨立工作、完成後再回來交代結果的 LLM 工作現場。

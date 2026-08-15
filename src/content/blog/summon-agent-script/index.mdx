@@ -13,6 +13,10 @@ series: summon-agent
 seriesOrder: 2
 ---
 
+<KeyTakeaways>
+  <p>已經知道要叫哪個 Agent、用哪個帳號時，還需要讓 Skill 一題一題問嗎？我把 cmux 啟動流程抽成 summon script：輪詢選單搬到終端機，也能帶參數直接執行，Agent 名單則收進 registry 讓 script 與 Skill 共用。輪詢設計沒有被拿掉，只是移出對話、不再由 LLM 執行機械步驟。</p>
+</KeyTakeaways>
+
 我原本用 Skill 召喚 Agent。它會先問我要找誰，選完再問要用哪個帳號，接著還要問在哪裡開。這個流程沒有錯，但每一題都是一次新的來回：我回答一次，context 多一段；它再追問一次，context 又多一段。
 
 有些時候，這種引導很有用；但更多時候，我早就知道自己要叫 CASE、要用哪個帳號、也知道要另開 workspace。這時候讓 AI 一題一題問，不是在幫我思考，只是在替一個明確指令加上對話成本。

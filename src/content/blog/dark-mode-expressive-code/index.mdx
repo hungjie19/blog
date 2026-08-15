@@ -9,6 +9,10 @@ tags:
   - Site-Building
 ---
 
+<KeyTakeaways>
+  <p>Blog 切好 dark mode，code block 卻沒跟著變色該怎麼辦？把 CSS 從 media query 改成 class-based、用 inline script 防 FOUC，再用 Expressive Code 取代手刻的 code block；關鍵是 Expressive Code 不看 CSS class，而是靠 <code>data-theme</code> 屬性切換，所以 toggle 要同步設定。</p>
+</KeyTakeaways>
+
 現在不管是 App 還是作業系統，幾乎都有 dark mode。工程師族群尤其習慣開著深色模式工作——長時間盯著螢幕，眼睛比較不累。
 
 既然自己也是這樣用的，blog 當然也需要有這個功能。於是我跟 AI 一起來實作。

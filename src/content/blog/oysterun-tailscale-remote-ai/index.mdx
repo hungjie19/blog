@@ -12,6 +12,10 @@ series: remote-control
 seriesOrder: 6
 ---
 
+<KeyTakeaways>
+  <p>無法使用 Claude 內建 Remote Control 時，還有沒有別的方式從手機控制本機 agent？Oysterun 是一套自帶手機對話、檔案瀏覽與通知的本機 AI Host，靠 Tailscale 讓手機隨時連回 Mac；但它只能接續自己開出的 session，terminal 裡既有的對話接不回來。</p>
+</KeyTakeaways>
+
 Claude Code 與 Codex 都有自己的遠端方案，但我有一個帳號無法直接用 Claude 的內建 Remote Control。於是我開始找另一條路，最後碰到 Oysterun。
 
 一開始我以為它只是「把手機接回 terminal」的工具；實際裝起來後才發現不對。它不是 SSH、也不是 Telegram、Slack 或 Discord 的轉接 bot。Oysterun 是一套自己做了手機對話窗的 AI Host：手機對它說話，它在本機啟動 Claude Code 或 Codex，再把工作進度、檔案、通知和報告交回手機。

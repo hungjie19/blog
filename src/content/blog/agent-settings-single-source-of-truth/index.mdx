@@ -13,6 +13,10 @@ series: agent-workflow
 seriesOrder: 2
 ---
 
+<KeyTakeaways>
+  <p>這篇說明如何讓 Claude 與 Codex 的 Agent 角色設定不必各寫一份：Claude 用一份 Markdown 同時服務 subagent 與主 session，Codex 則拆成 custom agent TOML 與 profile 兩條入口；作者把角色工作原則抽成 shared contract、角色名單收進 registry.yaml，兩邊 runtime 檔案只留各自必要的載入設定。</p>
+</KeyTakeaways>
+
 我一直很喜歡 Claude 的 Agent 設計，因為它的心智模型很直覺：先定義一個角色，再決定要讓它接手主對話，或在背景當一個專職 subagent。角色本身不需要跟著使用方式重寫一次。
 
 後來我把同一套工作方式搬到 Codex，才發現事情沒有那麼單純。它不是少了 Agent，而是把不同情境的載入入口拆開了。也正是這個差異，逼我重新理解 Agent 設定的 Single Source of Truth 到底該放在哪裡。

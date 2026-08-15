@@ -12,6 +12,10 @@ tags:
   - Workflow
 ---
 
+<KeyTakeaways>
+  <p>MCP 裝好之後，AI 就會自己使用 OpenMemory 嗎？不會——MCP 只提供能力，判斷時機得把記憶策略寫進 System Prompt（`CLAUDE.md` / `AGENTS.md`），並把記憶分成固定規則、可搜尋線索、完整 session summary 三層；哪些判斷值得被未來重複依賴，最後仍要由使用者自己取捨。</p>
+</KeyTakeaways>
+
 OpenMemory 裝好之後，我原本以為接下來的事情會很自然。MCP 已經接上了，AI 應該會自己開始用 OpenMemory，該記的時候記，該查的時候查，然後慢慢變得越來越懂我。
 
 但用著用著，我很快就發現事情不是這樣。有時候它會記，有時候又完全不記；有時候我以為它應該去查之前的脈絡，它卻直接回我。這種不穩定感讓我開始懷疑：它到底是怎麼判斷要不要用 OpenMemory 的？

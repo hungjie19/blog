@@ -13,6 +13,10 @@ tags:
   - Semantic-Search
 ---
 
+<KeyTakeaways>
+  <p>跨 session、跨 LLM 的長期記憶該選哪一套？比較 GitHub 上的社群方案、再與 Notion 和 Obsidian 對照後，我選了可自架、能透過 MCP 共用、又有 UI 可回頭審查的 OpenMemory；比較條件是當時的實際情境，而且它只放替 AI 指路的記憶片段，完整脈絡仍留在筆記裡。</p>
+</KeyTakeaways>
+
 現在的 AI 工具，多半記得我大概是誰、偏好什麼語氣。但一開新的對話視窗，它們往往不記得更實際的細節：這個專案為什麼選 pnpm、上次排除過什麼方案、某個規則是在什麼情況下訂下來的。
 
 一個做法是[把對話保存下來作為自己的知識筆記](/posts/session-is-knowledge/)。完整脈絡留在自己手上，這件事很重要；但它主要解決了保存，還沒有解決搜尋。需要接續舊脈絡時，仍要靠人找出那份筆記，再手動貼進新的對話視窗。
@@ -25,12 +29,12 @@ tags:
 
 | 方案 | 本地 | 雲端 | 接到 AI 的方式 | 寫入方式 | 搜尋方式 |
 |---|---|---|---|---|---|
-| [OpenMemory / Mem0](https://github.com/mem0ai/mem0)<br>60,718 ⭐ | ✅ | ✅ | MCP / API | AI 依規則存取 | 語意搜尋 |
-| [OMEGA](https://github.com/omega-memory/omega-memory)<br>184 ⭐ | ✅ | — | MCP + hooks | 自動與主動皆可 | 語意 + 關鍵字 |
-| [Supermemory](https://github.com/supermemoryai/supermemory)<br>28,347 ⭐ | ✅ | ✅ | Plugin / MCP / API | 自動萃取 | Hybrid search |
-| [Zep / Graphiti](https://github.com/getzep/graphiti)<br>28,663 ⭐ | ✅ | ✅ | MCP / SDK | 應用自行整合 | 圖譜 + 語意 |
-| [Letta](https://github.com/letta-ai/letta)<br>23,771 ⭐ | ✅ | ✅ | SDK / Agent | Agent 維護 state | Agent memory search |
-| [claude-mem](https://github.com/thedotmack/claude-mem)<br>87,028 ⭐ | ✅ | — | Plugin + hooks | Hooks 自動記錄 | 關鍵字 + 語意 |
+| [OpenMemory / Mem0](https://github.com/mem0ai/mem0)<br />60,718 ⭐ | ✅ | ✅ | MCP / API | AI 依規則存取 | 語意搜尋 |
+| [OMEGA](https://github.com/omega-memory/omega-memory)<br />184 ⭐ | ✅ | — | MCP + hooks | 自動與主動皆可 | 語意 + 關鍵字 |
+| [Supermemory](https://github.com/supermemoryai/supermemory)<br />28,347 ⭐ | ✅ | ✅ | Plugin / MCP / API | 自動萃取 | Hybrid search |
+| [Zep / Graphiti](https://github.com/getzep/graphiti)<br />28,663 ⭐ | ✅ | ✅ | MCP / SDK | 應用自行整合 | 圖譜 + 語意 |
+| [Letta](https://github.com/letta-ai/letta)<br />23,771 ⭐ | ✅ | ✅ | SDK / Agent | Agent 維護 state | Agent memory search |
+| [claude-mem](https://github.com/thedotmack/claude-mem)<br />87,028 ⭐ | ✅ | — | Plugin + hooks | Hooks 自動記錄 | 關鍵字 + 語意 |
 
 這一輪裡，OpenMemory 最接近我想要的樣子：資料可以自己部署、不同 LLM 能透過 MCP 或 API 共用，還有 UI 可以回頭檢查記憶。它不是只把對話記錄下來，而是先萃取出偏好、決策和限制，再讓 AI 用語意搜尋找回來。
 

@@ -12,6 +12,10 @@ series: summon-agent
 seriesOrder: 3
 ---
 
+<KeyTakeaways>
+  <p>手機遠端控制只能接手已經在跑的工作嗎？把 --remote-control 直接寫進 summon script 的啟動指令，新 Agent 一出生就能從手機接手，不必事後補送 /rc；建立 workspace 時要加 --focus true，否則 cmux 不會真的送出啟動命令。這條路只對手機 App 登入的 personal 帳號成立。</p>
+</KeyTakeaways>
+
 遠端控制用久了，我本來只把它想成「出門後，從手機接手 Mac 上已經在跑的工作」。直到有一天，我在手機上想再叫一個 Agent 幫我處理另一件事，才發現還可以再往前一步：**新 Agent 能不能一出生，就已經能被手機接手？**
 
 答案是可以。而且一旦做完，手機就不只是查看工作進度的地方，而是能直接召喚新工作現場的入口。
