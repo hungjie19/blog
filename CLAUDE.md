@@ -25,7 +25,7 @@
 ```
 src/content/blog/
   [slug]/
-    index.md    ← 文章本文
+    index.mdx   ← 文章本文（固定用 KeyTakeaways 摘要，需要 import，一律 .mdx）
     image.png   ← 圖片放同層
 ```
 
