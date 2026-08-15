@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
+import KeyTakeaways from "../../components/KeyTakeaways.astro";
 import { getSeries, seriesLabel, sortSeriesEntries } from "../../lib/series";
 
 export async function getStaticPaths() {
@@ -92,7 +93,7 @@ const readingTime = `約 ${minutes} 分鐘`;
     </div>
 
     <div class="article-body">
-      <Content />
+      <Content components={{ KeyTakeaways }} />
     </div>
     {
       seriesList && (
