@@ -1,0 +1,72 @@
+<aside class="key-takeaways" aria-labelledby="key-takeaways-title">
+  <h2 id="key-takeaways-title">Key Takeaways</h2>
+  <div class="key-takeaways-content">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  .key-takeaways {
+    --key-takeaways-radius: 14px;
+    position: relative;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border-radius: var(--key-takeaways-radius);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  }
+
+  .key-takeaways::before,
+  .key-takeaways::after {
+    content: '';
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--accent);
+    pointer-events: none;
+  }
+
+  .key-takeaways::before {
+    top: -2px;
+    left: -2px;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: var(--key-takeaways-radius);
+  }
+
+  .key-takeaways::after {
+    bottom: -2px;
+    right: -2px;
+    border-left: none;
+    border-top: none;
+    border-bottom-right-radius: var(--key-takeaways-radius);
+  }
+
+  #key-takeaways-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--heading);
+  }
+
+  .key-takeaways-content {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--article-text);
+  }
+
+  .key-takeaways-content :global(p) {
+    margin: 0;
+  }
+
+  .key-takeaways-content :global(p + p) {
+    margin-top: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    .key-takeaways {
+      --key-takeaways-radius: 12px;
+      padding: 1.25rem;
+    }
+  }
+</style>
