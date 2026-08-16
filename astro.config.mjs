@@ -16,6 +16,9 @@ export default defineConfig({
   server: {
     host: true,
   },
+  build: {
+    inlineStylesheets: 'always',
+  },
   integrations: [
     expressiveCode({
       themes: ['monokai', 'github-light'],
