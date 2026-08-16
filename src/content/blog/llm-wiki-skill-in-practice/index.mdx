@@ -1,0 +1,101 @@
+---
+title: 'LLM Wiki：Wiki Ingest 與我的批次工作流程'
+ogTitle: 'LLM Wiki：Wiki Ingest|與我的批次工作流程'
+date: 2026-08-16T23:27:25+08:00
+description: '選定一套公開的 LLM Wiki 實作後，我先用它把 50 個 summaries 批次整理成 wiki，再依自己的語言、資料結構與工作方式加上 wiki-ingest 與 changelog，讓外部 skill 逐步變成可持續維護的知識系統，也說明為什麼先站在公開實作上再疊加，比從零重寫更適合我的工作流。'
+tags:
+  - AI
+  - LLM
+  - Knowledge-Management
+  - Skill
+  - Workflow
+---
+
+import KeyTakeaways from '../../../components/KeyTakeaways.astro';
+
+<KeyTakeaways>
+  <p>選好一套 LLM Wiki 實作後，怎麼把它接進自己的知識系統？前篇已經談過選擇，這篇直接記錄我怎麼先調整資料結構，再用繁體中文完成 ingest，最後打造自己的 wiki workflow 與 skill 修改紀錄。</p>
+</KeyTakeaways>
+
+[前一篇](/posts/karpathy-llm-wiki/)已經介紹 LLM Wiki 的概念、比較不同實作，也說明我最後為什麼選 Agent Skill。這一篇不再重複安裝和比較，直接從「選好了，接下來怎麼用」開始。
+
+我一開始想用 LLM Wiki，目的不是再增加一個筆記工具，而是想解決一個很實際的問題：同一個主題討論過五次之後，我不想每次都重新讀五份 Session Summary，才能拼出目前的理解。
+
+我希望 source 可以被整合成一篇 concept page。之後 Agent 搜尋或跨對話接續工作時，先讀這一篇 wiki 就夠了；需要追查推理過程，再回頭讀原始 summary。接下來要做的，就不是再研究哪一套，而是把它接進我已經存在的 Vault。
+
+## 先把資料結構接到自己的 Vault
+
+上游 skill 原本定義兩個主要區域：`raw/` 放不可變的 source，`wiki/` 放整合後的知識。這個分法本身沒有問題，但我的 Vault 已經有一個更適合自己的 source 目錄：`summaries/`。
+
+所以第一個調整不是重寫 ingest，而是把原本的概念接到自己的資料結構：
+
+```text
+# Karpathy LLM Wiki
+raw/         ── ingest ──▶  wiki/
+原始資料                    概念知識
+文章、論文、圖片
+
+# 我的改法
+summaries/   ── ingest ──▶  wiki/
+跟 AI 對話                   概念知識
+保留下來的紀錄
+時間軸紀錄
+```
+
+`summaries/` 是我和 AI 每次討論後留下的時間軸紀錄，本身就是原始材料，不需要再複製一份到 `raw/`。`wiki/` 則保留上游設計，繼續負責把多份 source 整合成按概念組織的頁面。
+
+這個調整讓外部 skill 的核心架構保留下來，但 source 的生命週期改成符合自己的工作方式：`summaries/` ingest 後繼續保留，未來仍然可以回頭查原始脈絡。
+
+## 先跑三篇，再開始批次 ingest
+
+一開始我先丟三篇 OpenMemory 的 summary 給 AI，作為 Wiki 的素材，讓它先萃取看看會產生什麼結果，當作小批次測試。
+
+三篇跑完後，基本流程接得起來。批次真的跑起來後，第一個問題很快就出現：Wiki 文章全部是英文。
+
+這個問題先不急著手動修每一篇，而是留到後面寫回 skill。它讓我發現，這套流程不只要能跑，也要把我的閱讀需求和批次工作方式一起接進去。
+
+## 打造自己的 wiki workflow
+
+單篇 ingest 和批次 workflow 是兩個不同問題。
+
+`karpathy-llm-wiki` 負責讀一份 source，更新或檢查 wiki；我的批次需求則是：找出還沒處理的 summaries、記住執行順序、做到一半中斷後能接續，最後把整批工作收好。這些是「怎麼管理一批工作」，不是「怎麼寫一篇 wiki」。
+
+所以我另外寫了一個 `wiki-ingest` companion skill，把批次流程包在外面：
+
+```text
+summaries/
+   ↓ 找出還沒有 ingested 的檔案
+wiki-ingest
+   ↓ 建 queue、管理順序與 checkpoint
+karpathy-llm-wiki
+   ↓ 執行單篇 ingest
+wiki/ + git commit + archive
+```
+
+它會掃描還沒有 `ingested:` 的 summaries，建立按主題分組的 queue；每篇完成後，同一個 commit 裡更新 wiki、summary 的 frontmatter 和 queue checkpoint。這樣 session 如果中斷，下一次不是靠記憶猜做到哪裡，而是回到檔案狀態繼續。
+
+這裡的重點不是把上游 skill 改得越大越好，而是保留它原本「怎麼 ingest」的責任，再在外面加一層「怎麼管理整個 wiki workflow」。這也是我說的「疊加」：不是把原本的東西整份 fork 走，而是讓自己的工作方式有一個清楚的邊界。
+
+## 為 skill 留一份修改紀錄
+
+Wiki 原本就有 `wiki/log.md`，用來記錄哪一天做了哪些 ingest、query 或 lint。這份紀錄對追蹤知識庫的操作很有用，但它不會告訴我：為什麼要改 skill、改了什麼，以及未來更新時哪些修改不能丟。
+
+所以我另外建立 `karpathy-wiki-changelog.md`，專門記錄 skill 的修改項目和原因。它會留下像是「internal source 不複製到 `raw/`」和「Wiki 改用繁體中文」這些決策，讓未來更新 skill 時可以快速對照。
+
+第一個寫回 skill 的修改，就是把語言規則固定下來：Wiki 文章使用繁體中文並技術名詞保留 English 原文。這樣之後不論是哪一次 ingest，都不需要再另外提醒一次。
+
+批次流程還需要知道哪些 summaries 已經處理過，避免下一次又從頭掃一次。所以我在每份 summary 的 frontmatter 加上 `ingested: YYYY-MM-DD`，把「做完了」變成檔案本身看得見的狀態。
+
+後來我把維護流程固定成三個位置各做一件事：`SKILL.md` 放實際規則，`karpathy-wiki-changelog.md` 放修改歷史和原因；`CLAUDE.md` 則留下一句提醒，要求每次要改 `SKILL.md` 前先讀 changelog。它不是第三份規則手冊，而是入口指示，避免下一次有人直接改 skill，卻不知道前面已經做過哪些取捨。
+
+這個設計是後來才長出來的，不是第一次使用時就想完整。因為真的遇過一次 skill 被更新成 vanilla 版本，原本加上的客製化設定整段消失，才知道「有寫在檔案裡」和「下次更新還保得住」是兩件事。
+
+## 先用，再把自己的觀念疊上去
+
+回頭看，這套系統和原本的公開實作並沒有變成兩個完全不同的東西。我還是使用它的核心架構，只是把自己的語言、source 生命週期、批次需求和維護習慣加回去。
+
+我現在比較相信一種順序：先使用大家已經討論過的做法，確認它解決了哪個問題；真的撞到自己的限制，再用 companion skill 或客製化規則往上疊。除非原本的邏輯根本接不起來，才需要考慮從零寫一套新的。
+
+這樣做的好處，不只是少寫一些 code。之後要跟別人討論時，我可以先說明自己是基於哪一套公開做法，再說明我在哪些地方加了什麼，以及為什麼要加。它比較像在一棟已經蓋好的房子上改裝，不是自己先蓋一間，然後再花力氣證明每一根樑柱都合理。
+
+我喜歡這種「先用再改」的節奏。外部 skill 提供起點，實際工作負責暴露問題，changelog 則負責把這些修改留下來。最後留下的不是一個神秘的個人版本，而是一套我知道怎麼繼續維護的工作流程。
