@@ -44,6 +44,12 @@ export const seriesLists = {
     type: "series",
     cover: "/images/series/summon-agent.jpg",
   },
+  "claude-academy": {
+    title: "跟著 Claude Academy，重新認識 Claude",
+    description: "跟著 Claude Academy 的課程與實作，在 30 天內重新整理 Claude 的能力、邊界與工作方法。",
+    type: "series",
+    cover: undefined,
+  },
 } satisfies Record<string, SeriesList>;
 
 export type SeriesId = keyof typeof seriesLists;
