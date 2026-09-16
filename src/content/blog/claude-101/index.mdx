@@ -1,0 +1,264 @@
+---
+title: "Claude 101 功能全介紹：Chat、Cowork、Projects、Skills、企業搜尋與 Research"
+ogTitle: "Claude 101 功能全介紹|Chat、Cowork、Projects、Skills、企業搜尋與 Research"
+date: 2026-09-16T23:32:00+08:00
+description: "Claude 101 從第一次對話與有效 Prompt 開始，整理 Claude 的核心能力、工作方式、Projects、Memory、Artifacts、Skills、Connectors、Research 與企業搜尋。"
+tags:
+  - AI
+  - Claude
+  - Prompt-Engineering
+  - Skill
+  - Workflow
+series: claude-academy
+seriesOrder: 2
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Claude 101 是一份從入門到產品地圖的課程筆記：先理解 Claude 作為 thinking partner 的定位與有效 Prompt 的三個元素，再認識 Chat、Cowork、Code、Projects、Memory、Artifacts、Skills、Connectors、Enterprise Search 與 Research；各功能的可用性仍會受到方案、平台與組織設定影響。
+  </p>
+</KeyTakeaways>
+
+這堂課的範圍比我原本預期的廣。它不只從第一次對話與有效提示開始，後面還一路介紹 Projects、Artifacts、Skills、Connectors、Enterprise Search、Research，以及 Chat、Cowork、Code 這幾種不同的工作方式。
+
+所以這篇先保留比較完整的課程筆記形式，不急著把每一個功能濃縮成一句結論。對 Claude 還沒有完整產品地圖的人來說，先知道有哪些工具、它們分別解決什麼問題，可能比先背一套 Prompt 技巧更有用。
+
+## 1. 什麼是 Claude？
+
+Claude 不只是聊天機器人，也可以把它理解成設計來當 **thinking partner** 的 AI 助理。它不只負責回答問題，也可以陪你整理想法、分析資料、寫作、研究，或把一個比較複雜的工作拆成幾個步驟。
+
+Anthropic 將 Claude 描述為以 **Constitutional AI** 訓練的助理，讓模型依照一組明確的原則調整行為，方向包含 helpful、honest、harmless，以及降低有害或歧視性輸出的風險。[Anthropic 對 Constitutional AI 的說明](https://www.anthropic.com/news/claudes-constitution)也提到，這種做法的其中一個目的，是讓模型採用的價值與行為方向更容易被理解與調整。
+
+這不代表 Claude 的回答永遠正確，也不代表它會自動知道你的工作背景。比較好的理解方式是：它是一個能力範圍很廣、可以協作完成文字與知識工作，但仍然需要人提供脈絡並檢查結果的助理。
+
+目前主要有三種使用管道：
+
+- **網頁**：直接開啟 [claude.ai](https://claude.ai) 使用。
+- **桌面**：下載 Claude Desktop，在電腦上使用 Chat、Cowork 或 Code；桌面環境也支援本機檔案與部分桌面擴充功能。
+- **行動裝置**：使用 iOS / Android App，適合快速提問、語音輸入或分析照片等情境。
+
+Claude Desktop 的實際功能會依作業系統與方案而不同。官方目前也列出 Linux beta 支援，因此「Mac / Windows」比較適合當作常見使用環境，而不是完整的平台限制。
+
+## 2. 與 Claude 的第一次對話：撰寫有效的提示
+
+第一次和 Claude 對話時，可以先記住三個要素：
+
+1. **鋪陳情境（Setting the stage）**：你的角色是什麼？目標是什麼？有沒有工作背景、受眾或既有資料需要讓 Claude 知道？
+2. **定義任務（Defining the task）**：希望 Claude 採取什麼具體行動？要分析、整理、比較、重寫，還是產出一份可以直接使用的文件？
+3. **指定規則（Specifying rules）**：希望用什麼風格、語氣或格式？有沒有範例、限制條件或評估標準可以附上？
+
+以投資人簡報為例，與其只說「幫我做一份 pitch deck」，不如補上：
+
+- **鋪陳情境**：這是為新創獨立串流 App 準備的投資人 pitch deck。
+- **定義任務**：清楚說明產品定位、市場機會、商業模式與目前進度。
+- **指定規則**：使用專業報告格式，若需要外部資料，請查找最新網路資料並附上引用來源。
+
+這樣的差別不在於 Prompt 寫得像不像一段神秘咒語，而是 Claude 是否取得了足夠的判斷條件。你提供的背景越接近實際工作，Claude 越有機會把答案放進正確的情境裡。
+
+### 對話是反覆迭代的
+
+第一次提示很少能一次到位，這是正常的。比較有效的方式，是把對話看成一連串小提示：先請 Claude 產出初稿，再針對結構、內容、語氣或遺漏之處提出具體回饋。
+
+例如第一版太像簡報大綱，可以直接說「保留目前的市場分析，但把每一頁改成投資人能快速理解的主張，並補上每個數字的來源」。這比重新開一個對話、把原本的需求全部重打一次更容易保留上下文。
+
+### Memory（記憶）
+
+如果帳號與環境開啟了 Memory，Claude 可以從過去的對話中整理出與你有關的工作脈絡，例如偏好、習慣、工作方式或之前提過的事項。你可以在 Settings 裡檢視、管理或刪除記憶。[官方目前的說明](https://support.claude.com/en/articles/11817273-use-claude-s-chat-search-and-memory-to-build-on-previous-context)也提醒，不同方案與執行環境的預設行為不完全相同：Team / Enterprise 可能需要由 Owner 開啟，而在本機執行的 Cowork session 不使用 Memory。
+
+Memory 和 Project Knowledge 不是同一件事。Memory 比較像「Claude 逐漸知道我平常怎麼工作」，Project Knowledge 則是「這個專案需要參考哪些明確資料」。不能因為 Claude 記得你的語氣偏好，就推論它已經知道某個專案的完整背景。
+
+### Skills（技能）
+
+Skills 是可重複使用的指令、文件、腳本與資源組合，教 Claude 如何處理特定任務或流程。當情境符合時，Claude 可以自動套用相關 Skill，不需要每次重新解釋完整規則。
+
+## 3. 獲得更好的結果：常見挑戰及解決方法
+
+第一次的提示很少能一次到位，把它當作**對話的開始**，而不是一次性的委託。常見挑戰與解法可以整理成下面這張表：
+
+| 挑戰 | 解決方法 |
+|---|---|
+| 第一版結果不理想 | 把首版輸出當作**起點**，而非終稿。檢視哪裡對、哪裡不對，再提出具體回饋要求修正。 |
+| 不確定 Claude 適不適合某項任務 | 建立簡單的 **Eval（評估）**：針對重視的任務類型，系統性測試 Claude 的表現，累積判斷直覺。 |
+| 分析結果遺漏重點 | 對照手邊資料驗證，發現遺漏後**明確指出問題點**，讓 Claude 重試。 |
+| 未來會重複發生的問題 | 把這次學到的修正方式記下來，**下次提示時直接補上**該項要求，或整理成 Project instruction / Skill。 |
+
+### AI Fluency 4D
+
+這裡也連到 Claude Academy 介紹的 **AI Fluency 4D**：
+
+- **Delegation（委派）**：判斷什麼任務該交給 AI，什麼任務仍需要自己掌握。
+- **Description（描述）**：把情境、任務、規則與限制說清楚。
+- **Discernment（判斷力）**：評估 Claude 的輸出是否可信、是否符合需求。
+- **Diligence（嚴謹）**：持續檢查、修正與迭代，而不是產出後就直接照單全收。
+
+把 Claude 當協作夥伴，而不是一次到位的自動販賣機——**先給、看結果、再具體回饋**，是拿到好結果的關鍵循環。
+
+## 4. Claude 桌面應用程式：Chat / Cowork / Code
+
+三種工作方式，對應三種「工作形態」：**Chat** 是逐輪對話，**Cowork** 是交辦式工作，**Code** 是建構軟體。Chat / Cowork 是多數知識工作者會接觸的模式，Code 則是開發者的工作區。
+
+| | **Chat** | **Cowork** | **Code** |
+|---|---|---|---|
+| **定位** | 思考夥伴，逐輪對話 | 交辦整個任務，取回成品 | 撰寫、測試與部署程式碼 |
+| **角色** | 每一步都參與判斷 | 描述結果後可放手，Claude 自行規劃執行 | 可設定自動化程度 |
+| **適合情境** | 腦力激盪、草擬、編輯、邊想邊聊 | 整合多來源資料、深入研究分析、產出完整文件或簡報 | 寫程式、修 bug、更新套件、跑測試、開 PR |
+| **執行前** | 直接開始對話 | 先問問題釐清範圍、格式與限制，列出可檢視計畫 | 同樣可以選擇是否先建立計畫 |
+| **自動化設定** | — | 可多工同時跑多個任務 | 可依風險選擇手動核准、接受編輯或 Plan 模式 |
+| **使用門檻** | 依方案提供 | 需視方案與平台而定 | 需視方案與平台而定 |
+| **位置** | Claude 首頁 | Cowork 工作模式或分頁 | Code 工作模式或分頁 |
+
+Chat 是帶著半成形的想法一起邊聊邊想；Cowork 是描述目標後轉身去忙別的，回來拿成品；Code 則是專門給開發者處理程式碼庫與工程流程的工作區。
+
+官方目前將 Cowork 描述成使用 Claude Code 同一套 agentic architecture、但不需要終端機的工作方式。[Cowork 的可用平台與方案仍有差異](https://support.claude.com/en/articles/13345190-get-started-with-claude-cowork)，所以這張表比較像選擇邏輯，不是每個帳號都一定會看到完全相同的介面。
+
+## 5. 專案介紹（Projects）
+
+Projects 建立一個**自成一體的工作環境**，各自擁有獨立的對話紀錄、知識庫與自訂設定，解決每次開新對話都要重新上傳檔案、重新解釋背景的問題。
+
+### 知識庫（Project Knowledge）
+
+- 上傳文件後，Claude 會在該 Project 的對話中把這些資料納入參考。
+- 對話內容不會自動變成所有其他對話都能使用的背景，除非把資訊加進 Project Knowledge，或由 Memory 保留相關個人脈絡。
+- 檔名建議寫得明確，例如 `Q4-2024-品牌指南.pdf`，方便 Claude 搜尋與比對。
+- 付費方案在 Project Knowledge 接近 context window 上限時，會自動啟用 RAG 模式，搜尋並擷取與問題相關的內容，而不是把所有檔案一次載入。
+
+[Claude 官方目前的 RAG 文件](https://support.claude.com/en/articles/11473015-retrieval-augmented-generation-rag-for-projects)說明，RAG 可以讓 Project 的容量最多擴大到 10 倍，而且不需要使用者自行設定。這個功能不是把舊檔案刪掉，也不是要求使用者建立新的 Project。
+
+### 自訂指令
+
+可以用「Set project instructions」設定該 Project 內的回應風格、角色、格式或規則，套用到底下所有對話。例如要求 Claude 固定使用繁體中文、先列出假設再回答，或把輸出整理成指定的報告格式。
+
+### 對話分享與權限
+
+Team / Enterprise 的 Project 可以分享給組織成員。常見的權限層級包含：
+
+- **Can view**：能看內容、存取知識庫與對話，但不能修改。
+- **Can edit**：可以修改 Project instructions、知識庫與成員設定。
+- 更高層級的管理權限則依組織設定而定。
+
+> Project = 預先載好知識庫與自訂規則的專屬工作空間，讓每次對話都有一致的背景與限制。
+
+## 6. Artifacts 是什麼？
+
+Artifacts 可以把「重要的產出」放到一個獨立視窗裡，不用埋在對話裡一路往上滑。網頁、圖表、程式碼或文件，都能在旁邊看到成品，再繼續修改。
+
+Claude 通常會在內容具備以下特徵時產生 Artifact：
+
+- 內容夠份量、自成一體，通常超過 15 行。
+- 很可能會想繼續修改、迭代或重複使用。
+- 複雜到脫離原本對話後，仍然看得懂它在做什麼。
+- 之後還會想回來參考或繼續使用。
+
+常見類型包括：
+
+- 文件（Markdown / 純文字）
+- 程式碼
+- 網頁（HTML / CSS / JavaScript）
+- 圖表（流程圖、時序圖、甘特圖）
+- 互動元件（計算機、儀表板、小遊戲）
+
+Artifacts 的價值不只是把畫面移到右側，而是讓產出脫離一次性對話，變成可以持續修改與分享的物件。可以複製、下載，或使用 **Publish** 取得連結。
+
+公開發布的 Artifact 可以讓拿到連結的人查看與互動，基本功能不一定需要 Claude 帳號；但使用 AI-powered features 時，仍可能需要登入。[Publish 與 Share 的方案差異](https://support.claude.com/en/articles/9547008-publish-and-share-artifacts)也要特別注意：Free / Pro / Max 偏向公開發布，Team / Enterprise 則主要是組織內分享。
+
+## 7. Skills 是什麼：技能 vs. 專案
+
+Skills 是一包「教學文件 + 腳本 + 資源」，教 Claude **怎麼**穩定執行重複性任務。Project 和 Skill 很容易一起出現，但它們處理的是不同問題：
+
+| | **Project（專案）** | **Skill（技能）** |
+|---|---|---|
+| **本質** | 知識庫，保存資訊 | 執行流程，固定做法 |
+| **回答的問題** | **What**：有哪些資料？ | **How**：該怎麼做？ |
+| **內容** | 規格文件、會議紀錄、研究報告 | 具體步驟、順序、方法論 |
+| **作用範圍** | 只在該 Project 內生效 | 在不同情境都能重複使用，符合條件時自動套用 |
+| **適合用在** | 累積並持續參考同一主題的資訊 | 每次都要用同一套流程穩定重跑的工作 |
+
+兩者不衝突，還能互補。Skill 可以去 Project 裡抓資料來用，例如「客戶通話準備」Skill 直接引用 Project 知識庫中的客戶資料。
+
+可以用下面這句話記住它們的差別：
+
+> 要存資訊、當團隊知識庫——用 Project；要讓 Claude 每次都照同一套流程做事——用 Skill。Project 給料，Skill 給做法。
+
+## 8. 連接你的工具（Connectors）
+
+Connectors 由 **Model Context Protocol（MCP）** 驅動，可以把它想成「AI 的 USB-C」：用一個比較通用的標準，讓 Claude 連接到不同的應用程式與資料來源。
+
+連接器讓 Claude 從助手變成比較知情的協作者，能夠存取每天使用的工具，搜尋檔案、擷取文件、分析資料、建立新內容，或更新既有記錄。
+
+常見可以分成兩種類型：
+
+- **網頁連接器**：連結雲端服務，例如 Google Drive、Notion、Slack、Gmail 或其他工作工具。
+- **桌面擴充功能**：透過 Claude Desktop 在電腦上執行，讓 Claude 存取本機檔案與部分應用程式。
+
+### 安全性與權限
+
+- 權限應該限制在連接器所需的範圍，可針對每個應用程式個別設定。
+- Claude 只能存取你在原始服務裡本來就有權限查看或操作的資料。
+- 連線可以在 Claude 設定或第三方服務的安全性設定中撤銷。
+- 只安裝來自可信來源的連接器，尤其是會讀取檔案或代表你執行動作的工具。
+
+[Connectors 官方說明](https://support.claude.com/en/articles/11176164-use-connectors-to-extend-claude-s-capabilities)也把權限邊界寫得很清楚：Claude 會繼承每個使用者在原始服務裡的權限，不能因為接上 Connector 就自動看到原本沒有權限的檔案、頻道或記錄。
+
+## 9. 什麼是企業搜尋？
+
+Enterprise Search 是給 Team / Enterprise 組織使用的跨工具搜尋功能。啟用後，側邊欄會新增類似「Ask Your Org」的專屬選項，整合散落在公司不同工具與資料來源中的知識，可以把它視為整個組織預先建好的搜尋型 Project。
+
+### 啟用之後就能馬上搜尋嗎？
+
+看到選項出現，代表組織層級設定可能已經完成，但通常還需要：
+
+1. **Owner / IT 選定連接器**：至少連接一個文件類工具，例如 SharePoint 或 Google Drive，以及一個聊天類工具，例如 Slack 或 Teams。
+2. **個人授權登入**：每位使用者用自己的帳號授權已連接的服務，才能搜尋到自己有權限查看的內容。
+
+### 是否安全？
+
+Enterprise Search 的搜尋結果會依照原始連接工具的權限顯示。你只能看到自己本來就有權限查看、而且與查詢可能相關的內容；對話本身也不會自動變成其他成員可以閱讀的公開內容。
+
+不過，「不會因為搜尋而擴大權限」和「資料完全不會被保留」是兩件不同的事。官方目前說明，搜尋結果會和相關對話一起保留，並受到組織資料保留政策影響。[Enterprise Search 官方文件](https://support.claude.com/en/articles/12489464-use-enterprise-search)值得和課程中較簡化的安全性描述一起閱讀。
+
+## 10. 深度探索的 Research 模式
+
+Research 是進階功能，能將 Claude 從對話式助手轉變成比較系統性的調查者。它會進行多次、彼此建構的搜尋，同時決定接下來要調查什麼，自動探索問題的不同角度，最後整理成附引用來源的報告。
+
+它和一般問答的差別，不只是「搜尋得比較多」，而是 Claude 會根據前一步找到的結果，決定下一步要追查什麼。這種方式適合處理需要交叉比對、拆解子問題，或需要看不同來源的研究工作。
+
+課程筆記提到，Research 的回應時間可能依複雜度從 5 到 45 分鐘不等；這比較適合當作課程當時提供的經驗範圍，不要當成固定 SLA。官方目前的說法是會在幾分鐘內完成，但實際時間仍然取決於研究問題與服務狀態。[Research 官方說明](https://support.claude.com/en/articles/11088861-use-research-on-claude)也提醒，使用 Research 必須開啟 web search，且目前主要提供給付費方案。
+
+### 撰寫有效 Research 提示的技巧
+
+- **明確說明目標**：不要只說「告訴我電動車市場的資訊」，改成「分析電動車電池市場——識別主要參與者、技術趨勢，以及可能影響投資決策的供應鏈挑戰」。
+- **指定想要的章節或結構**：Claude 會依照提供的結構組織研究結果。
+- **納入相關限制條件**：例如預算範圍、時間表、地理要求或資料截止日期，幫助 Claude 聚焦相關選項。
+- **請 Claude 協助改善提示**：不確定怎麼構思研究問題時，可以先請 Claude 把研究目標改寫成更完整的 Research prompt。
+
+搭配 MCP 之後，Research 還可以從個人資料與已授權的工作工具中找出更符合需求的脈絡。不過資料來源越多，權限與來源品質的檢查也越重要。
+
+## 11. 與 Claude 合作的其他方式
+
+Claude 101 最後也把 Claude 放回比較完整的產品生態裡：
+
+| 工具 | 最適合用於 | 運作環境 |
+|---|---|---|
+| **Claude.ai** | 一般任務、研究、寫作、分析、檔案建立 | 網頁、桌面和行動應用程式 |
+| **Claude Code** | 軟體開發、程式碼庫瀏覽、Git 工作流程 | 終端機、命令列、IDE 或瀏覽器 |
+| **Claude Cowork** | 複雜多步驟任務：研究簡報、文件建立、檔案整理、資料分析 | 桌面、網頁、行動裝置，依方案與平台而定 |
+| **Claude Tag** | 團隊協作、會議準備、情境中的快速解答 | Slack 工作區 |
+| **Claude Design** | UI 原型、設計探索、具設計系統意識的工作 | 網頁 |
+| **Claude for Microsoft 365** | 就地編輯並在文件間延續上下文 | Excel、PowerPoint、Word 和 Outlook 側邊欄 |
+| **Claude in Chrome** | 網頁研究、電子郵件管理、瀏覽器自動化 | Chrome 瀏覽器側邊欄 |
+
+這張表比較像課程中的產品地圖，不代表每一項都會在同一個帳號、地區或方案中出現。功能名稱、支援平台與可用性都可能持續調整，實際使用前仍要以產品頁面與帳號設定為準。
+
+## 12. 一題值得記住的測驗
+
+**Q：當 Project Knowledge 接近 context window 限制時，Claude 會怎麼做？**
+
+**答案：**自動啟用 RAG 模式，搜尋 Project Knowledge，只擷取回答問題所需的相關內容，容量最多擴大到 10 倍；不需要自己設定，也不會自動刪除舊檔案。
+
+## Day 2 小結
+
+Claude 101 看起來像入門課，實際上比較像一張產品與工作方法的總覽地圖。從第一次 Prompt 的鋪陳情境，到 Chat、Cowork、Code 的工作分工，再到 Project、Memory、Skill、Connector 和 Research，這些功能最後都在回答同一件事：這份工作需要多少背景、多少自主執行，以及多少人的判斷？
+
+這堂課先不急著要求你把所有功能都用一遍。至少到這裡，我會先記住一個很實用的循環：先交代、看結果、再回饋。Claude 能不能幫上忙，通常不只取決於它有多強，也取決於我們有沒有把工作交代到它能判斷的程度。
