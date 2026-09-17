@@ -44,9 +44,10 @@ export const seriesLists = {
     type: "series",
     cover: "/images/series/summon-agent.jpg",
   },
-  "claude-academy": {
-    title: "跟著 Claude Academy，重新認識 Claude",
-    description: "跟著 Claude Academy 的課程與實作，在 30 天內重新整理 Claude 的能力、邊界與工作方法。",
+  "ithome-2026-ironman": {
+    title: "iThome 2026 鐵人賽：跟著 Claude Academy，重新認識 Claude",
+    description:
+      "每天都在用 AI，不代表真的了解手上的工具。iThome 2026 鐵人賽跟著官方 Claude Academy，30 天重新學習 Claude：從 101、Cowork、Claude Code 到 Skills、MCP、Agent 與 API，收集學習徽章，也記錄實際踩坑與應用經驗。",
     type: "series",
     cover: undefined,
   },
