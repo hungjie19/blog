@@ -8,6 +8,13 @@ export type SeriesList = {
 };
 
 export const seriesLists = {
+  "ithome-2026-ironman": {
+    title: "iThome 2026 鐵人賽：跟著 Claude Academy，重新認識 Claude",
+    description:
+      "每天都在用 AI，不代表真的了解手上的工具。iThome 2026 鐵人賽跟著官方 Claude Academy，30 天重新學習 Claude：從 101、Cowork、Claude Code 到 Skills、MCP、Agent 與 API，收集學習徽章，也記錄實際踩坑與應用經驗。",
+    type: "series",
+    cover: "/images/series/ithome-2026-ironman.webp",
+  },
   openmemory: {
     title: "OpenMemory",
     description: "把本地記憶接進 AI 工作流程後，如何建立可長期使用的記憶策略。",
@@ -43,13 +50,6 @@ export const seriesLists = {
     description: "把 Agent、帳號與工作目錄組成可操作的召喚流程，最後延伸到手機接手。",
     type: "series",
     cover: "/images/series/summon-agent.jpg",
-  },
-  "ithome-2026-ironman": {
-    title: "iThome 2026 鐵人賽：跟著 Claude Academy，重新認識 Claude",
-    description:
-      "每天都在用 AI，不代表真的了解手上的工具。iThome 2026 鐵人賽跟著官方 Claude Academy，30 天重新學習 Claude：從 101、Cowork、Claude Code 到 Skills、MCP、Agent 與 API，收集學習徽章，也記錄實際踩坑與應用經驗。",
-    type: "series",
-    cover: undefined,
   },
 } satisfies Record<string, SeriesList>;
 
