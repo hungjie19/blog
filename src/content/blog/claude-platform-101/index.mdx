@@ -1,0 +1,683 @@
+---
+title: "Claude Platform 101：API、Agent 與工具整合"
+ogTitle: "Claude Platform 101|API、Agent 與工具整合"
+date: 2026-09-20T22:05:46+08:00
+description: "Claude Platform 101 從 Messages API、模型選擇與 agent loop 出發，整理 Tool use、Extended thinking、Skills、MCP、Context management 與 Managed agents 的分工。"
+tags:
+  - AI
+  - Claude
+  - Agent
+  - MCP
+  - Skill
+series: ithome-2026-ironman
+seriesOrder: 6
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Claude Platform 是把 Claude 從聊天視窗接進產品的 API 與基礎設施：先用 <code>messages.create</code> 建立結構化請求，再用 tools、Skills、MCP 和 context management 讓 agent 能取得資料、採取行動並長時間工作；Managed agents 則把迴圈與 sandbox 交給 Anthropic 代管，實際功能與型號仍會隨版本變動。
+  </p>
+</KeyTakeaways>
+
+前幾天還在看 [Claude Code 101](/posts/claude-code-101/) 怎麼讀專案、改檔案、跑指令，這次打開 Claude Platform 101，視角往下移了一層：如果 Claude 不只是一個聊天視窗，而是要放進自己的產品裡，API、工具、記憶和長時間執行的 agent 要怎麼接在一起？這堂課用 13 堂短課，把這張地圖一路畫到 Claude Code。
+
+課程原文：[Claude Platform 101](https://academy.claude.com/zh-TW/courses/claude-platform-101)
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 13 堂課 |
+| 總時長 | 1.5 小時 |
+| 測驗 | 1 個（約 3 分鐘；共 5 題） |
+| 完成 | 有完成徽章 |
+| 先決條件 | 能讀寫至少一種語言的程式碼、基本命令列操作；一個 Claude Console 帳戶＋來自 platform.claude.com 的 API 金鑰（新帳戶有少量免費額度，之後在 Settings > Billing 加值） |
+| 使用的 SDK | 大多數示範用 Python SDK（`anthropic`，pip 安裝）；「Your first API call」「什麼是工具使用？」和「Building with Claude Code」三堂用 TypeScript SDK（`@anthropic-ai/sdk`，Node + npm） |
+| 適合對象 | 用過聊天視窗的 Claude、想把它做進自己應用程式的開發者；或已經發過幾次 API 呼叫，卡在「怎麼讓它自主行動」「怎麼接到真實系統」的人 |
+
+官方寫的學習範圍，從第一個 `messages.create`、模型評估、手動 agent loop、Tool use、Extended thinking，一路延伸到內建工具、Skills、MCP、Context management、Managed agents，以及用 Claude Code 建立 API 應用程式。
+
+## 什麼是 Claude Platform？
+
+### 1. What is the Claude Platform?
+
+Claude Platform 是 Anthropic 讓你「用程式呼叫 Claude」的基礎設施：從自己的 code 送結構化請求、拿回結構化回應，並控制模型、token、工具與 system 指令。
+
+平台可以先分成四個入口：
+
+- REST API：用任何語言呼叫。
+- SDK：用各語言的套件接進程式。
+- CLI：從命令列操作。
+- Console：管理 API 金鑰、查看用量、部署 managed agents、測試 prompt。
+
+課程用三層結構整理平台：
+
+| 層 | 是什麼 | 包含 |
+|---|---|---|
+| Primitives 基本元件 | 為 Claude 調校的 API 積木，會直接在 code 裡呼叫 | Messages API、Tool use、Files、Web search、Code execution、MCP servers、Skills |
+| Infrastructure 基礎設施 | 把 agentic 系統從原型推到規模化需要的管線 | Managed agents、retries、queues、observability |
+| Controls 控管 | 上線後團隊用來調整的旋鈕 | dashboards、evals |
+
+一句話是：**build with primitives, scale on infrastructure, run with control**。
+
+課程用 help desk 自動草擬回覆來示範。產品原本已經有客服 ticket，現在加一個按鈕，依 ticket 內容、團隊語氣和準則產生回信。流程是建 client、取出 ticket、呼叫 `messages.create`，再把結果回傳給按鈕顯示。
+
+| 參數 | 作用 |
+|---|---|
+| `model` | 選擇處理請求的模型，範例用 Haiku，因為草擬回覆是簡單任務 |
+| `max_tokens` | 限制回應長度上限 |
+| `system` | system prompt，定義 Claude 的角色、語氣與準則 |
+| `messages` | 訊息陣列；`user` role 表示使用者輸入，ticket 內容放在這裡 |
+
+這個例子讓平台的定位變得很清楚：重點在把 Claude 加進既有產品，API 是中間的接線方式。
+
+### 2. Your first API call
+
+第一個 API 呼叫的準備工作很直接：到 platform.claude.com 取得 API 金鑰，放進 `.env.local`，不要寫死在原始碼或提交到版本控制，再安裝 TypeScript SDK：
+
+```bash
+npm install @anthropic-ai/sdk
+```
+
+`messages.create` 的請求先記三個元素：
+
+- 一個 `model`
+- 一個 `max_tokens` 上限
+- 一串 `messages`，role 是 `user` 或 `assistant`
+
+課程範例是請 Claude review 一個有 bug 的 code：`add(a, b)` 寫成 `a - b`，再把 system prompt 設成「你是簡潔的資深 code reviewer，一段話給回饋」。Claude 會指出 `add` 實際上在做減法。
+
+這裡有兩個容易忽略的地方。第一，system prompt 是調整 persona 的地方，想要簡潔的 reviewer，就直接寫在 system prompt。第二，回應的 `content` 是 block 陣列，不是單純字串。純文字回覆通常只有一個 `type: "text"` block，但加入工具或 thinking 後，回應可能包含多種 block，所以程式應該迴圈處理並檢查 `type`。
+
+同樣的 `messages.create` 形狀也能包成產品 endpoint。例如從資料庫撈會議逐字稿，請 Claude 抽出洞察與風險，把結果存回資料列，再回傳給 UI；外面多了一層 route handler，核心請求仍然相同。
+
+課程 Q&A 另外整理了幾個邊界：API 帳戶與金鑰在 Console 另外計費，不含在 Claude 訂閱裡；新帳戶是否有多少免費額度，以登入後 Console 顯示為準。Messages API 不替你保存對話，每次呼叫都要把要保留的歷史送出去，`system` 是獨立參數，工具結果則會放在 `user` 訊息裡的 `tool_result` block。
+
+`messages` 只是一串按時間排列的訊息。最後一則是這一輪要請 Claude 回應的內容，前面的是歷史；哪些內容要留、哪些要丟，由 app 自己決定。角色、語氣和長期準則這類背景放在 `system`，Claude 的新回應則由 app `append` 回歷史，供下一輪使用。
+
+### 3. Choosing the right model
+
+模型選擇很容易變成「預設用最強的」，但真正上線後，延遲與帳單都會一起出現。課程列出四個層級：
+
+| 層級 | 定位 | 適合 | 目前型號（課程列出） |
+|---|---|---|---|
+| Fable | 位於 Opus 之上的新層級，成本比 Opus 高 | 最困難、值得付額外成本的工作 | Claude Fable 5.1 (`claude-fable-5-1`) |
+| Opus | 三個核心系列中最強，但最慢、成本最高 | 深度推理、複雜分析、多步驟 coding、細緻寫作 | Claude Opus 5 (`claude-opus-5`) |
+| Sonnet | 智能、速度、成本的平衡點 | 大多數 production 工作 | Claude Sonnet 5 (`claude-sonnet-5`) |
+| Haiku | 最快、成本最低 | 高量低複雜度的分類、抽取與路由 | Claude Haiku 4.5 (`claude-haiku-4-5`) |
+
+課程也提醒，影片用較早的模型錄製，程式碼才改成目前型號，因此影片裡的延遲與 token 數不能直接拿來對照現在的輸出。
+
+選模型前先做簡單的 evaluation（評估）：準備 20–30 個來自真實工作負載的代表性輸入，逐個模型跑，再依「好輸出的定義」評分。建議由下往上爬：
+
+1. 先用 Haiku，品質夠就停。
+2. 不夠再升 Sonnet。
+3. 任務真的需要才動用 Opus。
+
+實作上可以讓同一個 prompt 依序跑不同模型，只替換 `model` 欄位，再印出 `response.usage` 的 input／output tokens。課程範例裡，Opus 最慢、文字最漂亮，但兩句話的定義用不到那麼多能力；Haiku 很快，也足以完成這個場景。
+
+所以課程給的核心判準是：**對的模型，是你願意直接上線的輸出裡最便宜的那個**。Production 也可以依任務分流：文件分類用 Haiku、客戶更新用 Sonnet、RFP 回覆才用 Opus。
+
+## 教導您的代理
+
+### 4. The agent loop explained
+
+單次 API 呼叫只會回一個回應。想把工作自動化，Claude 就需要行動、看結果、決定下一步，再繼續跑，這就是 agentic workflow。
+
+Agent 可以理解成由 Claude 參與決策的訊息迴圈：收到任務、挑選工具、執行程式碼，再重複到 Claude 判斷工作完成。
+
+最基本的迴圈是：
+
+1. 帶著可用的 tools 送訊息給 Claude。
+2. Claude 回傳最終答案，或要求呼叫某個工具。
+3. 你的程式碼執行工具。
+4. 把工具結果送回 Claude。
+5. 重複，直到 `stop_reason` 是 `end_turn`。
+
+最小範例是 `get_weather`：Claude 收到「我今天在 Austin 該穿什麼？」後，自己無法知道即時天氣，就要呼叫工具。
+
+| 部分 | 作用 |
+|---|---|
+| `tools` 陣列 | 告訴 Claude 可用工具、name、description 和輸入的 JSON schema |
+| `run_tool` | 範例裡寫死的查表；真實環境會打資料庫或 API |
+| while 迴圈 | 依 `stop_reason` 分支：`end_turn` 回傳文字；`tool_use` 找出 tool block、執行，再把 assistant 回應和 tool result 推回 messages |
+
+跑起來是兩輪：第一輪 `stop_reason` 是 `tool_use`，Claude 要求 Austin 的天氣；第二輪是 `end_turn`，回覆穿輕薄透氣的衣服。兩次 API 呼叫、一次工具執行、一個最終答案，就是最小 agent loop。
+
+Production 的合規 agent 也沿用相同形狀：讀結構報告、用工具查建築法規，再把風險發現寫回資料庫。真實工具取代假天氣，結果可以用 server-sent events 串回 UI。
+
+這個迴圈屬於一般的 API request／response。每一圈都是獨立的 `client.messages.create(...)`，Claude 回應後連線結束；是你的程式碼在 `while` 裡反覆呼叫，每次都重新送出完整 `messages`。server-sent events 是把後端的發現串回 UI，Managed agents 的 stream 則是另一種事件互動方式。
+
+### 5. 什麼是工具使用？
+
+工作流程裡的專案管理軟體、資料庫和檔案，Claude 自己看不到，就要靠工具取得外部資料或執行動作。
+
+工具是你定義並暴露給 Claude 的函式：你描述它做什麼、需要什麼輸入，Claude 再決定何時呼叫。實際流程是：
+
+1. Claude 請求呼叫工具。
+2. 你的程式碼執行函式。
+3. 結果回傳給 Claude，它繼續工作。
+
+工具用 JSON schema 定義，至少包含名稱、描述和輸入結構，放在請求的 `tools` 陣列裡。描述是 Claude 判斷要不要使用工具的重要依據，寫得具體，工具才比較容易被選對。
+
+第一輪 Claude 回 `stop_reason: "tool_use"`，這就是程式該接手的信號。迴圈拿參數呼叫工具，再把結果包成綁定 `tool_use_id` 的 `tool_result` block，放進下一則 `user` 訊息送回去。
+
+多個工具的例子是 Denver 三天旅行：宣告 `get_weather` 查今天，`get_forecast` 查未來幾天。Claude 會讀工具描述，把「今天」和「接下來幾天」分派給不同工具，有時同一輪呼叫兩個，有時一個接一個。
+
+如果每個函式都要手寫 JSON schema 和 while 迴圈，樣板程式碼會快速變多。SDK 的 Tool runner 目前是 beta，支援 TypeScript、Python、Ruby、C#、Go、Java 和 PHP。以 TypeScript 為例，可以用 `betaZodTool()` 搭配 Zod（需要 Zod 3.25.0 以上）定義一次工具，runner 會處理 tool use／tool result 迴圈，也會驗證 Claude 傳來的輸入。
+
+這時不用自己寫 while、stop reason switch、手動推回 tool result 或重複寫 JSON schema；`await runner` 會等所有來回結束，再回傳最終 assistant 訊息。真實工具通常只是包在現有函式外的薄封裝，例如 `lookup_building_code` 和 `search_building_code`。
+
+### 6. 什麼是思考？
+
+有些問題包含多步驟邏輯、程式碼除錯或取捨，比起快速產生答案，更需要先留一點推理空間。
+
+Extended thinking（擴展思考）讓 Claude 在最終回應前產生內部推理 token。課程以 Claude Opus 5 為例，思考文字預設隱藏；請求的 `thinking` 設定加入 `"display": "summarized"` 後，回應會帶上推理摘要。
+
+Opus 5 的 adaptive thinking 預設開啟，Claude 會動態決定是否思考以及思考多少。深度由 `output_config` 裡的 `effort` 控制，等級包括 `low`、`medium`、`high`、`xhigh` 和 `max`。
+
+| 何時用 | 何時跳過 |
+|---|---|
+| 數學與多步驟邏輯、程式碼除錯、法規分析、涉及權衡或比較選項的工作 | 簡單分類、抽取、樣板化任務，避免增加不必要的延遲與成本 |
+
+課程範例是帶著天氣工具的 agent loop，請 Claude 規劃從舊金山出發、包含兩個停靠點的公路旅行，同時權衡天氣和車程。請求使用 `thinking={"type": "adaptive", "display": "summarized"}`，以及 `output_config={"effort": "high"}`。
+
+這個功能的價值，在於讓 agent 把不同發現串起來。合規審查時，它可能把第三節的風載規格和文件其他地方的材料規格放在一起比較，找到跨段落的衝突；簡單任務就不需要多這一層。
+
+## 擴展您的代理
+
+### 7. Built-in tools
+
+Anthropic 把一些常見能力做成內建工具，開發者只要宣告工具，執行環境由 Anthropic 提供。
+
+Server tools 在 Anthropic 的基礎設施上執行，不需要你自己跑 agent loop。主要有三個：
+
+| 工具 | 做什麼 |
+|---|---|
+| Web search | 搜尋網路並回傳附引用的結果 |
+| Code execution | 在 sandbox 裡寫並執行 Python |
+| Web fetch | 擷取 URL 的完整內容 |
+
+使用 server tools 時，不用判斷 `stop_reason` 或手動把 tool result 推回去，Anthropic 會在伺服器端處理。回應則可能出現 `server_tool_use` block，以及像 `bash_code_execution_tool_result` 這類 tool result block，程式仍然要逐一檢查 `content` 的 block type。
+
+另一類是 Client tools，工具在你的程式碼所在處執行，Anthropic 提供 schema 並針對它們訓練 Claude。Memory 和 Bash 都屬於這一類，SDK 會提供 schema 和 runner。
+
+| | 第 5 堂：自訂工具 | 第 7 堂：Server tools |
+|---|---|---|
+| 工具是誰寫的 | 你 | Anthropic 已經寫好 |
+| 誰執行 | 你的程式碼 | Anthropic 的伺服器 |
+| 要不要寫 agent loop | 要，看到 `tool_use` 後自己執行並回傳 | 不用，結果直接在同一個回應裡回來 |
+| 例子 | 查你資料庫的 `lookup_building_code` | web search、code execution、web fetch |
+
+工具由誰執行，是這堂課最值得記住的判準。想讓 Claude 上網查資料，自訂工具要自己接搜尋 API、寫 crawler、跑迴圈；Server tool 只要在 `tools` 裡宣告 `web_search`。Client tool 雖然是內建能力，仍然會在你的機器上跑。
+
+### 8. Skills
+
+Skill 是一個資料夾，裡面放指示、腳本與資源，讓 Claude 動態載入來處理特定任務。核心通常是 `SKILL.md`，用來教 Claude 一套做法，例如狀態報告格式、review 清單或 release notes。
+
+| | 解決什麼 | 例子 |
+|---|---|---|
+| Tools | 連接 Claude 到資料與動作；Claude 呼叫，其他東西執行 | 「查這個法規條文」「寄這封信」 |
+| Skills | 教 Claude 一個程序；Claude 讀了照著做，也可能執行附帶腳本 | 「照這個模板產生每日狀態報告」 |
+
+記法是：**tools 是「Claude 能做什麼」，Skills 是「你要它怎麼做」**。
+
+Skills 採漸進式載入。啟動時先載入 name 和 description，等 agent 判斷相關後才讀完整內容，因此 Skills 變多時，context 不會一開始就全部被塞滿。
+
+上傳一次 Skill 到 workspace 後，可以用 `skill.id` 引用；請求透過 `container` 裡的 `skills` 陣列指定 `skill_id` 和 `version`，也可以疊加多個 Skill。API 版 Skills 已經 GA，不需要舊的 `skills-2025-10-02` beta header；但 Skill 要真的執行腳本，仍然需要同時開啟 code execution，因為它是在 Anthropic 雲端的 code execution container 裡跑。
+
+這堂講的是 API 版 Skills，和 Claude Code 放在本機資料夾裡的技能屬於不同層。兩邊都可能使用 `SKILL.md`、腳本和漸進式載入，但課程沒有確認兩者能否直接互通。
+
+### 9. MCP
+
+Tools、Skills 和 connectors 之外還有 MCP，關鍵差別在於誰維護整合程式碼。
+
+如果 agent 要從 Asana 拉任務、查 Google Calendar、搜尋 Slack，用自訂工具就要自己維護三套第三方 API 封裝。MCP 讓服務提供者發布 MCP server，透過標準協定暴露工具、描述、schema 和認證；服務 API 改版時，由服務提供者更新 server。
+
+| 功能 | 連接／教什麼 | 誰維護 |
+|---|---|---|
+| Tools | 連接 Claude 到**你自己的**內部系統，例如資料庫、專案追蹤或專有 API | 你（你擁有 code） |
+| Skills | 教 Claude **一個程序**，例如報告模板或 review 清單；本身不一定是整合 | 你 |
+| MCP | 連接 Claude 到**第三方服務** | 服務提供者 |
+
+一句話是：**tools 給你的東西、skills 給你的流程、MCP 給別人的東西**。
+
+連接 MCP server 時，請求裡有兩個部分：
+
+- `mcp_servers`：宣告連線資訊，包括 `type`、`url`、`name` 和選用的 `authorization_token`。
+- `tools` 裡的 `type: "mcp_toolset"`：設定 Claude 能使用哪些工具，預設可以全部開啟。
+
+課程範例用 Linear MCP server，當時使用 `client.beta.messages.create` 和 `betas=["mcp-client-2025-11-20"]`。程式沒有自行寫 tool schema，Claude 會從 server 取得工具清單與 schema，再挑選工具。
+
+MCP server 常會暴露很多工具，權限可以先收緊：設定 `default_config: {"enabled": False}`，再用 `configs` 逐一開啟需要的工具。範例只開 `search_messages` 和 `list_channels`，讓 Claude 能搜尋和列出頻道，避免意外發文或刪除內容。
+
+API 版 MCP connector 的連線由 Anthropic 雲端發起，課程範例是公開的 HTTPS server；本機 MCP 的相容方式，課程沒有完整說明，這裡仍要以官方文件為準。認證也要分成兩組：Anthropic API key 用來向 Anthropic 證明身分，MCP 的 `authorization_token` 則用來向 Linear 或其他 MCP server 證明身分。
+
+| 憑證 | 向誰證明身分 | 放哪 |
+|---|---|---|
+| Anthropic API key | 向 **Anthropic** 證明你是誰、帳單記給誰 | SDK client 使用的環境變數 |
+| `authorization_token` | 向 **Linear**（MCP server）證明你是誰 | 請求裡的 `mcp_servers` |
+
+### 10. Context management
+
+每個請求都有 Context window（上下文視窗）。Claude 在某一輪看得到的 system prompt、訊息歷史、工具定義與結果、附加檔案、Skills 和 thinking blocks，都算在 context 裡；這些內容會影響輸入成本，也會消耗有限的視窗。
+
+Anthropic 公開四種長時間執行 agent 的 context 管理模式：
+
+| # | 模式 | 做法 | 解決什麼 |
+|---|---|---|---|
+| 1 | Just-in-time context 即時載入 | 不先把全部資料塞進去，需要時透過工具拉進來；這是設計模式，不是獨立 API 功能 | 視窗大小 |
+| 2 | Server-side compaction 伺服器端壓縮 | 對話變長時，Anthropic 把舊輪次摘要成 block；請求加入 `context_management` 和 `{"type": "compact_20260112"}` | 視窗大小 |
+| 3 | Prompt caching 提示快取 | 標記 system prompt、工具定義或長文件等穩定內容，跨呼叫重用 | 成本 |
+| 4 | Memory tool 記憶工具 | 將跨 session 的偏好、執行筆記和決定存到記憶目錄，儲存後端由 client 實作 | 無狀態 |
+
+這四種方式可以疊加。合規審查 agent 可以快取 system prompt 和工具定義，再用 `lookup_building_code` 即時載入需要的法規條文。每個模式處理的問題不同：just-in-time 控制視窗大小，compaction 摘要舊歷史，caching 降低成本，memory tool 保存跨 session 的資訊。
+
+用 Messages API 時，對話歷史仍由 app 決定要送哪些內容：
+
+| 你的選擇 | 對應 |
+|---|---|
+| 全部照送 | 最簡單，但每次都為整段輸入付費，視窗滿了請求會失敗 |
+| 只留部分，或自己摘要舊輪次 | 自己設計裁剪策略 |
+| 讓 API 自動摘要舊輪次 | Server-side compaction |
+| 標記穩定不變的前段 | Prompt caching，只省成本，不縮短視窗 |
+| 把重要事實存到對話之外 | Memory tool，儲存後端由你實作 |
+
+裁剪歷史時，`tool_use` 和對應的 `tool_result` 要成對保留，這是課程補充的實作注意事項。
+
+## 受管理代理
+
+### 11. What are managed agents?
+
+Claude Managed Agents 是用來大規模建立與部署 agent 的 API。你定義 agent 的工具、persona 和能力，設定 sandbox 的套件與網路控制，再從自己的應用程式發起 session；Claude 會在隔離的 container 裡工作，使用檔案系統、bash 和網路搜尋。
+
+它的核心仍然是熟悉的 agent loop：推理、呼叫工具、讀結果、重複。差別在於 loop 和執行環境交給 Anthropic 的基礎設施代管。
+
+課程用了三個例子：
+
+| 例子 | 情境 | 用到的能力 |
+|---|---|---|
+| 1. 會做事的 Kanban 看板 | 把「優化網站效能」的 ticket 拖進「進行中」就開 session；環境預裝 Lighthouse、Puppeteer，掛載 GitHub repo，再用 rubric 和 grader 檢查結果 | Session、Environment、Outcomes、event stream |
+| 2. 有記憶的定期研究 agent | 每週追蹤 SaaS 方案價格，用 web search 和 Python 做成本分析，用 spreadsheet Skill 寫摘要，再透過 MCP 把結果送到 Slack 和 Asana | Web search、Skills、MCP、Memory |
+| 3. 多 agent 事件應變 | coordinator agent 收到告警後派給 specialist，各自使用獨立 context，最後彙整事件摘要；敏感動作送出前等待人核准 | Multi-agent、自訂工具、permissions policy、Memory |
+
+建構元件可以整理成這張表：
+
+| 元件 | 說明 |
+|---|---|
+| Agents | 定義特定工具、persona 和能力 |
+| Sessions | 從你的應用程式發起的一次執行 |
+| Environments | 有套件與網路控制的 sandbox |
+| Tools | 包含你後端的自訂工具 |
+| MCP | 連到 Slack、Asana 這類服務 |
+| Memory | agent 開工前讀、完成後寫的儲存區 |
+| Outcomes | 用 rubric 和 grader 定義「完成」 |
+| Multi-agent coordination | coordinator 派工給 specialist |
+
+這種做法把「完成長什麼樣子」也放進流程裡：你定義 rubric，agent 做事，grader 評分，Claude 讀回饋後繼續修正。
+
+### 12. Building your first managed agent
+
+當 agent loop 要跑數分鐘甚至數小時、跨很多工具、需要保存狀態或斷線後續跑時，Managed agents 可以把 loop、sandbox 和 resumability 委派出去。
+
+四個 primitives 依序是：
+
+| Primitive | 是什麼 |
+|---|---|
+| Agent | persona：model、system prompt、toolset；可跨多次執行重用 |
+| Environment | agent 執行的位置，以及網路設定 |
+| Session | 某個 agent 在某個 environment 裡的一次執行；也是工作單位 |
+| Events | 進出系統的訊息，包括動作、工具呼叫、結果和回覆 |
+
+心態可以改成：你送 events，再讀 events。最小 demo 是在暫存目錄建檔、數行數、回報結果，步驟如下：
+
+1. 建 agent：指定 model、system 和 Anthropic 打包的 `agent_toolset`。
+2. 建 environment：設定雲端 sandbox 和網路。
+3. 建 session：指定 agent 和 environment。
+4. 先開 stream，再送 kickoff；stream 只會送出開啟後發生的事件。
+5. 消費 stream，直到 `session.status_idle`。
+
+| 事件 | 意義 |
+|---|---|
+| `agent.message` | Claude 的文字 |
+| `agent.tool_use` | Claude 選了什麼工具 |
+| `session.status_idle` | agent 做完了 |
+
+選擇 Managed agents 的條件是 loop 會跑太久、做太多事，或要撐過網路中斷；想完全控制執行細節時，就自己寫 loop。
+
+Session ID 也不等於記憶：
+
+| | 是什麼 | 存在哪 | 跨對話嗎 |
+|---|---|---|---|
+| Session | 一個 agent 在某個 environment 的單次執行 | Anthropic 雲端 | 屬於那一次執行 |
+| Memory store | agent 開工前讀、做完後寫的獨立儲存區 | Anthropic 雲端 | 是 |
+| Memory tool | Claude 透過工具讀寫記憶目錄 | 你的後端 | 是，由你實作儲存 |
+
+「交給 Anthropic 跑」的範圍也可以拆開看：
+
+| 交給 Anthropic | 仍然是你的 app |
+|---|---|
+| agent loop、推理、呼叫工具、讀結果、重複 | UI、後端與使用者流程 |
+| sandbox、檔案系統、bash、網路搜尋 | 什麼時候開 session、開幾個 |
+| 執行狀態與斷線後續跑 | 收到 events 後怎麼顯示和處理 |
+
+看板拖曳事件仍然會先觸發你的後端，由你的後端建立 session、送出 `user.message`；Anthropic container 執行後，再把 events 串回你的後端。`agent.message` 和 `agent.tool_use` 可以即時顯示，`session.status_idle` 則代表這次工作完成。
+
+## 使用 Claude Code 進行建置
+
+### 13. Building with Claude Code
+
+手寫 Claude API 的 code 可以，但課程最後示範另一條路：從一個只有 stub 的 TypeScript 檔開始，讓 Claude Code 補完 API 整合。
+
+stub 裡有兩個函式：`getWeather` 接受城市並回傳溫度與天氣狀況，`run` 則預期使用 Tool runner 和 Claude TypeScript SDK。Claude API skill 可以用 `/claude-api` 直接呼叫，也可能在 Claude Code 偵測到 TypeScript SDK 時自動載入。
+
+一個好 prompt 要說清楚三件事：要改哪個檔案、要使用哪個模式、完成時要看到什麼結果。Claude Code 會依型別補完函式、在檔案底部加上呼叫、執行腳本，出錯時讀錯誤訊息並修補。
+
+這個例子產生的是 Zod 工具、Tool runner、`run` 函式，以及最後印出 agent loop 結果的程式。對 Claude API 來說，常見形狀就是：**定義工具 → 交給 runner → 回傳結果**。實作完成後仍然要 review diff。
+
+## 整體對照：誰執行、在哪跑
+
+「API 相關操作都在雲端」這句話太粗略。模型推理一定在雲端，但執行與儲存的位置會依功能不同；比較好記的判準是：宣告後由 Anthropic 執行的在雲端，Claude 只提出請求、由你的程式碼執行的就在你這邊。
+
+| 在 Anthropic 雲端 | 在你自己這邊 |
+|---|---|
+| 模型推理（每次 `messages.create`） | 自訂工具的執行：Claude 只請求，你的程式碼才跑 |
+| Server tools：web search、code execution、web fetch | Client tools：Memory、Bash |
+| Skills 的執行，跑在 code execution container | 手寫的 agent loop |
+| Managed agents：迴圈、sandbox、session | Messages API 的對話歷史，每次自己整包送 |
+| Managed agents 的 memory store | Memory tool 的儲存後端，由你實作 |
+| MCP connector 的連線發起 | 帶給 MCP server 的認證 token |
+
+同一個 agent loop，自己手寫時在你的環境執行，交給 Managed agents 後則由 Anthropic 的環境執行。
+
+## 綜合示範：每日晨報 agent（TypeScript，上課 Q&A 整理）
+
+下面把課程提到的能力串成一支示意程式。**這支程式沒有實際執行或編譯過**；`[課程]` 表示課程原文寫法，`[假設]` 表示課程沒有教、這裡補上的假設，`[未驗證]` 表示 TypeScript SDK 型別或功能組合仍要對照官方文件。程式中的註解保留這些邊界。
+
+```ts
+// ============================================================
+// Claude Platform 101 綜合示範：「每日晨報 agent」
+// 每天早上：① 分類信件 ② 查天氣 ③ 上網查資料 ④ 讀 Gmail ⑤ 用固定格式產出晨報
+// ============================================================
+import Anthropic from "@anthropic-ai/sdk";
+import { betaZodTool } from "@anthropic-ai/sdk/helpers/beta/zod";
+import { z } from "zod";
+
+// ---------- 第 2 堂：金鑰放 .env.local，不進版本控制 ----------
+// Node 20.6+ 可用 `--env-file=.env.local` 載入。共三組東西：
+//   ANTHROPIC_API_KEY=sk-ant-xxxx       # 向「Anthropic」證明你是誰、帳單記給誰
+//   GMAIL_MCP_URL=https://gmail-mcp.example.com/mcp  # [假設] 公開的 Gmail MCP server（Anthropic 雲端要連得到）
+//   GMAIL_MCP_TOKEN=ya29.xxxx           # [假設] Gmail MCP 發給你的 token（多半是 OAuth，過期要自己換）；向「Gmail」證明你是誰
+//   BRIEF_SKILL_ID=skill_xxxx           # [假設] 事先上傳 Skill 後拿到的 ID
+// ⚠ ANTHROPIC_API_KEY 和 GMAIL_MCP_TOKEN 是兩組不同的憑證，不要混在一起。
+
+const client = new Anthropic(); // [課程] 自動讀 ANTHROPIC_API_KEY
+
+// ---------- 第 3 堂：選對模型（便宜的先上，夠用就好）----------
+const MODEL = {
+  cheap: "claude-haiku-4-5", // 高量低複雜度：分類、抽取、路由
+  daily: "claude-sonnet-5",  // 大多數 production 工作
+  hard: "claude-opus-5",     // 深度推理、複雜分析
+} as const;
+
+// ---------- 第 1、2 堂：最基本的 messages.create ----------
+async function classifyEmail(subject: string): Promise<string> {
+  const res = await client.messages.create({
+    model: MODEL.cheap,          // 分類這種簡單任務用 Haiku
+    max_tokens: 50,              // 回應長度上限
+    system: "你是信件分類器，只回 urgent / normal / spam 其中一個字。", // system：角色與規則（長期背景）
+    messages: [{ role: "user", content: subject }],                    // messages：這一輪的內容
+  });
+  console.log(res.usage); // 輸入／輸出 token 數，帳單就照這算
+  // 回應的 content 是 block 陣列，不是字串，要迴圈檢查 type
+  for (const block of res.content) if (block.type === "text") return block.text.trim();
+  return "normal";
+}
+
+// ---------- 第 4、5 堂：自訂工具 + 手寫 agent loop ----------
+// 自訂工具是「你的東西」：Claude 只請求呼叫，真正執行的是你的程式碼
+const tools: Anthropic.Tool[] = [
+  {
+    name: "get_weather",
+    description: "Get today's current weather for a city.", // 描述要具體，Claude 靠它決定要不要呼叫
+    input_schema: {
+      type: "object",
+      properties: { city: { type: "string", description: "The city to check" } },
+      required: ["city"],
+    },
+  },
+];
+
+function runTool(name: string, input: any): string {
+  switch (name) {
+    case "get_weather":
+      return `Weather in ${input.city}: 28C, cloudy`; // [假設] 寫死的假資料，真實環境會打天氣 API
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
+}
+
+async function agentLoopByHand(question: string): Promise<string> {
+  // 對話歷史由「你的 app」保管：Messages API 不記對話，每次要整包重送
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: question }];
+  while (true) {
+    // 每一圈都是一次獨立的 HTTP API 呼叫（不是 WebSocket 長連線）
+    const response = await client.messages.create({
+      model: MODEL.daily,
+      max_tokens: 1024,
+      tools,
+      messages,
+    });
+    if (response.stop_reason !== "tool_use") {
+      // end_turn：Claude 做完了，回最終文字
+      return response.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n");
+    }
+    // tool_use：先把 Claude 這一輪的回應放進歷史，再執行工具、把結果當一則 user 訊息送回
+    messages.push({ role: "assistant", content: response.content });
+    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+    for (const block of response.content) {
+      if (block.type === "tool_use") {
+        toolResults.push({ type: "tool_result", tool_use_id: block.id, content: runTool(block.name, block.input) });
+      }
+    }
+    messages.push({ role: "user", content: toolResults });
+  }
+}
+
+// ---------- 第 5 堂：Tool runner（beta），同一件事少寫很多 ----------
+// 不用 while、不用 stop_reason 判斷、不用手寫 JSON schema（Zod 同時驗證輸入）
+const weatherTool = betaZodTool({
+  name: "get_weather",
+  description: "Get today's current weather for a city.",
+  inputSchema: z.object({ city: z.string().describe("The city to check") }),
+  run: async ({ city }) => `Weather in ${city}: 28C, cloudy`,
+});
+
+async function agentLoopByRunner(question: string) {
+  const runner = client.beta.messages.toolRunner({
+    model: MODEL.daily,
+    max_tokens: 1024,
+    messages: [{ role: "user", content: question }],
+    tools: [weatherTool],
+  });
+  return await runner; // 等全部來回結束，拿最終的 assistant 訊息
+}
+
+// ---------- 第 10 堂 模式 4：Memory tool（client tool，儲存後端由你實作）----------
+// Claude 透過工具呼叫讀寫「記憶目錄」；你決定存在檔案、資料庫或加密儲存。
+// Anthropic 會自動注入 system 指示，叫 Claude 開工前先看記憶目錄。
+// [未驗證] 課程沒給 TS 的宣告方式與型號字串，下面只是儲存後端的示意：
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+const MEMORY_DIR = "./memory"; // [假設] 這裡用本機資料夾示意；換成你自己的資料庫、雲端儲存也行，重點是「由你實作與保管」
+async function saveMemory(name: string, text: string) {
+  await mkdir(MEMORY_DIR, { recursive: true });
+  await writeFile(`${MEMORY_DIR}/${name}.md`, text);
+}
+async function loadMemory(name: string) {
+  return readFile(`${MEMORY_DIR}/${name}.md`, "utf8").catch(() => "");
+}
+
+// ---------- 第 6～10 堂：一次請求串起 thinking / server tools / Skill / MCP / context 管理 ----------
+const BRIEF_RULES = "你是每日晨報助理。依 Skill 的格式產出晨報，先讀 Gmail 未讀信，再查今日重點新聞。";
+
+async function morningBrief() {
+  const response = await client.beta.messages.create({
+    betas: [
+      "mcp-client-2025-11-20", // 第 9 堂：MCP connector 還是 beta，要帶 beta header [課程]
+      "compact-2026-01-12",    // 第 10 堂：server-side compaction 的 beta header [課程]
+    ],
+    model: MODEL.hard,
+    max_tokens: 16000,
+
+    // 第 6 堂：Opus 5 預設自適應思考；display: summarized 才看得到推理摘要；
+    // effort 放在 output_config 裡（不是 thinking 裡）。[課程 Python 寫法，TS 型別未驗證]
+    thinking: { type: "adaptive", display: "summarized" },
+    output_config: { effort: "high" }, // low | medium | high | xhigh | max
+
+    // 第 10 堂 模式 3：prompt caching——標記穩定不變的前段，跨呼叫用小成本重用
+    // [背景知識] cache_control 寫法課程沒給，要對照官方文件
+    system: [{ type: "text", text: BRIEF_RULES, cache_control: { type: "ephemeral" } }],
+
+    // 第 10 堂 模式 2：對話太長時，API 自動把舊輪次摘要掉 [課程]
+    context_management: { edits: [{ type: "compact_20260112" }] },
+
+    // 第 8 堂：API 版 Skill，事先上傳一次、用 ID 引用，跑在 Anthropic 雲端的 code execution container [課程]
+    container: { skills: [{ type: "custom", skill_id: process.env.BRIEF_SKILL_ID!, version: "latest" }] },
+
+    // 第 9 堂：MCP——第三方服務（這裡假設 Gmail）由對方維護，你只要宣告連線 [課程寫法，服務是假設]
+    mcp_servers: [
+      {
+        type: "url",
+        url: process.env.GMAIL_MCP_URL!,            // 連線是「Anthropic 雲端」發起的，所以要是公開網址
+        name: "gmail",
+        authorization_token: process.env.GMAIL_MCP_TOKEN!, // 每次請求都要帶（API 不記得你登入過）
+      },
+    ],
+
+    tools: [
+      // 第 7 堂：Server tools——宣告了就由 Anthropic 執行，不需要 agent loop [課程]
+      { type: "web_search_20260209", name: "web_search" },
+      // Skill 要在 code execution 的 container 裡跑腳本，所以要同時開
+      // （課程 Skills 堂寫 20250825、Built-in 堂寫 20260120，版本不一致，要確認）
+      { type: "code_execution_20260120", name: "code_execution" },
+      // 第 9 堂：預設全關，只開讀取類工具，Claude 不會意外寄信或刪信 [課程做法]
+      {
+        type: "mcp_toolset",
+        mcp_server_name: "gmail",
+        default_config: { enabled: false },
+        configs: {
+          search_emails: { enabled: true }, // [假設] 工具名稱，實際看 Gmail MCP 暴露什麼
+          read_email: { enabled: true },
+        },
+      },
+    ],
+    // 上面全是 Anthropic 端執行的能力，回應裡不需要你跑迴圈；
+    // 若同時放自訂工具（如 get_weather），就要自己迴圈或用 Tool runner。[混用行為未驗證]
+
+    messages: [{ role: "user", content: "幫我產出今天的晨報。" }],
+  });
+
+  // 回應是 block 陣列：text、thinking、server_tool_use、tool result 等，要逐一檢查 type
+  for (const block of response.content) {
+    if (block.type === "thinking") console.log("[推理摘要]", block.thinking);
+    else if (block.type === "text") console.log(block.text);
+  }
+}
+
+// ---------- 第 11、12 堂：Managed agents——把迴圈、sandbox、續跑都交給 Anthropic ----------
+// 適合跑很久、會動檔案的任務；你只「送 events、讀 events」，不再自己 while 迴圈。
+// [未驗證] 課程示範是 Python，TS 的方法簽章以 SDK 實際為準。
+async function runManagedAgent() {
+  // 1) Agent：persona（模型＋system＋toolset），可重用
+  const agent = await client.beta.agents.create({
+    name: "Morning Brief Agent",
+    model: MODEL.hard,
+    system: "你是每日晨報助理，把結果整理成檔案。",
+    tools: [{ type: "agent_toolset_20260401", default_config: { enabled: true } }], // Anthropic 打包的檔案／bash／網路工具
+  });
+  // 2) Environment：agent 跑在哪（雲端 sandbox、網路設定）
+  const environment = await client.beta.environments.create({
+    name: "brief-env",
+    config: { type: "cloud", networking: { type: "unrestricted" } },
+  });
+  // 3) Session：單次執行，工作單位
+  const session = await client.beta.sessions.create({
+    agent: agent.id,
+    environment_id: environment.id,
+    title: "晨報 demo",
+  });
+  // 4) 先開 stream，再送 kickoff（stream 只送「開啟之後」發生的事件）
+  const stream = await client.beta.sessions.events.stream(session.id);
+  await client.beta.sessions.events.send(session.id, {
+    events: [{ type: "user.message", content: [{ type: "text", text: "整理今天的晨報，存成檔案並回報。" }] }],
+  });
+  // 5) 消費 events
+  for await (const event of stream) {
+    if (event.type === "agent.message") console.log("[agent]", event.content);
+    else if (event.type === "agent.tool_use") console.log("[tool]", event.name);
+    else if (event.type === "session.status_idle") break; // agent 做完了
+  }
+  // 跨對話的「記憶」不靠 session ID，而靠 memory store（另一個獨立儲存區）
+}
+
+// ---------- 第 13 堂：Building with Claude Code ----------
+// 這種「定義工具 → 交給 runner → 回傳結果」的樣板不必手打：
+// 把上面檔案 stub 出來，在專案資料夾啟動 Claude Code，用 /claude-api（或它偵測到 TS SDK 時自動觸發），
+// prompt 寫清楚三件事：要改的檔案、要用的模式（Tool runner）、預期的結束狀態；你的工作是 review diff。
+
+// ---------- 串起來 ----------
+async function main() {
+  const label = await classifyEmail("【通知】伺服器磁碟使用率 95%"); // 第 3 堂：便宜模型分類
+  console.log("分類：", label);
+  console.log(await agentLoopByHand("我今天在 Taipei 該穿什麼？")); // 第 4、5 堂
+  await morningBrief();                                            // 第 6～10 堂
+  // await runManagedAgent();                                      // 第 11、12 堂
+}
+main();
+```
+
+這支程式和課程的對應關係如下：
+
+| 段落 | 對應課程 | 誰執行 |
+|---|---|---|
+| `classifyEmail` | 1~3 | 模型推理在雲端 |
+| `agentLoopByHand`／`agentLoopByRunner` | 4、5 | 迴圈與 `runTool` 在你這邊 |
+| `morningBrief` 的 `web_search`／`code_execution` | 7 | Anthropic 雲端 |
+| `morningBrief` 的 `container.skills` | 8 | Anthropic 雲端（code execution container） |
+| `morningBrief` 的 `mcp_servers` | 9 | 連線由 Anthropic 雲端發起；token 由你每次帶 |
+| `system` 快取、`context_management`、記憶後端 | 10 | 快取與壓縮在雲端；記憶後端在你這邊 |
+| `runManagedAgent` | 11、12 | 整個迴圈在 Anthropic 雲端 |
+
+## 測驗：Claude Platform 101 Q&A
+
+有 5 題。以下保留題目與正確答案，中英對照的繁中是自譯。
+
+### Q1. When Claude decides to use a tool, who actually executes it?（當 Claude 決定使用工具時，實際上是誰執行它？）
+
+答案：**Your code runs it and sends the result back**（你的程式碼執行它，並把結果送回去）。
+
+### Q2. In Claude Code, which slash command invokes the built-in skill for working with the Claude API?（在 Claude Code 中，哪個斜線指令會呼叫處理 Claude API 的內建 Skill？）
+
+答案：**`/claude-api`**。
+
+### Q3. Which jobs are the best fit for a managed agent?（哪些工作最適合交給 managed agent？）
+
+答案：**Long-running, sandboxed, or background work**（長時間執行、需要 sandbox 或在背景執行的工作）。
+
+### Q4. Which three parameters does the `messages.create` call itself require?（`messages.create` 呼叫本身需要哪三個參數？）
+
+答案：**A model, a max tokens limit, and a list of messages**（一個 model、一個 max tokens 上限、一份 messages 清單）。
+
+### Q5. Why does context management matter for long-running agents?（為什麼 context management 對長時間執行的 agent 很重要？）
+
+答案：**The window is finite and you pay for what's in it — so the goal is fitting the right things in**（視窗有限，放進去的內容都要付費，所以目標是只放進對的東西）。
+
+## 小結
+
+這個場景平常比較少碰到，所以這次是我第一次實際開發、撰寫這類程式，也第一次完整走過 API 開發流程。光是把整門課的場景摸懂，就花了接近快三倍的時間。
+
+尤其代理的部分相對複雜：哪些東西跑在雲端、哪些東西留在本地，需要自己摸過一遍才真的有感。
+
+跟著這堂課完整走過一次後，對 API 開發這件事有更深的體驗。模型怎麼選、記憶該怎麼放、Skill 怎麼串、MCP 怎麼接，這些原本分散的概念，開始有比較具體、深刻的印象。也期待後續課程能再深入相關開發。
