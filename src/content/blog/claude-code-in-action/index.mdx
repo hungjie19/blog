@@ -1,0 +1,347 @@
+---
+title: "Claude Code in Action：指令、Hooks 與驗證，讓 Agent 長時間工作"
+ogTitle: "Claude Code in Action|指令、Hooks 與驗證，讓 Agent 長時間工作"
+date: 2026-09-21T16:02:04+08:00
+description: "Claude Code in Action 課程筆記，從 /goal、/compact、Routines 與 headless，到 Hooks、權限模式、GitHub Actions、Code Review 和 Plugin，整理讓 Agent 長時間工作的設定與驗證方法。"
+tags:
+  - AI
+  - Claude
+  - Claude-Code
+  - Agent
+  - Workflow
+series: ithome-2026-ironman
+seriesOrder: 7
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Claude Code in Action 教的是如何讓 Claude Code 處理更長時間、較少人工盯場的工作：先用 Plan Mode 計劃模式界定範圍，再用 CLAUDE.md、Skill、Hooks、Routines 常規任務、headless 無頭模式、GitHub 整合和 Plugin 控制流程，最後以 diff、測試與獨立審查驗證；Routines 和 Code Review 的功能與限制仍可能依版本、平台和帳號方案變動。
+  </p>
+</KeyTakeaways>
+
+前一篇 [Claude Code 101](/posts/claude-code-101/) 還在談 Explore → Plan → Code → Commit，這次打開 [Claude Code in Action](https://academy.claude.com/zh-TW/courses/claude-code-in-action)，問題變得更現實：當任務會跑幾個小時、要動十幾個檔案，或希望整個團隊都能用同一套規則時，怎麼讓 Claude 繼續往前走，又不必每一秒盯著？
+
+> 格式說明：本文保留課程的英文課名與技術術語；英文原文取自 Claude Academy 官方英文版頁面。課名、術語和指令採英文在前、繁中翻譯在後；指令只在第一次講解時標示翻譯，後續不重複。
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 9 堂課 |
+| 總時長 | 1 小時 |
+| 測驗 | 1 個（約 3 分鐘；共 8 題） |
+| 完成 | 有完成徽章 |
+| 先決條件 | 熟悉命令列介面與終端機操作；對用 Git 做版本控制有基本了解；已經會用 Claude Code 下單次 prompt |
+| 適合對象 | 已經用 Claude Code 下單次 prompt、想進階到「更長、更少人盯著、整個團隊一起用」工作流程的開發者；想為多個工作流程導入 AI 驅動 GitHub 整合的團隊 |
+
+這堂課的四個 section 是 **Steer the work**、**Configure Claude**、**Automate repeat work** 和 **Verify and share**。它會重新碰到 CLAUDE.md、Skill 和 Hooks，但重點已經從「它們是什麼」移到「怎麼設計，才能讓長時間工作比較可靠」。
+
+## Steer the work 引導工作
+
+### 1. Steering long sessions 引導長時間工作階段
+
+快速任務問一句、看一下結果就好。跨十幾個檔案的重構或新功能，可能跑上幾個小時；這時候，如果需要人一直介入，整個流程就會被拖慢。課程把做法濃縮成兩個習慣：開工前先界定範圍，執行中適時引導。
+
+先用 Plan Mode 計劃模式讓 Claude 以唯讀方式研究 codebase，找出要改的地方，交一份計畫給人審。計畫拿到手之後要真的讀，遇到疑問就請 Claude 補上。反覆修計畫，通常比直接執行、祈禱順利、最後再收拾殘局有效。
+
+執行中的兩個工具，分別處理 context 太長和方向走偏：
+
+| 工具 | 做什麼 | 重點 |
+|---|---|---|
+| **Compaction 壓縮** | 把對話總結成摘要，當成新的 context，移除舊訊息 | 不要單獨下 `/compact`（壓縮）；後面加上指示，例如 `/compact Focus on the --version flag implementation`，這段文字會決定摘要要保留什麼 |
+| **Rewind 回溯** | 回到上一個檢查點 | 每個使用者 prompt 都會建立檢查點；在空白 prompt 上連按兩次 Escape 可以開啟選單 |
+
+Rewind 選單有五個選項：
+
+| 選項 | 效果 |
+|---|---|
+| Restore code and conversation 還原程式碼與對話 | 兩者一起回復 |
+| Restore conversation 還原對話 | 只回復聊天內容 |
+| Restore code 還原程式碼 | 只回復檔案 |
+| Summarize from here 從此處開始總結 | 總結檢查點之後的所有內容；旁支對話太長、只想釋放空間時好用 |
+| Summarize up to here 總結至此處 | 總結檢查點之前的所有內容；想壓縮很長的設定階段、保留實作部分完整時好用 |
+
+### Goal 目標、Loop 迴圈與 Worktrees 工作樹
+
+如果已經知道「完成」長什麼樣子，可以用 `/goal`（目標）設定完成條件，讓 Claude 跨多個回合持續工作，直到快速評估器確認條件達成。例如：
+
+```text
+/goal all tests in src/billing pass, and the type checker reports zero errors
+```
+
+Goal 的限制是評估器只能讀對話記錄（transcript），所以條件要能從 Claude 實際輸出的內容檢查，例如測試執行結果。取消 Goal 使用 `/goal clear`。
+
+`/loop`（迴圈）則是用固定或自行調節的間隔重複執行 prompt，適合拉取 CI 或部署狀態，等狀態改變時採取行動；按 Escape 可以停止。
+
+同一個 codebase 若同時跑多個 agent，應該使用 **Worktrees 工作樹**。每個 session 有自己的檔案樹，彼此不會互相覆蓋。官方的比喻很準：一輛車不要有兩個方向盤。`.worktreeinclude` 可以列出要複製到每個 worktree 的 git ignored 檔案，例如環境變數檔和本機設定。
+
+## Configure Claude 設定 Claude
+
+### 2. A CLAUDE.md that follows 一份會被遵循的 CLAUDE.md
+
+CLAUDE.md 會越寫越大：每遇到一個問題就加一條規則，最後整份檔案開始和自己的內容競爭注意力。課程給的判斷方式是，先分清楚一條規則屬於「指引」還是「絕不能逾越的界線」。前者適合放在 CLAUDE.md，後者交給 Hook，才能真的在動作發生前阻止。
+
+Claude 啟動時會疊加讀取不同層級的設定：
+
+| 位置 | 說明 |
+|---|---|
+| Managed policy 受管理的政策 | 平台團隊控制的組織層級檔案，無法排除 |
+| User 使用者 | 個人偏好，套用到自己在這台機器上的專案 |
+| Project 專案 | 與團隊共用，納入版本庫 |
+| Local 本機 | 被 git 忽略，只供自己在目前 repo 使用 |
+
+大型檔案可以用 import 整理：
+
+```text
+@.claude/conventions/code-style.md
+@.claude/conventions/testing.md
+@.claude/conventions/workflow.md
+```
+
+這裡的 import 會在 Claude 啟動時把內容就地展開，所以它改善的是組織方式，context 總量仍然會增加。規則要具體、可檢驗，並且寫出替代方案。例如與其寫「遵循 API 路由的最佳實踐」，不如寫「把新的 API 路由放在 `src/api/handlers`，每個檔案一個」。
+
+### 3. Verification skills 驗證技能
+
+Skill 很適合包住會重複發生的流程。這堂課建議優先建立的 Skill，是驗證自己的工作成果：要求 Claude 重構後，Skill 自動執行測試、閱讀 diff、檢查測試是否被刻意放寬，最後回報通過或失敗並附上證據。
+
+只看到測試全過還不夠，因為測試可能被悄悄改得比較寬鬆。真正的完成，是每一道檢查都執行過、結果被觀察過，而且清楚說明發生了什麼。如果同一段多步驟指示已經輸入過兩次，就值得考慮把它包成 Skill。
+
+CLAUDE.md、Skill 和 Hook 的分工可以這樣記：CLAUDE.md 是每次對話都會讀的常駐規則；Skill 是符合情境時才載入的工作流程；Hook 是需要確實執行的程式碼。
+
+### 4. Permission modes 權限模式
+
+課程把日常模式整理成下面幾種：
+
+| 模式 | 可自由執行 | 其他 |
+|---|---|---|
+| Manual 手動 | 僅能讀取，不提示詢問 | 其他所有操作先詢問 |
+| Accept edits 接受編輯 | 讀取、檔案編輯、常見的檔案系統 Bash 指令 | 其他操作先詢問 |
+| Plan 規劃 | 僅能用唯讀工具研究並提出計畫 | 不會實際編輯 |
+| Auto 自動 | 接受所有操作 | 每個動作執行前由另一個分類模型審查 |
+| Don't ask 不詢問 | 只允許預先核准的工具 | 清單外的操作自動拒絕 |
+| Bypass permissions 略過權限 | 跳過所有檢查 | 只適合隔離的 container 或 VM |
+
+Auto 自動模式的分類器把關的是動作意圖，不是程式碼正確性。它可能擋下正式環境部署、強制推送或把下載的程式碼直接導進 shell，也可能放行一段會出錯的身分驗證重構。因此，課程建議搭配 Stop hook：Auto 自動模式檢查 Claude「試圖做什麼」，Stop hook 在 Claude 結束時確認結果真的能運作。這份阻擋／放行清單仍會演進，實際使用時要以官方文件為準。
+
+Don't ask 不詢問模式適合無人值守的 CI、排程或夜間批次，讓流程不會卡在沒人能核准的提示上。Bypass permissions 略過權限則只留給隔離的 container 或 VM。
+
+### 5. Hooks
+
+在 CLAUDE.md 寫「每次編輯完都跑 Prettier」，Claude 大多會照做，長時間執行仍可能漏掉。Hook 是在代理迴圈固定時間點執行的確定性程式碼，讓規則從「通常會聽」變成「不能跳過」。
+
+常見事件包括：
+
+| 事件 | 何時觸發 | 用途 |
+|---|---|---|
+| **PreToolUse** | 工具呼叫之前 | 阻止危險工具呼叫 |
+| **PostToolUse** | 工具呼叫成功之後 | 自動格式化、執行 lint |
+| **Stop** | Claude 想結束這一輪時 | 條件未滿足時拒絕結束 |
+| **PreCompact / PostCompact** | 壓縮前後 | 介入壓縮流程 |
+| **InstructionsLoaded** | CLAUDE.md 或規則檔載入時 | 稽核實際進入 context 的內容 |
+| **SessionStart** | session 開始 | 為環境做準備 |
+
+如果要在壓縮後重新注入 context，要用帶 `compact` matcher 的 SessionStart；PostCompact 本身不會把輸出送回對話。
+
+PreToolUse 會以 JSON 回傳決策，關鍵欄位是 `permissionDecision`：
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PreToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "...",
+    "updatedInput": {
+      "command": "..."
+    }
+  }
+}
+```
+
+`permissionDecision` 可以是 `allow`、`deny` 或 `ask`。非互動式 `-p`（非互動模式）執行另有 `defer`，讓呼叫的程序暫停工具、稍後恢復。
+
+不回傳 JSON 的 Hook 則依 exit code 判斷：
+
+| 退出碼 | 意義 |
+|---|---|
+| **0** | 成功；事件會依類型處理 stdout |
+| **2** | 阻斷性錯誤，stderr 會回饋給 Claude |
+| 其他值 | 非阻斷；Claude 繼續執行 |
+
+容易踩到的地方是 exit code 1：它不會阻止指令。要阻斷，請用 2。PostToolUse 已經晚了一步，無法阻止剛完成的工具呼叫，但仍能把檢查結果回饋給 Claude。
+
+Hook 也能用 `updatedInput` 重寫呼叫，而不只是阻止。課程舉的例子是監看 Bash 指令，發現 `sk_live_` 模式時先換成佔位符，讓指令繼續跑、機密卻不會被送出去。
+
+## Automate repeat work 自動化重複工作
+
+### 6. Routines 常規任務 and headless 無頭模式
+
+當一項工作已經值得信任，下一步就是停止手動執行。這堂課把選項排成一條光譜：一端是跑在 Anthropic 託管基礎設施上的 **Routines 常規任務**，另一端是從自己的程式碼啟動的 **headless 無頭模式** 和 **Agent SDK**。
+
+Routines 常規任務把一個 prompt、它作用的儲存庫和所需的 connectors 綁在一起，觸發後在雲端執行。觸發條件可以是 cron、對 API 端點發 HTTP POST，或 GitHub 事件。適合早晨依賴項稽核、新 PR 分類和每天掃描 Sentry 工單。
+
+建立 Routines 有兩種方式：在 `claude.ai/code/routines` 的網頁介面設定，或在 Claude Code 內使用 `/schedule`（排程）：
+
+```text
+/schedule daily dependency audit at 9am
+```
+
+使用前要記住三個限制：它仍是 research preview；重複排程最多每小時一次；每次執行從預設分支的全新複本開始，預設只能推送到 `claude/` 前綴的分支，除非個別 repo 另行放寬。
+
+需要接進自己的管線時，可以使用 headless 無頭模式。核心是 `-p`（`--print` 的簡寫）：一次性指令、沒有互動 UI，從 stdin 讀取、寫入 stdout，可以像 shell 工具一樣串接：
+
+```bash
+claude -p "summarize the changes in this diff"
+```
+
+課程在這裡說 `-p` 會跳過 hooks、skills、plugins、MCP 伺服器與 CLAUDE.md 的自動探索，只使用 Claude 加上你明確允許的工具。這點與[官方文件](https://code.claude.com/docs/zh-TW/headless)不符：官方文件寫的是加上 `--bare`（確定性模式）才會跳過這些自動探索；沒有 `--bare` 時，`claude -p` 會載入與互動式 session 相同的 context。文件也註記，`--bare` 之後會成為 `-p` 的預設。本文以官方文件為準，並保留課程與文件的出入。
+
+官方文件已把這頁改名為「以程式方式執行 Claude Code」（run Claude Code programmatically），內文稱 `-p` 為「非互動模式」；headless 無頭模式是課程沿用的舊說法。
+
+headless 無頭模式也能輸出結構化 JSON。把 `--json-schema`（JSON schema）配 `--output-format json`（JSON 輸出格式），結果會放在 JSON 回應的 `structured_output` 欄位：
+
+```bash
+claude -p "Extract the exported function names from src/core/style.js" \
+  --output-format json \
+  --json-schema '{"type":"object","properties":{"functions":{"type":"array","items":{"type":"string"}}},"required":["functions"]}' \
+  | jq '.structured_output.functions'
+```
+
+如果要把工作拆成多個腳本，可以從 JSON 輸出取出 session ID，再用 `--resume`（恢復 session）恢復完整 context：
+
+```bash
+claude --resume "$(jq -r .session_id /tmp/plan.json)"
+```
+
+`--bare` 則是給 CI 的選擇；官方文件稱它為「裸機模式」，並說它是腳本與 SDK 呼叫的建議模式。需要把 Claude Code 嵌進自己的 TypeScript 或 Python 產品時，才往下走到 Agent SDK；它提供 `query` 函式、`allowedTools`、system prompt、權限模式和串流訊息等元件。
+
+| 選擇 | 適用 |
+|---|---|
+| Routines | 重複性工作的預設選擇，跑在 Anthropic 基礎設施，不用自己託管 |
+| `-p` headless | 工作需要自己的管線，想用腳本傳輸資料 |
+| `--bare` | CI 需要每次運行結果相同 |
+| Agent SDK | 工作需要嵌進自己的產品 |
+
+### 7. GitHub Actions and Code Review
+
+PR 是交接重複性工作的自然位置。Claude Code 在這裡有兩條路：Anthropic 託管的 **Code Review**，以及自己接的 **GitHub Action**。
+
+Code Review 透過 Claude GitHub app 審查 PR，不需要自己建置或託管服務，會用行內留言標示問題。啟用時由組織管理員在 Claude Code 管理設定的 Code review 區段連接 repo、安裝 GitHub app，再選擇 PR 開啟、每次推送，或有人留言 `@claude review` 時執行。
+
+它會分析完整 codebase 和 diff，依嚴重程度標記問題，去除重複後以摘要表格呈現。Code Review 不會核准或封鎖 PR，也沒有託管的自動修正；判斷仍由人做。本功能目前是 research preview，僅提供給 team 和 enterprise 方案。需要在本機套用修正時，可以用 `/code-review`（程式碼審查）搭配 `--fix`（修正）。
+
+工作若超出審查範圍，例如根據留言實作變更、排程報告，或回應 GitHub 事件，就使用 GitHub Action。先在 Claude Code 內執行 `/install-github-app`（安裝 GitHub app），再在 repo 設定 Anthropic API 金鑰 secret。常用的 workflow 片段如下：
+
+```yaml
+- uses: anthropics/claude-code-action@v1
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    trigger_phrase: "@claude"
+    prompt: "Your instructions here"
+    claude_args: "--max-turns 5 --model claude-sonnet-5"
+```
+
+常用輸入包括：
+
+| 輸入 | 說明 |
+|---|---|
+| `anthropic_api_key` | 選填 |
+| `github_token` | 預設為 `secrets.GITHUB_TOKEN` |
+| `trigger_phrase` | Action 在留言中監聽的內容，預設為 `@claude` |
+| `use_bedrock` / `use_vertex` | 使用 Bedrock 或 Vertex 時切換提供者 |
+| `prompt` | 這次執行的指示 |
+| `claude_args` | 直接傳給 Claude Code 的 CLI 引數字串 |
+
+`claude_args` 可以限制最大回合數、設定權限模式和允許的工具。無人值守的工作不能停下來等待核准，唯讀報告則只給它真正需要的工具。
+
+## Verify and share 驗證與分享
+
+### 8. Trust it: Verifying unsupervised runs 信任它：驗證無人監督的執行
+
+課程有一句很值得留下來的原則：**驗證的程度，應該和你給予這次執行的自由度成正比。** 短 session 你可能一路看著訊息，只要快速瀏覽；無人看管或由 CI 觸發的工作，就要事後重建發生過什麼。
+
+驗證可以收斂成四步：
+
+1. 先跑 `/code-review`，再自己讀 `git diff`；從 diff 開始，不要只看摘要。
+2. 用 Stop hook 執行測試，失敗就拒絕讓 Claude 結束回合。
+3. 用 PostToolUse hook 在編輯後執行 lint 和型別檢查，並用 JSON 結果與 exit code 驗證 headless 執行。
+4. 對重要變更開一個全新的 session 或 Subagent，讓它在不知道原本建構過程的情況下提供第二意見。
+
+摘要讀起來再乾淨，也可能掩蓋計畫外的檔案變更；真正的關卡是測試是否確實執行，以及 Claude 是真的執行了測試，還是只說自己執行過。Stop hook 用 exit 2 回饋失敗，Claude 讀到後能自行修正。
+
+### 9. Plugins
+
+當一套 Skills、Subagents、Hooks 和 MCP 設定要交給整個團隊使用時，Plugin 是把它們打包、版本化和安裝的方式。除了這些元件，它也能包含 language server protocol 伺服器、背景監控程式、主題，以及部分 `settings.json`。
+
+可以依名稱直接安裝 `/plugin install`（安裝 plugin）：
+
+```text
+/plugin install github@claude-plugins-official
+```
+
+安裝後 Claude Code 會提示執行 `/reload-plugins`（重新載入 plugins）。如果團隊有自己的共享來源，可以用 `/plugin marketplace add`（新增 marketplace）：
+
+```text
+/plugin marketplace add your-org/claude-plugins
+```
+
+安裝前一定要讀清楚內容。Plugin 會用你的權限在你的機器上執行程式碼，附帶的 Hook 也會在符合條件的工具呼叫時觸發。即使你只是想安裝某個 Skill，也可能一併安裝它的 PreToolUse 和 Stop hook。
+
+Plugin 不會覆寫自己的設定，而是與現有元件並行；Hooks 會疊加，Skills、agents 和 commands 會以 Plugin 名稱作為命名空間。第三方內容經過 marketplace 審查，也不等於完全值得信任，安裝前仍要確認來源與實際會執行的內容。
+
+自己的 Plugin 可以沿用現有 `.claude` 結構：每個 Skill 一個資料夾、每個 Subagent 在 `agents` 底下一個 Markdown 檔，Hook 放在 `hooks/hooks.json`，MCP 設定放在 `.mcp.json`。選擇加入 manifest 時，`.claude-plugin/plugin.json` 可以描述名稱、版本、作者和用途：
+
+```json
+{
+  "name": "svg-splitter-review",
+  "version": "0.1.0",
+  "description": "Reviews the SVG Splitter repo",
+  "author": {
+    "name": "Lewis Menelaws"
+  }
+}
+```
+
+## 測驗：Claude Code in Action Q&A
+
+有 8 題：100% 已通過。以下保留題目與正確答案，中英對照的繁中是自譯。
+
+### Q1. Your team has a hard rule: never push to main. Where should it live so Claude cannot skip it?（你的團隊有一條硬性規則：絕不推送到 main。它應該放在哪裡，才能讓 Claude 無法跳過？）
+
+答案：**In a pre-tool use hook that stops the push**（放在會阻止推送的 pre-tool use hook 裡）。
+
+### Q2. You have typed the same multi-step procedure to Claude more than once, and it includes long reference material and a helper script. How should you package it?（你已經不只一次向 Claude 輸入同一段多步驟流程，其中包含冗長的參考資料和一個輔助腳本。你應該如何打包它？）
+
+答案：**Make a skill, keep skill.md lean, and push depth into reference.md and scripts Claude runs when needed**（建立一個 skill，讓 skill.md 保持精簡，把深度內容推到 reference.md，以及 Claude 需要時才執行的腳本）。
+
+### Q3. A job ran unattended in CI and reports success. What is the most reliable first move before you ship it?（一項工作在 CI 中無人監督地執行，並回報成功。在你交付它之前，最可靠的第一步是什麼？）
+
+答案：**Start from the diff itself and git diff, and confirm tests actually passed rather than were claimed**（從 diff 本身和 git diff 開始，並確認測試真的通過，而不是只被宣稱通過）。
+
+### Q4. You want a dependency audit to run every morning at 9am with no machine of yours staying on and no workflow file to maintain. Which tool fits?（你希望每天早上 9 點自動執行一次依賴項稽核，而且不需要你的機器一直開著，也沒有需要維護的 workflow 檔。哪個工具適合？）
+
+答案：**A routine that runs on Anthropic infrastructure on a cron trigger**（在 Anthropic 基礎設施上以 cron 觸發執行的 routine）。
+
+### Q5. Your team wants Claude to review every pull request with inline comments and nothing to build or host, and you do not need it to approve or block the PR. Which option fits?（你的團隊希望 Claude 審查每一個 pull request 並附上行內留言，不需要建置或託管任何東西，也不需要它核准或封鎖 PR。哪個選項適合？）
+
+答案：**Managed code review through the Claude GitHub app**（透過 Claude GitHub app 使用託管的 code review）。
+
+### Q6. A community plugin gives you a skill you want. What should you do before enabling it?（一個社群 plugin 提供了你想要的 skill。啟用它之前你應該做什麼？）
+
+答案：**Inspect every hook, agent, and MCP server it adds, because a plugin runs code with your privileges and its hooks fire on every matching call**（檢查它新增的每一個 hook、agent 和 MCP 伺服器，因為 plugin 以你的權限執行程式碼，而且它的 hooks 會在每次符合條件的呼叫時觸發）。
+
+### Q7. You ask Claude in auto mode to refactor authentication and it writes broken authentication. What actually happens, and what should you add?（你請 Claude 在自動模式下重構身分驗證，結果它寫出了有問題的身分驗證程式碼。實際上會發生什麼事？你應該補上什麼？）
+
+答案：**The classifier waves it through because broken is not dangerous; pair auto mode with a stop hook that runs your tests**（分類器會放行，因為「有問題」不等於「危險」；把自動模式搭配一個會執行測試的 stop hook）。
+
+### Q8. You can describe exactly what "done" looks like for a task (all tests in a package pass, the type checker reports zero errors) better than you can list the steps to get there. Which approach fits best?（你能精確描述一項任務「完成」的樣子（一個 package 裡所有測試通過、型別檢查器回報零錯誤），比列出達成的步驟更容易。哪種做法最適合？）
+
+答案：**Use `/goal` to set a completion condition so Claude keeps working until a fast evaluator confirms it**（用 `/goal` 設定完成條件，讓 Claude 持續工作，直到一個快速評估器確認條件達成）。
+
+## 小結
+
+這堂課裡出現的，大多是開發者平常工作真的會用到的指令。上完課後我比較有感的是：指令除了原本的功能，還可以加上這一輪工作的意圖，讓 Claude 知道哪些資訊要留下來、接下來要往哪裡走。
+
+例如 `/compact` 不一定只是單純壓縮對話，也可以寫成：`/compact log 只留重要，跟我們接下來要做的目標`。這樣能幫助 agent 保留後續工作需要的資訊，是相對容易上手、也很快能感受到差異的用法。
