@@ -1,0 +1,315 @@
+---
+title: "Model Context Protocol 簡介：從零打造 MCP 客戶端與伺服器"
+date: 2026-09-22T22:40:44+08:00
+description: "Introduction to Model Context Protocol 課程筆記，從 MCP 客戶端與伺服器開始，整理工具、資源、提示和 Inspector 的分工與實作流程。"
+tags:
+  - AI
+  - Claude
+  - MCP
+  - Agent
+series: ithome-2026-ironman
+seriesOrder: 8
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Model Context Protocol（MCP）怎麼把 Claude 接上外部工具與資料？它用工具、資源和提示三種基本元素，分別處理模型要執行的能力、應用程式要帶入的資料，以及使用者要觸發的工作流程；本篇也整理 MCP 客戶端、伺服器和 Inspector 的實作關係。
+  </p>
+</KeyTakeaways>
+
+前幾天的 [Claude Platform 101](/posts/claude-platform-101/) 把視角放在 API、工具與 agent loop，今天打開 [Introduction to Model Context Protocol](https://academy.claude.com/zh-TW/courses/introduction-to-model-context-protocol)，開始往整合的另一側走。
+
+這堂課的做法很直接：從零寫一個 MCP 伺服器，再寫一個可以連上它的客戶端。看起來像是在組一個小型聊天 App，實際上是在把平常使用 Claude Code 時已經被包好的功能拆開來看——工具怎麼被列出來、資源怎麼帶進上下文、提示怎麼變成可以重複使用的工作流程。
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 10 堂課 |
+| 總時長 | 1 小時 |
+| 測驗 | 1 個（7 題） |
+| 完成 | 有完成徽章 |
+| 先決條件 | 具備 Python 程式設計實務知識，了解 JSON、HTTP request-response、`async/await` 和 API 基本概念 |
+| 適合對象 | 想建立 MCP 伺服器，並把 Claude 接到外部工具與服務的開發人員 |
+
+## MCP 解決的是哪一種整合問題？
+
+### 1. Introducing MCP
+
+假設要做一個聊天介面，讓使用者詢問「我所有 repository 中有哪些開放的 pull request？」。Claude 要回答這個問題，就需要能使用 GitHub API 的工具。
+
+如果每個 App 都自己處理 GitHub 的工具定義、參數格式、API 呼叫、錯誤處理和後續維護，整合工作很快就會膨脹。換成 MCP 的想法後，這些工作可以集中在一個專門的 MCP 伺服器裡，App 只要透過標準化的協定連線，就能取得它公開的工具、資源和提示。
+
+MCP 伺服器可以由服務提供商自己維護，也可以由開發者針對自己的資料或內部系統建立。它的角色像是外部服務的介面：把某個服務真正的 API 細節包起來，再用 MCP 能理解的方式公開出去。
+
+這裡有一個容易混在一起的概念：MCP 伺服器和 tool use 不是同一件事。MCP 伺服器負責提供工具的定義與執行入口；Claude 收到這些工具後，才在對話過程中判斷要不要使用其中一個。前者是整合標準，後者是模型如何使用能力。
+
+### 2. MCP 客戶端
+
+MCP 客戶端位在你的 App 和 MCP 伺服器之間，負責處理連線、訊息交換，以及 Python SDK 的協定細節。這堂課把 App 裡的 MCP 客戶端寫出來，所以也能看見平常使用產品時被隱藏的那一層。
+
+MCP 的通訊不綁定單一傳輸方式。可以在同一台機器上使用 standard input/output，也可以透過 HTTP、WebSocket 或其他網路協定連線。傳輸方式可以換，客戶端和伺服器交換的訊息概念仍然相同。
+
+最常用的工具訊息可以先記兩組：
+
+| 訊息 | 用途 |
+|---|---|
+| `ListToolsRequest` / `ListToolsResult` | 客戶端詢問伺服器有哪些工具，取得工具名稱、描述和參數 schema |
+| `CallToolRequest` / `CallToolResult` | 客戶端要求伺服器執行某個工具，並接收執行結果 |
+
+把一次完整請求拆開後，大概會經過這條路徑：使用者把問題送進 App，App 先向 MCP 伺服器取得工具清單，再把問題和工具一起交給 Claude。Claude 判斷需要使用工具後，App 透過 MCP 客戶端送出工具呼叫，MCP 伺服器執行實際邏輯，結果再回到 App 和 Claude，最後才組成答案給使用者。
+
+這也讓我重新理解 Claude Code 裡「設定完 MCP 後就能用」的感覺。工具清單的探索與連線管理早就由產品處理好了，使用者通常只會看到模型開始使用工具的那一段。
+
+## 先做一個可以測試的 MCP 伺服器
+
+### 3. 使用 MCP 定義工具
+
+課程選了一個很容易觀察結果的文件管理案例。文件先放在記憶體裡的簡單字典，MCP 伺服器提供讀取文件和編輯文件兩個工具。
+
+Python MCP SDK 的重點是 decorator。用 `@mcp.tool()` 裝飾一個 Python function，再搭配 type hints 和 Pydantic `Field` 描述參數，SDK 就能幫忙產生工具 schema，不需要手動拼一大段 JSON。
+
+這裡的描述文字不能隨便寫。工具名稱、用途和每個參數的說明，都是 Claude 判斷要不要使用工具時會看到的資訊。描述越清楚，模型越容易知道這個工具能做什麼、什麼時候適合呼叫，以及每個參數應該放什麼。
+
+### 4. 伺服器檢查器
+
+有了工具之後，還需要一個不必先接完整 App 的測試方式。MCP SDK 提供 MCP Inspector，可以在瀏覽器介面裡連接伺服器、列出工具、填入參數並直接執行。
+
+這個開發循環很實用：先啟動 server，再從 Inspector 的 Tools 分頁列出工具；接著選擇 `read_doc_contents` 或 `edit_document`，填入文件 ID 和必要欄位，執行後檢查回傳值。編輯文件後再立刻讀一次，也能確認伺服器狀態是否如預期保留。
+
+我照著課程在本機跑了一次，過程中遇到兩個版本相關的提醒。當時直接安裝 `mcp[cli]` 會拿到 MCP 2.x，但課程範例使用的是 1.x 的 `FastMCP` 語法；為了先照課程完成練習，我把版本釘在 2 以下。啟動 `mcp dev` 時，Inspector 也會透過 `npx` 安裝前端套件，第一次執行會看到套件安裝提示和 deprecated warning。
+
+這些訊息不會改變 Inspector 的核心用途，但很提醒人：課程範例和套件現在的版本不一定同時更新。先看錯誤訊息指出的是 API 改名、版本不相容，還是單純的依賴警告，再決定要升級程式碼或固定版本，通常比直接重裝更快。
+
+## 把 MCP 接進自己的客戶端
+
+### 5. 實作客戶端
+
+伺服器可以被 Inspector 測試後，課程開始寫另一半：讓 App 能夠真的使用 MCP 伺服器。
+
+客戶端主要包兩個元件：自訂的 MCP Client 類別，以及 Python SDK 提供的 Client Session。前者負責把常用操作包起來，後者才是實際維持與伺服器連線的物件。連線和資源清理如果散落在各處，很容易在流程結束時漏掉，所以課程把它們集中在自己的類別裡管理。
+
+最基本的兩個方法是 `list_tools()` 和 `call_tool()`。前者把伺服器提供的工具清單拿回來交給 App，再由 App 和使用者問題一起傳給 Claude；後者接住 Claude 決定要使用的工具名稱與參數，透過 session 呼叫 MCP 伺服器。
+
+這裡的分工可以這樣看：MCP 伺服器知道怎麼做某個外部服務的事情，MCP 客戶端知道怎麼把這些能力接進自己的 App，而 Claude 負責根據使用者問題判斷要不要使用工具。三者各自有工作，App 才能把結果組回一個完整的對話流程。
+
+### 6. 定義資源
+
+工具適合「執行一個動作」，資源則適合「提供一份資料」。課程用 HTTP 的 GET 來類比資源：它通常是唯讀的，重點在取得資訊，不在改變狀態。
+
+MCP 資源有兩種：直接資源使用固定 URI，適合列出全部文件；範本化資源在 URI 中放入參數，適合依照 `doc_id` 讀取單一文件。SDK 會解析 URI 中的參數，再把它傳給對應的 Python function。
+
+| | 資源 `@mcp.resource` | 工具 `@mcp.tool` |
+|---|---|---|
+| 主要用途 | 取得唯讀資料 | 執行動作，可能改變狀態 |
+| 誰控制使用時機 | App 應用程式 | Claude 模型 |
+| 是否能帶參數 | 直接資源或範本化資源都可以 | 用參數與 `Field` 定義 |
+| 回傳資訊 | 透過 `mime_type` 告訴客戶端如何解析 | SDK 依工具定義產生結構 |
+
+`mime_type` 也很重要。JSON、純文字和二進位資料的處理方式不同，伺服器用 MIME type 告訴客戶端內容應該怎麼解讀，SDK 再協助完成序列化。
+
+### 7. 存取資源
+
+這堂課用 `@document_name` 當作文件提及的使用情境：App 先取得文件清單，使用者選到某份文件後，App 再讀取對應資源，將內容直接放進送給 Claude 的上下文。
+
+這裡最值得留意的是，`@` 不是 MCP 協定的一部分。MCP 只定義資源這個抽象概念，以及讀取資源時的 request 和 result；要不要用 `@` 觸發、怎麼做自動完成、讀到內容後怎麼塞進 prompt，都是 App 自己的 UI 與流程設計。
+
+所以直接呼叫原始 Claude Messages API 時，`@report.pdf` 只是一段普通文字。Claude Code 之所以能把 `@` 當成檔案引用，是因為 Claude Code 自己在客戶端實作了這層邏輯。這門課把這段被產品包好的流程拆出來，讓人看見資源從列出、選取到讀取的完整路徑。
+
+## 用提示把工作流程包起來
+
+### 8. 定義提示
+
+MCP 的提示（Prompts）可以想成由伺服器作者預先準備好的工作指令。使用者當然可以直接要求 Claude 把文件轉成 Markdown，但如果某個工作流程有固定格式、領域知識和容易漏掉的邊界條件，把這些要求整理成一個可重複使用的提示，結果會更一致。
+
+課程用文件格式化作為例子。使用者從可用提示中選取 `format`，提供文件 ID，客戶端取得已經填入參數的指示，再交給 Claude 執行。提示本身不等於工具：它負責準備高品質的 instructions，實際要讀取或修改文件時，仍然可以搭配工具完成。
+
+好的提示也需要測試。MCP Inspector 能顯示參數插值後真正送出的訊息，方便在使用者依賴之前檢查內容是否完整、變數是否正確，還有提示是否真的適合這個伺服器的工作範圍。
+
+### 9. 客戶端中的提示
+
+客戶端端需要提供列出提示和取得個別提示的能力。`list_prompts` 讓 App 知道有哪些工作流程可以顯示；`get_prompt` 則依照使用者選的提示名稱和引數，取得最後要交給 Claude 的訊息。
+
+這種設計很像斜線指令：使用者輸入 `/` 後看到可用的工作流程，選取一個提示並補上文件名稱，App 再把完整指示傳給模型。斜線輸入只是 App 層的互動方式，MCP 負責的是提示如何被定義、列出和取回。
+
+## 工具、資源、提示：到底該選哪一個？
+
+### 10. MCP 最終評估
+
+做到這裡，三個 MCP 基本元素的分工可以濃縮成一張決策表：
+
+| 你想完成的事情 | 適合的 MCP 元素 | 控制者 |
+|---|---|---|
+| 給 Claude 一個可以自主使用的新能力 | 工具 Tools | 模型 |
+| 把資料帶進 UI 或對話上下文 | 資源 Resources | 應用程式 |
+| 讓使用者點選或輸入指令，啟動預先定義的工作流程 | 提示 Prompts | 使用者 |
+
+這個「誰控制」的角度，比單純記住三個名詞更好用。要讓 Claude 自己決定是否查資料或執行動作，先想工具；要讓 App 決定何時把資料放進畫面或上下文，想資源；要讓人透過按鈕、選單或斜線指令啟動一段流程，想提示。
+
+## 每堂課對照表
+
+| 章節 | 實作端 | 內容 |
+|---|---|---|
+| 3 | 伺服器端 | 工具 |
+| 4 | 客戶端 | Inspector 測工具 |
+| 5 | 客戶端 | `list_tools` / `call_tool` |
+| 6 | 伺服器端 | 資源 |
+| 7 | 客戶端 | `read_resource`（`@` 觸發） |
+| 8 | 伺服器端 | 提示 |
+| 9 | 客戶端 | `list_prompts` / `get_prompt`（`/` 觸發） |
+
+看完這張表，課程的節奏會更清楚：單數課程偏向在伺服器端定義工具、資源和提示，雙數課程則把它們接回客戶端，處理發現、呼叫和測試。
+
+## 附錄：課程程式碼
+
+以下把課程中最主要的程式碼集中放在文末。範例中的 `FastMCP` 是這次依課程版本完成的 1.x 寫法；如果安裝到 MCP 2.x，需依當時 SDK 文件調整 API，或先將版本固定在 2 以下。
+
+### 建立環境
+
+```bash
+mkdir my_mcp && cd my_mcp
+uv venv
+source .venv/bin/activate
+uv pip install "mcp[cli]<2"
+mcp dev mcp_server.py
+```
+
+### 完整的 `server.py` 實測版本
+
+```python
+"""my_mcp 練習伺服器 —— 對照 ironman Day 8 筆記逐堂課內容組起來的完整版本。
+
+每個區塊註解標的「第 N 堂」對應
+ironman/2026_09_22_day08_introduction-to-model-context-protocol.md
+"""
+
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.prompts import base
+from pydantic import Field
+
+# 第 3 堂：設定 MCP 伺服器
+mcp = FastMCP("DocumentMCP", log_level="ERROR")
+
+# 第 3 堂：文件存在簡單字典結構裡（key 是文件 ID，value 是內容）
+docs = {
+    "deposition.md": "This deposition covers the testimony of Angela Smith, P.E.",
+    "report.pdf": "The report details the state of a 20m condenser tower.",
+    "financials.docx": "These financials outline the project's budget and expenditures",
+    "outlook.pdf": "This document presents the projected future performance of the system",
+    "plan.md": "The plan outlines the steps for the project's implementation.",
+    "spec.txt": "These specifications define the technical requirements for the equipment",
+}
+
+
+# ── 第 3 堂：工具（由模型控制，Claude 自己判斷要不要呼叫） ──────────────────
+
+@mcp.tool(
+    name="read_doc_contents",
+    description="Read the contents of a document and return it as a string.",
+)
+def read_document(doc_id: str = Field(description="Id of the document to read")):
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+
+
+@mcp.tool(
+    name="edit_document",
+    description="Edit a document by replacing a string in the documents content with a new string.",
+)
+def edit_document(
+    doc_id: str = Field(description="Id of the document that will be edited"),
+    old_str: str = Field(description="The text to replace. Must match exactly, including whitespace."),
+    new_str: str = Field(description="The new text to insert in place of the old text."),
+):
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    docs[doc_id] = docs[doc_id].replace(old_str, new_str)
+
+
+# ── 第 6 堂：資源（由 App 控制，唯讀，對應「@」引用文件時被讀取） ────────────
+
+@mcp.resource("docs://documents", mime_type="application/json")
+def list_docs() -> list[str]:
+    """直接資源：固定網址，列出所有文件 ID（給自動完成用）。"""
+    return list(docs.keys())
+
+
+@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")
+def fetch_doc(doc_id: str) -> str:
+    """範本化資源：網址帶 {doc_id} 參數，取單一文件內容。"""
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+
+
+# ── 第 8 堂：提示（由使用者觸發，例如 /extract_numbers）───────────────────
+# 改用「抓數字」取代課程原本的「重排成 markdown」，結果一眼就能對答案，
+# 不用另外寫 markdown 解析/驗證的程式碼。
+
+@mcp.prompt(
+    name="extract_numbers",
+    description="Extract all numeric values mentioned in the document.",
+)
+def extract_numbers_prompt(
+    doc_id: str = Field(description="Id of the document to scan"),
+) -> list[base.Message]:
+    prompt = f"""
+Your goal is to find every number mentioned in a document and list them out clearly, one per line.
+
+The id of the document you need to scan is:
+<document_id>
+{doc_id}
+</document_id>
+
+Use the 'read_doc_contents' tool to read the document first, then extract every number you find.
+If there are no numbers, say so explicitly instead of leaving the list empty.
+"""
+    return [base.UserMessage(prompt)]
+
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+## 測驗：Introduction to Model Context Protocol Q&A
+
+有 7 題。以下保留題目與正確答案，中英對照的繁中是自譯。
+
+### Q1. What type of resource should be used to retrieve different documents by ID, such as `docs://documents/report.pdf`？（想建立一個根據 ID 擷取不同文件的資源，例如 `docs://documents/report.pdf`，應該用哪種類型的資源？）
+
+答案：範本化資源（Template Resource），因為 URI 中帶有 `{doc_id}` 這類參數。
+
+### Q2. What two main components are needed for an MCP client to connect an application to an MCP server？（建立 MCP 客戶端連接應用程式跟 MCP 伺服器，需要哪兩個主要元件？）
+
+答案：一個 MCP Client 類別和一個 Client Session。
+
+### Q3. What is the main problem when building a chat App for GitHub data without MCP？（建立聊天 App 讓使用者問 GitHub 資料，如果沒有 MCP，主要問題是什麼？）
+
+答案：你必須自己編寫、測試和維護所有 GitHub 工具程式碼。
+
+### Q4. What message type should an MCP client send to discover the tools provided by a server？（MCP 客戶端要找出伺服器提供哪些工具，該發送什麼訊息類型？）
+
+答案：`ListToolsRequest`。
+
+### Q5. What is the simplest way to create a file-reading tool with the Python MCP SDK？（用 Python MCP SDK 建立一個讀取檔案的工具，最簡單的方法是什麼？）
+
+答案：在 Python function 上使用 `@mcp.tool()` decorator。
+
+### Q6. Which MCP primitive should be used when a user clicks a button to trigger a document summarization workflow？（使用者應該能點擊按鈕觸發「摘要文件」工作流程，該用哪個 MCP 基本元件？）
+
+答案：Prompts。因為工作流程由使用者動作觸發；Resources 是讓 App 取得資料，不是用來表示使用者點擊按鈕啟動的流程。
+
+### Q7. What is the simplest way to test an MCP server before connecting it to a full application？（建好 MCP 伺服器後，想在接完整應用程式之前先測試工具正不正常，最簡單的方法是什麼？）
+
+答案：使用內建的 MCP Inspector，搭配 `mcp dev mcp_server.py`。
+
+## 小結
+
+原本以為 MCP 簡介只是把 MCP 的概念、架構和溝通流程講清楚，沒想到它是一堂很硬核的實作課。課程用一個簡單粗略、但前後完整的 App 視角，從零示範要打造一個能接上 MCP 的 AI client，會經過哪些流程；每個節點該由誰處理、App 要補哪些 function，也都拆開來講。
+
+課程刻意把 Claude Code 已經包好的部分拿掉，改成從一個獨立 App 出發。這也是我在 Resource 那堂一直疑惑的地方：為什麼讀取資料也要由 MCP 和 App 來處理？後來才發現，前提就是你沒有 Claude Code 幫你讀 Resource，App 必須自己包含讀取 Resource 的 function。原本看起來有點繞的設計，放回「我要自己打造一個 App」的前提後，整個邏輯就接起來了。
+
+這堂課就是跟著內容一步一步打造 MCP，再透過 Inspector UI 測試整個過程。官方已經提供不錯的工具和範例，實際跟 agent 合作把 Inspector 串起來的感覺也很好；一路把每個節點跑過一次，才真的把 MCP 的知識補齊。下一堂是 MCP 的進階主題，剛好可以接著看這套協定還有哪些更細的邊界。
