@@ -1,0 +1,407 @@
+---
+title: "Model Context Protocol：進階主題、取樣與 StreamableHTTP"
+date: 2026-09-23T22:44:38+08:00
+description: "Model Context Protocol 進階課程筆記，整理 Sampling、Roots、通知、Stdio 與 StreamableHTTP 的雙向通訊、SSE 連線和狀態取捨。"
+tags:
+  - AI
+  - Claude
+  - MCP
+  - Agent
+series: ithome-2026-ironman
+seriesOrder: 9
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Model Context Protocol 的進階能力怎麼把模型呼叫、檔案權限、即時通知和遠端傳輸串在一起？這堂課從 Sampling、Roots 和雙向訊息開始，一路整理 Stdio、StreamableHTTP、SSE 與無狀態部署的取捨。
+  </p>
+</KeyTakeaways>
+
+昨天的 [Model Context Protocol 簡介](/posts/introduction-to-model-context-protocol/) 從零打造 MCP 客戶端與伺服器，今天接著進入 [Model Context Protocol: Advanced Topics](https://academy.claude.com/zh-TW/courses/model-context-protocol-advanced-topics)。
+
+前一堂課把工具、資源和提示分開來看，這一堂開始處理更接近 production 的問題：伺服器需要模型幫忙時怎麼辦？長時間執行的工具要怎麼回報進度？檔案路徑要怎麼限制？客戶端和伺服器如果不在同一台機器上，又該選哪種 transport？
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 11 堂課 |
+| 總時長 | 1.5 小時 |
+| 測驗 | 1 個（10 題，約 8 分鐘） |
+| 完成 | 有完成徽章 |
+| 先決條件 | 具備 Python 開發與非同步程式設計模式的經驗；熟悉 JSON 訊息格式與 HTTP 協議；對伺服器發送事件（SSE）有基本了解 |
+| 適合對象 | 從事 Model Context Protocol 實作的開發人員；建置 MCP 伺服器與客戶端的工程師（官方英文原文：Engineers building production MCP servers who need to understand the protocol's advanced capabilities） |
+
+官方列出的學習內容，主要集中在這幾件事：
+
+- 了解 MCP 伺服器如何透過取樣（sampling）向已連接的客戶端請求語言模型呼叫，將 AI 成本與複雜性從伺服器轉移到客戶端。
+- 使用上下文物件、日誌回呼（logging callbacks）以及進度報告，為長時間執行的操作實作即時回饋。
+- 使用根目錄（roots）授予 MCP 伺服器存取特定目錄的權限，同時具備安全邊界與使用者友善的檔案探索功能。
+- 區分 MCP 訊息規範中的請求-結果配對與通知訊息，並了解雙向通訊模式。
+- 了解 MCP 客戶端與伺服器如何透過標準輸入/輸出串流進行通訊，包括所需的初始化交握序列。
+- 說明伺服器發送事件（SSE）如何透過 HTTP 實現伺服器到客戶端的通訊，包括會話管理與雙連線架構。
+- 了解配置旗標如何影響功能，特別是伺服器發起的請求與串流能力。
+- 決定何時使用無狀態 HTTP 搭配負載平衡器進行水平擴展，權衡有狀態與無狀態伺服器配置之間的取捨。
+- 根據部署需求、功能需求與擴展限制，選擇適當的傳輸方法。
+
+## 核心 MCP 功能
+
+### 1. Sampling
+
+Sampling 讓伺服器透過已連接的 MCP 客戶端存取像 Claude 這樣的語言模型。伺服器不直接呼叫 Claude，而是請客戶端代為呼叫，把文本生成的責任和成本從伺服器轉移到客戶端。
+
+這裡的「取樣」不是抽樣調查，也不是音訊取樣。LLM 生成文字時，技術上是在每一步從下一個 token 的機率分佈裡取樣；API 裡的 `temperature` 和 `top_p` 也屬於 sampling parameters。因此「請模型生成一段輸出」在 Machine Learning 的語境裡就叫 sampling，而 SDK 方法名 `create_message`（規格裡是 `sampling/createMessage`）指的是同一件事。
+
+一般 MCP 流程裡，LLM 一直在客戶端那邊：
+
+1. 使用者問問題，客戶端的 LLM 決定呼叫某個工具。
+2. MCP 伺服器執行工具，把資料回傳。
+3. 客戶端的 LLM 拿資料加上使用者問題，生成最終答案。
+
+Sampling 的方向相反。它發生在伺服器執行工具的過程中，伺服器自己需要 LLM 才能把工作做完。以課程裡的研究工具為例：
+
+1. 工具在伺服器裡抓完 Wikipedia 資料。
+2. 伺服器要把資料總結成報告，但它沒有 LLM，也沒有 API key。
+3. 伺服器組一個 prompt，例如「Please summarize the following text: …」，發出 sampling request。
+4. 客戶端呼叫 Claude 生成總結，再把結果回傳給伺服器。
+5. 伺服器把總結當成工具結果回傳。
+
+兩種流程的差別，可以先看 prompt 和結果各自由誰處理：
+
+| | 一般 MCP 工具呼叫 | Sampling |
+|---|---|---|
+| prompt 由誰組成 | 客戶端依照使用者問題組成 | 伺服器依照工具任務組成 |
+| LLM 由誰呼叫 | 客戶端 | 客戶端代伺服器呼叫 |
+| 生成結果先回到哪裡 | 客戶端，接著成為使用者答案 | 伺服器，伺服器可以繼續加工 |
+| 伺服器是否需要自己的 API key | 視伺服器功能而定 | 不需要直接持有模型 API key |
+
+所以，Sampling 解決的是「伺服器想用模型，但不想自己處理模型連線、憑證和每個使用者的 AI 費用」這個問題。公開 MCP 伺服器尤其適合這種設計：每個使用者透過自己的客戶端使用模型，伺服器不必替所有人負擔生成成本。
+
+伺服器端在工具函式裡用 `ctx.session.create_message()` 送出 sampling request：
+
+```python
+@mcp.tool()
+async def summarize(text_to_summarize: str, ctx: Context):
+    prompt = f"""
+    Please summarize the following text:
+    {text_to_summarize}
+    """
+    result = await ctx.session.create_message(
+        messages=[
+            SamplingMessage(
+                role="user",
+                content=TextContent(type="text", text=prompt)
+            )
+        ],
+        max_tokens=4000,
+        system_prompt="You are a helpful research assistant",
+    )
+    if result.content.type == "text":
+        return result.content.text
+    else:
+        raise ValueError("Sampling failed")
+```
+
+客戶端則要寫一個 sampling callback，處理伺服器發過來的 request，再把 callback 傳給 `ClientSession`：
+
+```python
+async def sampling_callback(context: RequestContext, params: CreateMessageRequestParams):
+    text = await chat(params.messages)
+    return CreateMessageResult(role="assistant", model=model, content=TextContent(type="text", text=text))
+
+async with ClientSession(read, write, sampling_callback=sampling_callback) as session:
+    await session.initialize()
+```
+
+這裡還有一個實作細節：伺服器提供的訊息清單是 MCP 通訊格式，不保證能直接丟進你使用的 LLM SDK。假設客戶端使用 Anthropic SDK，就要額外把 MCP messages 轉成 Anthropic SDK 能接受的格式。
+
+### 2. Sampling walkthrough
+
+互動式演練把一次 sampling 拆成六個步驟：
+
+1. 伺服器在工具呼叫期間執行 `create_message()`，傳入想交給語言模型的訊息。
+2. 客戶端實作 sampling callback，接收伺服器提供的訊息清單。
+3. 客戶端把 MCP 訊息轉成自己使用的 LLM SDK 格式。
+4. LLM 生成文字後，客戶端回傳包含生成文字的 `CreateMessageResult`。
+5. 這個 callback 在建立 `ClientSession` 時傳入。
+6. 伺服器取得結果後，可以把它當成工具工作流程的一部分、決定再 sampling 一次，或直接回傳。
+
+這個流程讓 MCP 伺服器多了一個很有用的能力：它可以描述「我需要模型幫我完成哪一段工作」，但模型的選擇、登入狀態和費用管理仍由客戶端掌握。
+
+### 3. Log and progress notifications
+
+長時間執行的工具如果完全沒有回饋，使用者很難判斷它是卡住、失敗，還是仍在處理。日誌和進度通知的實作不複雜，卻能讓操作感覺差很多。
+
+Python MCP SDK 裡，工具函式會自動取得一個 `Context` 引數，使用它和客戶端溝通：
+
+```python
+@mcp.tool(name="research", description="Research a given topic")
+async def research(topic: str = Field(description="Topic to research"), *, context: Context):
+    await context.info("About to do research...")
+    await context.report_progress(20, 100)
+    sources = await do_research(topic)
+
+    await context.info("Writing report...")
+    await context.report_progress(70, 100)
+    results = await generate_report(sources)
+    return results
+```
+
+這段程式裡有兩個關鍵方法：
+
+- `context.info()`：傳送日誌訊息給客戶端。
+- `context.report_progress()`：用目前值和總值更新進度。
+
+客戶端要自行決定怎麼呈現這些通知。CLI 可以直接印到終端機，網頁應用程式可以透過 WebSocket、SSE 或 polling 推送到瀏覽器，桌面應用程式則可以更新狀態文字和進度條。
+
+```python
+async def logging_callback(params: LoggingMessageNotificationParams):
+    print(params.data)
+
+async def print_progress_callback(progress: float, total: float | None, message: str | None):
+    if total is not None:
+        percentage = (progress / total) * 100
+        print(f"Progress: {progress}/{total} ({percentage:.1f}%)")
+    else:
+        print(f"Progress: {progress}")
+
+async def run():
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write, logging_callback=logging_callback) as session:
+            await session.initialize()
+            await session.call_tool(
+                name="add",
+                arguments={"a": 1, "b": 3},
+                progress_callback=print_progress_callback,
+            )
+```
+
+日誌 callback 在建立 client session 時提供；進度 callback 則在個別工具呼叫時提供。兩者都是可選功能，客戶端可以完全忽略，也可以只顯示自己需要的通知類型。
+
+### 4. Notification capabilities walkthrough
+
+通知功能的演練可以整理成四步：
+
+1. 工具函式接收 `Context` 參數，取得記錄日誌和回報進度的方法。
+2. 工具函式呼叫 `info()`、`warning()`、`debug()`、`error()`，或用 `report_progress()` 回報工作進度。
+3. 客戶端定義 logging callback 和 progress callback，準備接收伺服器發出的訊息。
+4. 把不同 callback 傳給適當的函式：logging callback 給 `ClientSession`，progress callback 給 `call_tool()`。
+
+這裡的通知比較接近 UX 層能力。它們不會改變工具最後回傳的資料，卻能讓使用者在等待期間知道系統正在做什麼。
+
+### 5. Roots
+
+Roots 是一種告訴 MCP 伺服器「可以存取哪些本機檔案和資料夾」的方式，可以把它想成檔案存取邊界。
+
+假設有一個影片轉換工具，接受檔案路徑，把 MP4 轉成 MOV。使用者只說「把 biking.mp4 轉成 mov」，Claude 只知道檔名，不知道檔案實際位於哪個資料夾。要求使用者每次輸入完整路徑，體驗會很差；讓伺服器搜尋整個檔案系統，又會放大安全風險。
+
+Roots 把這兩件事接起來：
+
+1. 使用者要求轉換影片檔案。
+2. Claude 呼叫 `list_roots`，查看可存取的目錄。
+3. Claude 對核准的目錄呼叫 `read_dir`，找出檔案。
+4. 找到檔案後，Claude 用完整路徑呼叫轉換工具。
+
+使用者仍然只需要說「轉換 biking.mp4」。如果只授予 Desktop 資料夾存取權，MCP 伺服器就不應該碰 Documents、Downloads 等其他位置的檔案。
+
+Roots 同時處理了幾種需求：
+
+- 使用者不必提供完整路徑。
+- Claude 可以把搜尋範圍縮在核准目錄裡。
+- 伺服器有一個清楚的檔案存取邊界。
+- Roots 可以由工具提供，也可以直接注入 prompt。
+
+但安全邊界不會因為 SDK 有 Roots API 就自動生效。典型做法是自己寫 `is_path_allowed()`：接收請求路徑，取得核准的 roots 清單，確認請求路徑落在其中一個 root 底下，再回傳 `true` 或 `false`。任何真正讀寫檔案的工具，都要在操作前執行這個檢查。
+
+:::caution
+MCP SDK 不會自動替檔案工具強制執行 root 限制。Roots 提供的是授權資訊，實際檔案存取仍要由伺服器在每個工具裡自行驗證。
+:::
+
+### 6. Roots walkthrough
+
+範例專案把 Roots 的使用拆成七步：
+
+1. **定義根目錄**：由使用者指定 MCP 伺服器可以存取哪些檔案或資料夾，範例程式用 CLI 引數接收路徑清單。
+2. **建立根目錄物件**：MCP 規範要求每個 root 都使用 `file://` 開頭的 URI，範例函式把路徑清單轉成 `Root` 物件。
+3. **建立根目錄 callback**：伺服器不會永遠持有一份固定清單，而是在需要時主動請求；客戶端要回傳 `ListRootsResult`，並把 callback 傳給 `ClientSession`。
+4. **使用根目錄**：工具存取檔案時需要 roots；當 LLM 要把檔名解析成完整路徑時，也可以使用 roots。伺服器可以定義列出 roots 的工具，或直接把它們放進 prompt。
+5. **存取根目錄**：伺服器呼叫 `ctx.session.list_roots()`，送訊息回客戶端並觸發 roots callback。
+6. **授權存取**：MCP SDK 不會限制工具能讀哪些檔案，伺服器要用 `is_path_allowed` 之類的函式比對路徑。
+7. **全面套用授權**：所有真正需要檔案或資料夾的工具，都要套用同一套檢查。
+
+Roots 的價值不只在「能不能讀」。它把使用者授權、檔案探索和工具設計放到同一個協定流程裡，讓檔案型 MCP 工具不用把完整路徑和整台電腦的權限一起交出去。
+
+## 傳輸與通訊
+
+### 7. JSON message types
+
+MCP 使用 JSON 訊息處理客戶端與伺服器之間的通訊。Claude 要呼叫工具時，客戶端送出 `Call Tool Request`；伺服器處理完，再用 `Call Tool Result` 回應。
+
+完整的訊息類型清單定義在官方 MCP 規範 repository，和 Python、TypeScript 等 SDK repository 分開。規範裡用 TypeScript 描述資料結構和型別，目的是讓協定更容易閱讀，不是要把那段 TypeScript 直接拿來執行。
+
+訊息可以先分成兩類：
+
+| 訊息類型 | 特性 | 例子 |
+|---|---|---|
+| 請求-結果訊息 | 一定成對，送出 request 後等待 result | `Call Tool Request → Call Tool Result`、`List Prompts Request → List Prompts Result`、`Read Resource Request → Read Resource Result`、`Initialize Request → Initialize Result` |
+| 通知訊息 | 單向送出，不需要回應 | `Progress Notification`、`Logging Message Notification`、`Tool List Changed Notification`、`Resource Updated Notification` |
+
+MCP 也依照發送者區分訊息：
+
+- 客戶端可以送工具呼叫請求和客戶端通知。
+- 伺服器可以送伺服器發起的請求和伺服器廣播的通知。
+
+這個雙向設計會直接影響 transport 的選擇。當伺服器只回應客戶端發來的 request 時，單向的 HTTP 模型看起來很自然；當伺服器需要主動發 sampling、roots、progress 或 logging 訊息時，傳輸層就要另外處理伺服器到客戶端的路徑。
+
+### 8. The STDIO transport
+
+MCP 客戶端和伺服器交換的是 JSON 訊息，實際 transport 可以是 HTTP、WebSocket 或其他方式。STDIO 是開發本機 MCP 伺服器時最常用的選項：客戶端把伺服器當成子程序啟動，透過標準輸入和標準輸出交換訊息。
+
+STDIO 只適合客戶端和伺服器在同一台機器的情境：
+
+- 客戶端把 MCP 訊息送進伺服器的 stdin。
+- 伺服器把回應寫到 stdout。
+- 雙方都能隨時使用這兩個通道發起訊息。
+
+開發時甚至可以直接從終端機測試 MCP 伺服器，不必先寫完整客戶端。用 `uv run server.py` 啟動伺服器後，把 JSON 訊息貼進 stdin，就能觀察 stdout 回傳的結果。
+
+MCP 連線需要先完成三則訊息的初始化交握：
+
+1. **Initialize Request**：客戶端先發。
+2. **Initialize Result**：伺服器回傳自己的能力。
+3. **Initialized Notification**：客戶端確認初始化完成，不預期收到回應。
+
+完成這段交握後，才能發送工具呼叫、提示列表查詢等其他請求。STDIO 的四種通訊方向可以整理成：
+
+| 發起者 | 訊息 | 通道 |
+|---|---|---|
+| 客戶端 | 請求 | 寫入伺服器 stdin |
+| 伺服器 | 回應 | 寫入客戶端可讀取的 stdout |
+| 伺服器 | 請求 | 寫入客戶端可讀取的 stdout |
+| 客戶端 | 回應 | 寫入伺服器 stdin |
+
+STDIO 提供了雙向通訊的完整模型，很適合用來理解 MCP 的基礎行為。等到要把客戶端和伺服器放到不同機器，再面對 HTTP 的方向限制與 session 管理。
+
+### 9. StreamableHTTP transport
+
+StreamableHTTP 讓 MCP 客戶端透過 HTTP 連到遠端託管的伺服器，突破 STDIO 必須在同一台機器的限制，也讓公開 MCP 伺服器成為可能。
+
+這裡有兩個重要的配置旗標，預設都是 `false`：
+
+- `stateless_http`：控制是否採用無狀態 HTTP。
+- `json_response`：控制回應是否使用單純 JSON。
+
+把它們設成 `true` 可能會犧牲進度通知、日誌、sampling 和伺服器發起的請求。原因在於標準 HTTP 很擅長處理「客戶端知道伺服器 URL，向伺服器發 request」，卻沒有自然提供「伺服器主動找到客戶端」的通道。
+
+因此，以下 MCP 訊息在純 HTTP 裡需要額外設計：
+
+- 伺服器發起的 `Create Message`。
+- 伺服器發起的 `List Roots`。
+- 進度通知。
+- 日誌通知。
+- 初始化、取消等由伺服器或雙方主動傳送的訊息。
+
+StreamableHTTP 透過 SSE 等方式繞過這項限制，但當部署設定被迫使用 `stateless_http=True` 或 `json_response=True` 時，傳輸層就會退回較受限的 HTTP 模式。這不是單純換一個設定名稱，還會改變 MCP 伺服器能提供哪些功能。
+
+### 10. Deep dive into StreamableHTTP
+
+StreamableHTTP 解決的根本問題是：某些 MCP 功能需要伺服器主動向客戶端發 request，但 HTTP 原本是客戶端向伺服器發 request。
+
+它使用 Server-Sent Events（SSE）建立一條伺服器到客戶端的長期連線：
+
+1. **初始連線設定**：客戶端送 `Initialize Request`，伺服器回傳帶有 `mcp-session-id` header 的 `Initialize Result`，客戶端再送出帶著 session ID 的 `Initialized Notification`。
+2. **建立 SSE 連線**：初始化完成後，客戶端發 GET request 建立 SSE 連線。這個長期存在的 HTTP response 讓伺服器可以隨時把訊息串流回客戶端。
+3. **工具呼叫與雙重 SSE 連線**：工具呼叫時會有兩個獨立 SSE connection。主要 SSE 連線長期保持開啟，負責伺服器發起的 request；工具專用 SSE 連線則在每次工具呼叫時建立，送完工具結果後關閉。
+4. **訊息路由**：進度通知走主要 SSE 連線；日誌訊息和工具結果走工具專用 SSE 連線。
+
+所以，StreamableHTTP 的複雜度來自它要在 HTTP 的限制下保留 MCP 的雙向能力。初始化後的每個 request 都要帶 session ID，系統還要管理不同用途的 SSE 連線。理解這個模型，對除錯和判斷串流行為很重要。
+
+### 11. State and StreamableHTTP transport
+
+`stateless_http` 和 `json_response` 會影響伺服器是否保留 session、是否能串流中間訊息，以及能不能使用伺服器發起的功能。這兩個旗標在 production 部署前需要分開理解。
+
+#### 何時需要無狀態 HTTP？
+
+當伺服器變熱門、單一實例撐不住流量時，常見做法是在 load balancer 後面跑多個伺服器實例。但 MCP 客戶端需要兩種獨立連線：
+
+- 接收伺服器到客戶端 request 的 GET SSE connection。
+- 呼叫工具並接收結果的 POST request。
+
+Load balancer 可能把兩種 request 路由到不同實例。如果工具執行期間要透過 sampling 呼叫 Claude，處理 POST 的伺服器就要和處理 GET SSE 的伺服器協調。這會引入 session 共享和跨實例通訊的複雜度。
+
+把 `stateless_http` 設為 `true` 可以消除這類協調問題，但取捨也很明確：
+
+- 客戶端不會取得 session ID，伺服器無法追蹤個別客戶端。
+- 沒有伺服器到客戶端 request，GET SSE 路徑無法使用。
+- 不能使用 sampling。
+- 不能使用 progress reporting。
+- 不能使用 resource subscription。
+
+換來的好處是：不需要客戶端初始化，請求可以直接處理，連線管理和水平擴展都比較單純。
+
+#### `json_response` 做什麼？
+
+`json_response=True` 比較單純。它停用 POST request 的串流回應，工具執行完成後只回傳最後的 JSON 結果。中間的進度通知和執行期間的日誌不會透過這條 response 傳送。
+
+可以用這張表快速判斷：
+
+| 部署需求 | 適合選擇 |
+|---|---|
+| 需要在 load balancer 後水平擴展，不需要伺服器主動發訊息，也不需要 sampling | `stateless_http=True` |
+| 不需要串流回應，只想取得工具執行完的 JSON 結果 | `json_response=True` |
+| 需要 sampling、進度、日誌或 subscription | 保留有狀態的 StreamableHTTP |
+| 客戶端和伺服器在同一台機器，正在開發和測試 | STDIO |
+
+開發環境也要注意 transport 的差異。如果本地開發使用 STDIO，production 卻要部署 StreamableHTTP，最好在開發期間就使用接近 production 的 transport。否則有狀態與無狀態模式的差異，可能要到部署後才暴露。
+
+## 測驗：Model Context Protocol: Advanced Topics Q&A
+
+有 10 題。以下保留題目與正確答案，中英對照的繁中是自譯。
+
+### Q1. Which transport method requires the client and server to run on the same machine?（哪種傳輸方法要求客戶端和伺服器都在同一台機器上執行？）
+
+答案：**STDIO transport**（STDIO 傳輸）。
+
+### Q2. What are Roots in MCP?（MCP 中的 Roots 是什麼？）
+
+答案：**A system for informing the MCP server which files and directories it can access**（一個告知 MCP 伺服器可以存取哪些檔案和資料夾的系統）。
+
+### Q3. What is the correct order for initializing an MCP connection?（MCP 連線初始化的正確順序是什麼？）
+
+答案：**Initialize Request → Initialize Result → Initialized Notification**。
+
+### Q4. You are developing an MCP server locally and want the simplest way to test communication between a client and server on the same machine. Which transport should you use?（你正在本地開發 MCP 伺服器，並希望以最簡單的方式測試同一台機器上客戶端和伺服器之間的通訊，應該使用哪種傳輸方式？）
+
+答案：**STDIO transport**（STDIO 傳輸）。
+
+### Q5. Your MCP tool sends a `Call Tool Request` and expects a result. What type of message pattern is this?（MCP 工具發送 `Call Tool Request` 並期待取得結果，這是什麼類型的訊息模式？）
+
+答案：**A request-result message**（請求-結果訊息）。
+
+### Q6. What is Sampling in MCP?（MCP 中的 Sampling 是什麼？）
+
+答案：**A way for a server to access a language model through a connected MCP client**（讓伺服器透過已連接的 MCP 客戶端存取語言模型的方式）。
+
+### Q7. You want a simpler HTTP response without streaming and only need the final result as JSON. Which flag should you enable?（你想要更簡單的 HTTP 回應，不使用串流，只需要以 JSON 取得最終結果，應該啟用哪個旗標？）
+
+答案：**`json_response=True`**。
+
+### Q8. Your StreamableHTTP server needs to send progress updates to the client, but HTTP normally does not allow server-initiated requests. How does StreamableHTTP solve this problem?（StreamableHTTP 伺服器需要向客戶端發送進度更新，但 HTTP 通常不允許伺服器發起請求，StreamableHTTP 如何解決？）
+
+答案：**It establishes a Server-Sent Events (SSE) connection**（建立伺服器發送事件 SSE 連線）。
+
+### Q9. Your MCP server needs to use Claude to summarize data, but you do not want the server to handle the API costs. Which feature should you use?（MCP 伺服器需要使用 Claude 總結資料，但不希望由伺服器處理 API 費用，應該使用什麼功能？）
+
+答案：**Sampling**（取樣）。
+
+### Q10. A user asks Claude to “convert video.mp4,” but Claude does not know where the file is located. Which MCP feature helps solve this problem?（使用者要求 Claude「轉換 video.mp4」，但 Claude 不知道檔案位於何處，哪個 MCP 功能可以協助解決？）
+
+答案：**Roots**（根目錄）。
+
+## 小結
+
+這堂進階課看完，我發現它的重心比想像中更靠近 App 客戶端。從 Sampling 到 STDIO、StreamableHTTP、SSE，表面上是不同功能和傳輸方式，實際上都在討論同一件事：MCP client 和 server 怎麼溝通、訊息怎麼雙向流動，以及資料要怎麼交換。
+
+這也讓我重新理解 MCP 的進階難點。Server 能提供工具只是起點，真正要把能力做成可用的 App，還要處理 sampling callback、logging 和 progress callback、Roots、初始化交握、session 與 SSE 連線。下一步對照官方影片和測驗時，最值得再核對的就是 StreamableHTTP 的雙連線模型，因為它看起來很像「設定打開就好」，實際上每個旗標都在改變協定能做的事。
