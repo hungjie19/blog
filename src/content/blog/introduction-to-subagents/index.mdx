@@ -1,0 +1,228 @@
+---
+title: "Subagents 入門：為何、何時使用 Subagent 來節省 Context"
+ogTitle: "Subagents 入門|為何、何時使用 Subagent 來節省 Context"
+date: 2026-09-24T17:16:38+08:00
+description: "Introduction to Subagents 課程筆記，整理 Subagent 如何透過獨立 context window 隔離探索工作、用 /agents 建立自訂代理，並以輸出格式、障礙回報與工具權限設計可靠的委派流程，適合研究與程式碼審查工作。"
+tags:
+  - AI
+  - Claude
+  - Claude-Code
+  - Agent
+  - Workflow
+series: ithome-2026-ironman
+seriesOrder: 10
+---
+
+import KeyTakeaways from "../../../components/KeyTakeaways.astro";
+
+<KeyTakeaways>
+  <p>
+    Subagent 子代理是 Claude Code 委派專門任務的獨立助手：它在自己的 context window 執行探索、審查或文件工作，只把摘要帶回主執行緒；這堂課也說明如何用 `/agents` 建立自訂代理、限制工具、定義輸出格式，並避開不必要的專家角色與循序管線。
+  </p>
+</KeyTakeaways>
+
+前一篇 [Claude Code 101](/posts/claude-code-101/) 提到，子代理可以把探索工作放進另一個 context，主 session 只接收最後摘要。這次的 [Introduction to Subagents](https://academy.claude.com/zh-TW/courses/introduction-to-subagents) 把這句話拆開來看：它到底怎麼隔離 context、怎麼建立自訂角色，又該在什麼時候把工作留在主執行緒？
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 4 堂課 |
+| 總時長 | 45 分鐘 |
+| 測驗 | 無 |
+| 完成 | 有「課程完成」頁 |
+| 先決條件 | 官網頁面未列 |
+| 適合對象 | 官網頁面未列；課程簡介是將複雜任務拆解到多個並行的 Claude 子代理中，並以確定性的方式協調它們 |
+
+官方列出的學習內容包括：
+
+- 理解 Subagent 子代理如何運作：Claude Code 如何建立獨立的 context window、輸入如何流入，以及摘要如何回傳。
+- 使用 `/agents` 指令建立自訂子代理，用於程式碼審查與文件生成等工作流程。
+- 透過結構化輸出格式、障礙回報與有限的工具存取權限，設計可靠的子代理。
+- 判斷子代理最能發揮效用的時機，並辨識應避免的常見反模式。
+
+## 1. What are subagents?（什麼是子代理？）
+
+**Subagent 子代理**是 Claude Code 可以委派任務的專門助手。每個子代理都在自己的 **context window** 運行，做完工作後只把**摘要**回傳主執行緒；中間的檔案讀取、搜尋和工具呼叫會被隔離，不會把整段過程塞回主對話。
+
+這件事重要，是因為主 context window 的空間有限。每次工具呼叫、檔案讀取和搜尋結果都會佔用工作記憶，內容太多時，Claude 可能開始遺忘對話早期的細節。子代理另開一個 context window，收到的內容主要只有兩樣：
+
+- **自訂系統提示**：來自設定檔，定義子代理的角色與行為。
+- **任務描述**：父代理根據你的要求寫出的工作說明。
+
+子代理會獨立完成工作，結束後只把摘要帶回主對話，整段子代理對話隨後被捨棄。這讓主 context 保持乾淨，也把探索過程的雜訊擋在外面；代價是你看不到子代理一路怎麼得出結論，會失去一部分可見性。
+
+課程用一個很實際的例子說明差別：在不熟的 codebase 裡問「哪個服務負責退款？」如果沒有子代理，Claude 可能要讀 15 個檔案、多次搜尋，再追蹤好幾層函式呼叫，所有中間結果都留在主 context 裡。有了子代理，Explore 子代理可以在自己的 context 裡挖完，主 context 最後只留下聚焦的答案。
+
+Claude Code 內建幾種子代理：
+
+| 子代理 | 用途 |
+|---|---|
+| 通用子代理 | 需要探索又要行動的多步驟任務 |
+| Explore 探索 | 快速搜尋、瀏覽 codebase |
+| Plan 計畫 | 在 plan mode 中，先研究、分析 codebase，再呈現計畫 |
+
+你也可以自己設定子代理的系統提示和工具存取權限，例如程式碼審查員、測試撰寫者或文件產生器。這些子代理的三個主要好處，可以濃縮成：把工作拆成專注的小塊、隔離中間工作以保持主 context 乾淨，以及只帶回下一步真正需要的資訊。
+
+## 2. Create subagents（建立子代理）
+
+自訂子代理是一個帶 YAML frontmatter 的 Markdown 檔。Frontmatter 告訴 Claude 何時使用它、可以用哪些工具，以及要採用哪個模型；下面的本文則是子代理真正收到的系統提示。
+
+### 用 `/agents` 建立
+
+建立流程從 `/agents` 斜線指令開始：
+
+1. 輸入 `/agents` 開啟管理介面，選擇「建立新代理」。
+2. 選擇範圍：專案層級只在目前專案可用；使用者層級則能在這台機器上的所有專案共用。
+3. 選擇建立方式。可以手寫，但課程建議先描述想讓代理完成什麼，再讓 Claude 產生名稱、描述和系統提示。
+4. 自訂工具：唯讀工具、編輯工具、執行工具、MCP 工具或其他工具。程式碼審查者通常不需要編輯工具，但可以保留執行工具來查看待處理的變更。
+5. 選擇模型：
+
+   | 模型 | 適合 |
+   |---|---|
+   | Haiku | 快速、輕量任務 |
+   | Sonnet | 速度與深度的平衡 |
+   | Opus | 複雜分析 |
+   | Inherit | 沿用主對話目前的模型 |
+
+6. 選擇顏色。顏色會顯示在 UI 上，同時執行多個子代理時比較容易分辨。
+
+設定檔通常放在 `.claude/agents/your-agent-name.md`：
+
+```markdown
+---
+name: code-quality-reviewer
+description: Use this agent when you need to review recently written or modified code for quality, security, and best practice compliance.
+tools: Bash, Glob, Grep, Read, WebFetch, WebSearch
+model: sonnet
+color: purple
+---
+
+You are an expert code reviewer specializing in quality assurance, security best practices, and
+adherence to project standards. ...
+```
+
+Frontmatter 的欄位各自負責不同事情：
+
+| 欄位 | 說明 |
+|---|---|
+| `name` | 唯一識別碼；可以直接叫 Claude 使用，也可以在訊息裡輸入 `@agent code-quality-reviewer` |
+| `description` | 控制 Claude 何時決定使用它；**必須單行**，要換行時使用跳脫的 `\n`，也可以放範例對話來幫助判斷委派時機 |
+| `tools` | 可存取的工具清單，可以隨時手動編輯 |
+| `model` | `sonnet`、`opus`、`haiku` 或 `inherit` |
+| `color` | UI 識別顏色 |
+
+其中 `description` 還有第二個角色：它不只控制「何時跑」，也會影響主代理啟動子代理時寫出的輸入提示。若想讓 Claude 主動使用某個子代理，可以在 description 加入 `proactively`，並寫出具體的範例對話與觸發情境。
+
+設定完成後要測試。可以先改一些程式碼，再請 Claude 審查；如果預期該用卻沒有啟動，回頭檢查 description，補上更具體的觸發詞與情境。
+
+## 3. Design effective subagents（設計有效的子代理）
+
+配置不佳的子代理會亂晃、跑太久，或產出主代理用不上的摘要。課程把解法整理成四件事：**寫好的 description、定義輸出格式、回報障礙，以及限制工具**。
+
+### 讓 description 塑造輸入提示
+
+所有可用子代理的 `name` 和 `description` 都會放進主代理的系統提示，主代理會依它們決定啟動哪一個。description 太籠統時，主代理可能只寫出「用 get diff 找出目前的變更」，讓子代理自己猜哪些檔案重要。
+
+description 如果加上「您必須明確告訴代理您希望它審查哪些檔案」，主代理在委派時就比較可能把實際檔案列在輸入提示裡。網路搜尋子代理也一樣：在 description 加上「回傳可引用的來源」，主代理就會把這個要求帶進委派內容。
+
+### 定義輸出格式
+
+官方把結構化輸出格式列為最重要的改進之一。它有兩個作用：
+
+1. 建立自然的停止點，填完每個部分就知道工作完成了。
+2. 避免子代理無限探索，因為它知道研究到什麼程度就足夠。
+
+程式碼審查子代理可以要求用這種格式回報：
+
+```
+Provide your review in a structured format:
+
+Summary: Brief overview of what you reviewed and overall assessment
+Critical Issues: Any security vulnerabilities, data integrity risks, or logic errors that must be fixed immediately
+Major Issues: Quality problems, architecture misalignment, or significant performance concerns
+Minor Issues: Style inconsistencies, documentation gaps, or minor optimizations
+Recommendations: Suggestions for improvement, refactoring opportunities, or best practices to apply
+Approval Status: Clear statement of whether the code is ready to merge/deploy or requires changes
+```
+
+這種格式同時幫助子代理知道何時停，也讓主代理不需要從一大段自由發揮的文字裡重新找重點。
+
+### 把障礙回報寫進輸出
+
+子代理找到變通方法時，這些細節應該出現在回傳摘要裡。否則主執行緒可能得自己重新發現同一個問題，白白浪費時間和 token。
+
+值得回報的障礙包括設定問題、環境特殊狀況、需要特殊旗標或配置的指令、造成問題的相依性，以及發現的 workaround。可以直接在輸出格式加上：
+
+```
+Obstacles Encountered: Report any obstacles encountered during the review process. This can be: setup issues, workarounds discovered or environment quirks. Report commands that needed a special flag or configuration. Report dependencies or imports that caused problems.
+```
+
+### 限制工具存取權限
+
+只給子代理完成工作所需的工具，可以減少意外副作用，也讓角色邊界更清楚：
+
+| 子代理類型 | 工具 |
+|---|---|
+| 研究／唯讀 | 只需 Glob、Grep、Read，無法意外修改檔案 |
+| 程式碼審查者 | 需要 Bash 來跑 `git diff`，但不需 Edit / Write |
+| 樣式／程式碼修改代理 | 給 Edit 和 Write，因為它的工作就是修改程式碼 |
+
+把 description、輸出格式、障礙區塊和工具限制放在一起，子代理才比較容易做到「知道何時該跑、知道何時該停、知道該回報什麼，也知道哪些事情不能做」。
+
+## 4. Use subagents effectively（有效使用子代理）
+
+判斷該不該啟動子代理，課程給了一個簡單問題：**中間過程的工作對主執行緒重要嗎？**
+
+如果只需要結果、不在乎探索過程，或探索本身會把主 context 塞滿，就適合委派。若每一步都要根據前一步發現的內容做決定，則把工作留在主執行緒通常比較合理。
+
+### 研究與探索
+
+研究陌生 codebase 是子代理的經典案例。例如要找出驗證機制，可以讓子代理讀數十個檔案、追蹤函式呼叫，最後只回傳：
+
+```
+JWT validation happens in middleware/auth.js line 42,
+called from the Express router in route/api.js
+```
+
+主執行緒需要的是「JWT 在哪裡驗證」這個答案，未必需要看過程中搜過的每一個檔案。
+
+### 程式碼審查
+
+主執行緒經過多輪對話建立功能後，再叫同一個執行緒審查，回饋有時會偏薄弱，因為 Claude 已經參與過建立過程，很難完全用新眼光看自己的工作。
+
+程式碼審查子代理可以在獨立 context 裡讀變更、執行 `git diff`，再套用專門的審查標準，而且不受撰寫過程的歷史影響。若把專案特有的檢查規則寫進系統提示，整個團隊也能沿用同一套標準。
+
+### 需要自訂系統提示的任務
+
+Claude Code 預設的系統提示偏簡潔、以程式碼為重點，未必適合所有工作。文案撰寫子代理可以補上語氣、受眾和風格；樣式設計子代理則可以先讀設計系統檔案，寫 CSS 前就知道色彩變數、間距慣例和元件模式。
+
+### 決策原則：中間過程的工作重要嗎？
+
+啟動子代理有成本：你會失去部分工作可見性，發現也會被壓縮成摘要。只有在它能提供主執行緒做不到的隔離、專注或自訂提示時，這個成本才值得。
+
+在[官方 lesson](https://academy.claude.com/zh-TW/courses/introduction-to-subagents/using-subagents-effectively)裡，課程把判斷濃縮成一個問題：**中間過程的工作重要嗎？**
+
+如果答案是否定的——你只需要最終結果——就把工作委派給子代理。如果答案是肯定的——你需要看到並回應過程中發生的事情——就把工作留在主執行緒裡。
+
+#### 在以下情況使用子代理
+
+- **研究與探索**：主執行緒通常只需要最後找到的檔案、函式或資料來源，不需要保留每一次搜尋的中間過程。
+- **程式碼審查**：讓獨立的子代理用新的 context 閱讀變更、套用審查標準，再回報問題。
+- **需要自訂系統提示的任務**：例如文案撰寫或樣式設計，可以替子代理提供主執行緒沒有的角色、語氣或設計規範。
+
+#### 在以下情況避免使用子代理
+
+- **沒有增加實際能力的「專家」角色**：如果只有「你是 Python 專家」這種稱號，沒有補充工作範圍、專業規則、評估標準或輸出格式，角色本身不會增加新的知識或工具。角色提示仍然可以用來聚焦行為與語氣；[Anthropic 官方文件](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)也明確提到，system prompt 裡的角色描述能幫助聚焦 Claude 的行為與語氣。
+- **每一步都依賴前一步的多步驟管線**：例如重現錯誤 → 除錯 → 修復，前一步的發現可能在交接摘要裡遺失；修 bug 幾乎都屬於這種情況。
+- **需要完整輸出以進行除錯的測試執行**：如果子代理只回報「測試失敗」，真正需要的輸出會被藏起來，最後還是得重新建立除錯流程；課程指出測試執行器模式在各種配置中的表現最差。
+
+## 小結
+
+這堂 4 堂、45 分鐘的課程，讓我把「多叫幾個代理來幫忙」重新拆成幾個可檢查的設計問題：它是否真的需要獨立 context？輸入有沒有說清楚？輸出有沒有停止點？遇到障礙時會不會回報？工具權限是否小到剛好夠用？
+
+實際工作時，我很常把 codebase 搜尋，或在 GitHub 上找可用的 library、Skill 或工具，單獨派給搜尋專用的 Subagent。主對話只接收整理後的搜尋結果，搜尋過程留在子代理自己的 context 裡，主 session 就能省下不少 context window 空間。
+
+Code review QA 也是類似的分工：我會另外設計並啟動一個 QA agent，和負責實作的 agent 分開。做 AWS 上的 IaC 部署時，會有專門處理 IaC 的 subagent；前端、Android 和後端也各自有對應的 subagent。每個代理負責的事情不同，掛載的 Skill 也依角色分開，可能是官方 Skill，或是從網路資料整理、再依需求調整過的 Skill。
+
+這樣一來，主對話視窗通常不需要載入那些領域專用的 Skill，主 session 本身也能保留更多 context window 空間。對我來說，Subagent 的價值不只是多一個角色，而是把搜尋、QA 和領域工作各自隔離，讓主代理把注意力留在決策與整合上。先記下最有用的一句話：只要答案就委派，需要看過程、需要回應過程，就把工作留在主執行緒。
