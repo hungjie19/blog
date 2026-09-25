@@ -11,7 +11,6 @@ tags:
   - Test
 ---
 
-import KeyTakeaways from '../../../components/KeyTakeaways.astro';
 
 <KeyTakeaways>
   <p>Google PageSpeed Insights 測試發現，這個 Astro Blog 的效能問題主要來自不必要的 Google Fonts 與 render-blocking CSS。移除字體請求並在 build 時把 CSS 寫進靜態 HTML 後，Performance 從 84 提升到 95，FCP 縮短約 35%，Speed Index 數值降低約 43%。</p>
