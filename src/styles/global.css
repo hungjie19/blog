@@ -14,6 +14,7 @@
   --color-sidebar:      #fafafa;
   --color-accent:       #60a5fa;
   --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
+  --color-link:         #0284c7;
 }
 
 @layer base {
@@ -31,6 +32,7 @@
     --sidebar:      var(--color-sidebar);
     --accent:       var(--color-accent);
     --accent-muted: var(--color-accent-muted);
+    --link:         var(--color-link);
   }
 
   html.dark {
@@ -47,6 +49,7 @@
     --color-sidebar:      #171717;
     --color-accent:       #60a5fa;
     --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
+    --color-link:         #00a0e9;
   }
 
   html, body {
