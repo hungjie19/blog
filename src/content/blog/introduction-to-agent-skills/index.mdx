@@ -1,0 +1,270 @@
+---
+title: "Introduction to Agent Skills：建立、分享與除錯 Skill"
+ogTitle: "Introduction to Agent Skills|建立、分享與除錯 Skill"
+date: 2026-09-26T16:01:21+08:00
+description: "Introduction to Agent Skills 課程筆記，整理 Claude Code 如何建立、載入、組織、分享與除錯可重複使用的 Skill；實際功能與指令可能依版本、平台與帳號方案而異，也適合想把重複工作整理成可共用方法的 AI 使用者。"
+tags:
+  - AI
+  - Claude
+  - Claude-Code
+  - Skill
+  - Workflow
+series: ithome-2026-ironman
+seriesOrder: 12
+---
+
+<KeyTakeaways>
+  <p>
+    Claude Code 的 Skill 是什麼？它是一組放在 <code>SKILL.md</code> 與相關資源中的可重複使用指示，Claude 會依 <code>description</code> 將符合任務的技能載入；這堂課再串起 frontmatter、Progressive Disclosure、<code>allowed-tools</code>、分享方式與除錯流程，實際功能與指令可能依版本、平台與帳號方案而異。
+  </p>
+</KeyTakeaways>
+
+前一天的 [The AI-Native SDLC Playbook](https://academy.claude.com/zh-TW/courses/ai-native-sdlc-playbook) 把焦點放在怎麼讓 AI 開發流程留下可以審查的規格、計畫和驗證結果。接著打開 [Introduction to Agent Skills](https://academy.claude.com/zh-TW/courses/introduction-to-agent-skills)，問題變得更貼近日常：那些每次都要重新交代給 Claude 的工作方法，能不能整理成一包，之後遇到符合的任務就自動套用？
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 堂數 | 6 堂課 |
+| 總時長 | 1 小時 |
+| 測驗 | 官網頁面上沒有列測驗 |
+| 完成 | 有「課程完成」頁 |
+| 先決條件 | 官網頁面未列 |
+| 適合對象 | 課程簡介以「在 Claude Code 中建立、設定並分享技能」為主，適合想把工作方法整理成可重複使用指示的人 |
+
+官方列出的學習內容，包含這幾個方向：
+
+- 說明 Skill 是什麼、存放在哪裡，以及 Claude Code 如何將它們與請求進行比對。
+- 從零建立一個具有有效 `SKILL.md` frontmatter 的技能，並驗證已載入。
+- 撰寫有效的技能描述，並用 `allowed-tools` 限制或預先核准工具存取。
+- 用 Progressive Disclosure 漸進式揭露、參考檔案和可執行腳本組織較大型的技能。
+- 針對特定使用案例，在 Skill、`CLAUDE.md`、Subagent、Hooks、MCP 伺服器之間做選擇。
+- 透過專案儲存庫、外掛程式、企業管理設定和自訂子代理分享技能。
+- 用技能驗證工具和 `claude --debug` 診斷觸發、載入、優先順序衝突和執行時期問題。
+
+官方的一句話是：技能讓你不必再重複自己，而是一次性教導 Claude；寫在一個地方，請求符合時 Claude Code 自動讀取。
+
+## 1. 什麼是技能？
+
+Skill 技能是一組指示與資源的資料夾，Claude Code 可以發現並使用它們來更準確地處理任務。每個技能都存放在一個 `SKILL.md`，frontmatter 至少要有 `name` 與 `description`，下方才是實際指示，例如檢查清單、格式偏好或工作流程。
+
+最小的 `SKILL.md` 可以長這樣：
+
+```yaml
+---
+name: pr-review
+description: Reviews pull requests for code quality. Use when reviewing PRs or checking code changes.
+---
+```
+
+Claude Code 會先拿 `description` 和目前的請求比對。當你要求審查 PR 時，它會把請求與可用技能的描述比較，啟用符合的技能；啟用時終端機會看到它載入。這讓同一份工作方法可以在不同專案裡重複使用，也讓技能本身不用在每次對話一開始就佔住 context。
+
+Skill 的存放位置，先用「誰要用」來判斷：
+
+| 類型 | 路徑 | 特性 |
+|---|---|---|
+| 個人技能 | `~/.claude/skills` | 跟著自己跨所有專案使用，例如 commit 訊息風格、文件格式或程式碼解說方式；Windows 為 `C:/Users/<your-user>/.claude/skills` |
+| 專案技能 | 儲存庫根目錄 `.claude/skills` | 隨程式碼進版控，clone 專案的人可以一起取得團隊標準 |
+
+這也說明了 Skill、`CLAUDE.md` 和 slash command 的差異：
+
+| 機制 | 載入時機 |
+|---|---|
+| `CLAUDE.md` | 每次對話都載入，例如永遠適用的 TypeScript strict mode 規則 |
+| Skill | 符合請求時按需載入，例如 PR review 或文件格式規範 |
+| Slash command | 使用者主動輸入才會執行 |
+
+判斷原則很簡單：團隊每次都要遵守的專案規範放在 `CLAUDE.md`；只有特定任務才需要的專業知識，整理成 Skill；需要人主動點名才執行的固定入口，才做成 slash command。
+
+## 2. 建立您的第一個技能
+
+課程用一個 PR description 技能示範從零建立 Skill。先建目錄，再放入 `SKILL.md`：
+
+```bash
+mkdir -p ~/.claude/skills/pr-description
+```
+
+完整範例是：
+
+```markdown
+---
+name: pr-description
+description: Writes pull request descriptions. Use when creating a PR, writing a PR, or when the user asks to summarize changes for a pull request.
+---
+
+When writing a PR description:
+
+1. Run `git diff main...HEAD` to see all changes on this branch
+2. Write a description following this format:
+
+## What
+One sentence explaining what this PR does.
+
+## Why
+Brief context on why this change is needed
+
+## Changes
+- Bullet points of specific changes made
+- Group related changes together
+- Mention any files deleted or renamed
+```
+
+這裡的 `name` 用來識別技能，`description` 告訴 Claude 何時該用它；第二組破折號後的內容則是技能啟用後要遵循的指示。描述要具體到足以完成配對，單寫「協助處理文件」會讓觸發條件太模糊。
+
+建立後要重新啟動工作階段，讓 Claude Code 重新掃描技能。可以在可用技能清單確認它是否出現，再在分支上製造一些變更，測試「為我的變更撰寫 PR 描述」是否能正確觸發。
+
+課程把技能匹配的運作方式整理成三步：啟動時掃描技能的名稱和描述；請求進來時做語意比對；配對成功後載入完整的 `SKILL.md`，讓目前任務使用它。描述裡最好同時寫清楚技能做什麼，以及哪些說法也應該觸發它。
+
+技能的優先順序則依設定層級排列：
+
+| 順位 | 層級 | 位置 |
+|---|---|---|
+| 1（最高） | Enterprise 企業 | 受管理的設定 |
+| 2 | Personal 個人 | `~/.claude/skills` |
+| 3 | Project 專案 | 儲存庫內 `.claude/skills` |
+| 4（最低） | Plugins 外掛程式 | 已安裝的外掛程式 |
+
+企業層級可以用技能強制標準，同時仍允許個人自訂。遇到同名衝突時，優先使用較高層級的版本；若要避免誤用，技能名稱應該描述清楚，不要只叫 `review` 這種過於寬泛的名字。
+
+## 3. 配置與多檔案技能
+
+Skill 的 frontmatter 可以放幾個核心欄位。`name` 和 `description` 是必要欄位，`allowed-tools` 與 `model` 則依使用情境選用：
+
+| 欄位 | 必填 | 說明 |
+|---|---|---|
+| `name` | 必填 | 只用小寫字母、數字、連字號；最多 64 字元；應與目錄名稱相符 |
+| `description` | 必填 | 告訴 Claude 何時使用；最多 1,024 字元，是最重要的配對依據 |
+| `allowed-tools` | 選填 | 技能啟用期間預先核准所列工具，Claude 不必逐次詢問權限 |
+| `model` | 選填 | 指定該技能使用哪個 Claude model |
+
+`allowed-tools` 可以縮小技能工作時會碰到的工具範圍，也可以預先核准特定操作。課程同時提到 `disallowed-tools`，用來從 Claude 可用的工具集中移除指定工具：
+
+```yaml
+---
+name: codebase-onboarding
+description: Helps new developers understand the system works.
+allowed-tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+```
+
+這裡有一個容易混淆的邊界：`allowed-tools` 是技能啟用期間的預先核准，不會把 Claude 永久限制在這些工具裡；如果技能指示需要編輯檔案或寫入內容，仍會依正常權限設定處理。單獨列出 `Bash` 會放得很寬，課程建議信任程度較高時才這樣做，也可以縮小成類似 `Bash(git status *)` 的模式。
+
+### Progressive Disclosure 漸進式揭露
+
+所有內容都塞進一個 2,000 行的 `SKILL.md`，很快就會讓 context 變得擁擠，也讓技能難以維護。Progressive Disclosure 的做法，是只把啟用時一定需要的規則留在 `SKILL.md`，其他資料拆到技能目錄的子檔案：
+
+| 目錄 | 適合放的內容 |
+|---|---|
+| `scripts/` | 可執行程式碼 |
+| `references/` | 額外文件或詳細規則 |
+| `assets/` | 圖片、範本或其他資料檔案 |
+
+`SKILL.md` 只要告訴 Claude 什麼時候讀取這些檔案即可。技能需要時再把參考資料帶進 context，能保留完整能力，也不必讓每次觸發都載入所有內容。經過測試的腳本則直接執行，輸出結果通常比把大段腳本內容貼進指示更穩定。
+
+## 4. Skills 與其他 Claude Code 功能的比較
+
+Claude Code 的自訂能力很多，放錯位置會讓設定變得難以理解。可以先用「何時觸發」和「要不要隔離 context」來分工：
+
+| 比較 | 核心差異 | 用前者的情境 | 用 Skill 的情境 |
+|---|---|---|---|
+| `CLAUDE.md` vs Skill | 每次對話載入 vs 按需載入 | 始終適用的專案標準，例如「絕不修改資料庫結構描述」；框架偏好與程式碼風格 | 特定任務的專業知識，只在某些情境需要 |
+| Subagent vs Skill | 隔離 context 委派工作 vs 為目前對話增添知識 | 想把任務交給獨立執行環境，或需要不同工具權限與 context | 增強 Claude 對目前任務的知識，讓整段對話共用工作方法 |
+| Hooks vs Skill | 事件驅動 vs 請求驅動 | 每次檔案儲存、特定工具呼叫前，或 Claude 動作產生的自動化副作用 | 影響 Claude 如何處理請求，以及它應該遵循的推理準則 |
+| MCP 伺服器 | 提供外部工具與整合 | 連接資料庫、專案管理工具、文件或其他外部服務 | — |
+
+**Model Context Protocol（MCP）** 和 Skill 放在不同層次：MCP 提供 Claude 可以呼叫的外部工具與資料來源；Skill 提供 Claude 如何處理某類任務的工作方法。兩者可以一起使用，例如 Skill 指示 Claude 依照團隊流程查資料，再透過 MCP 取得實際內容。
+
+課程給的典型組合是：`CLAUDE.md` 放始終生效的專案標準；Skills 放按需載入的任務知識；Hooks 放事件觸發的自動化；Subagents 負責隔離與委派；MCP 伺服器提供外部工具和服務。
+
+## 5. 分享技能
+
+Skill 能不能被別人使用，取決於你把它放在哪一層。課程整理了三種分享方式：
+
+| 方式 | 做法 | 適合情境 |
+|---|---|---|
+| 提交到儲存庫 | 放在 `.claude/skills`，隨 repo 進版控 | 團隊程式碼標準、專案特定工作流程、參照該 repo 結構的技能 |
+| 外掛程式（Plugin） | 外掛專案內建 `skills` 目錄，發布到 Marketplace | 技能不綁定單一專案，也能幫到直屬團隊以外的使用者 |
+| 企業管理設定 | 由管理員在組織範圍部署 | 必須一致套用的標準、安全要求和合規流程 |
+
+`.claude` 目錄可以同時放代理、Hooks、Skills 和設定，全部受版本控制。企業也能透過 `strictKnownMarketplaces` 限制外掛程式只能從核准來源安裝：
+
+```json
+"strictKnownMarketplaces": [
+  { "source": "github", "repo": "acme-corp/approved-plugins" },
+  { "source": "npm", "package": "@acme-corp/compliance-plugins" }
+]
+```
+
+### Skills 與子代理
+
+這裡有一個很容易漏掉的設定邊界：子代理從全新的 context 開始，不會自動看到你的 Skills。內建代理，例如 Explorer、Plan、Verify，也無法直接存取技能；自訂子代理則可以在 frontmatter 的 `skills` 欄位明確列出要載入的技能。
+
+```markdown
+---
+name: frontend-security-accessibility-reviewer
+description: "Use this agent when you need to review frontend code for accessibility..."
+tools: Bash, Glob, Grep, Read, WebFetch, WebSearch, Skill...
+model: sonnet
+color: blue
+skills: accessibility-audit, performance-check
+---
+```
+
+技能會在自訂子代理啟動時載入，載入的是整份 Skill，不只是名稱。因此，若要讓子代理使用某個技能，先確認技能真的存在於 `.claude/skills`，再在代理設定中明確列出來。
+
+## 6. 疑難排解技能
+
+當 Skill 沒有如預期工作，可以先把問題分成四類：沒有觸發、無法載入、發生衝突，或載入後執行失敗。課程建議先使用技能驗證工具做結構檢查，再處理細節：
+
+```text
+agent skills verifier
+```
+
+| 症狀 | 常見原因與處理方向 |
+|---|---|
+| 技能無法觸發 | 通常是 `description` 太模糊。加入使用者實際會說的觸發詞句，用不同說法測試語意是否重疊 |
+| 技能無法載入 | 檢查 `SKILL.md` 是否位於具名目錄內、檔名大小寫是否正確，再用 `claude --debug` 找載入錯誤 |
+| 使用了錯誤的技能 | 不同技能的描述太接近，讓每個描述更具體、彼此更容易區分 |
+| 優先順序衝突 | 檢查是否有更高層級的 Enterprise 或 Personal 技能覆蓋目前版本 |
+| 外掛技能未出現 | 清除快取、重新啟動 Claude Code，確認外掛結構與安裝狀態 |
+| 執行時錯誤 | 檢查依賴項、腳本權限與路徑分隔符；需要執行的腳本要有 `chmod +x`，路徑使用正斜線 |
+
+快速檢查時，可以依序問自己：描述是否真的說清楚「做什麼」與「什麼時候用」？目錄與檔名是否符合規定？同名技能是否在更高層級？腳本依賴和執行權限是否完整？這幾個問題通常能先把範圍縮小。
+
+課程最後留下的理解很實用：最好的 Skill 往往來自真實痛點。當你發現自己一直重複向 Claude 解釋同一件事，就有一個工作方法值得被整理出來。
+
+## 小結
+
+這堂課把 Skill 從「一段比較長的 Prompt」拆成一個可以被發現、配對、載入、分享和驗證的工作單位，也把基礎觀念和資料結構接了起來。`description` 決定它什麼時候出場，`SKILL.md` 放核心規則，多檔案結構負責把細節按需帶進來，分享層級則決定這套方法只服務自己、整個 repo，還是整間公司。
+
+這堂課最有價值的地方，是把「這個工作到底該包成 MCP、Skill 還是 Plugin？」這個一開始就會冒出的問題拆開回答。要固定規範就寫進 `CLAUDE.md`，要隔離工作就交給 Subagent，要保證事件發生時執行就使用 Hooks；需要外部工具與資料來源時再接 MCP，需要分發一整套能力時則考慮 Plugin。[Claude Code 官方 Skills 文件](https://code.claude.com/docs/zh-TW/skills)也把這些邊界和 Skill 的實際設定寫得很清楚。
+
+上完這堂課，我有三點想補充說明：
+
+### 1. Commands vs Skills
+
+第一堂只用一句話帶到 slash commands，Claude Code 的[官方 Skills 文件](https://code.claude.com/docs/zh-TW/skills)則把兩者的關係寫得更清楚：自訂 commands 已經合併進 skills，但舊的 command 檔案仍然可以繼續使用。
+
+| | Commands | Skills |
+|---|---|---|
+| 結構 | `.claude/commands/` 下一支 `.md` 檔，檔名就是命令名稱 | 一個資料夾加上 `SKILL.md`，資料夾名稱就是命令名稱 |
+| 叫用方式 | `deploy.md` 對應 `/deploy` | `.claude/skills/deploy/SKILL.md` 同樣對應 `/deploy` |
+| 可攜帶的內容 | 主要就是單一 Markdown 檔 | 可以帶 `scripts/`、`references/`、`assets/` 等支援檔案 |
+| 額外控制 | 使用相同的部分 frontmatter | 另外支援 `hooks`、`disable-model-invocation`、`user-invocable` 等 Claude Code 功能 |
+
+從使用感受來說，Commands 顧名思義就是一個指令。我通常會把原本可能貼在記事本裡、需要時再複製出來的一段命令或 Prompt 收進 `.claude/commands/`；下次直接用 `/name` 叫用，不必再翻它存在哪裡。簡單說，它就是一個很小的 SOP，足以把一段固定操作收起來，複雜度還不到需要拆成 Skill 的程度。
+
+所以差別先從結構看：Commands 是單一檔案，Skills 是可以容納完整工作方法的資料夾。兩者都用 `/name` 叫用；官方文件對新工作建議使用 Skills，因為它能裝進支援檔案，也能控制 Claude 是否可以自動載入或由使用者手動叫用。
+
+兩個叫用控制欄位很值得記下來：`disable-model-invocation: true` 會阻止 Claude 自動載入，保留 `/name` 讓使用者手動觸發；`user-invocable: false` 則把 Skill 從 `/` 選單隱藏，讓它只在相關時由 Claude 使用。前者適合 deploy、commit 這種有副作用、需要人決定時機的工作，後者適合背景知識型 Skill。
+
+### 2. 使用 `skill-creator` 建立 Skill
+
+上面的手動範例適合用來理解 `SKILL.md` 的基本結構；實際要建立或改善 Skill 時，可以直接叫用 Anthropic 官方 plugin 裡的 [`skill-creator`](https://github.com/anthropics/claude-plugins-official/blob/main/plugins/skill-creator/skills/skill-creator/SKILL.md)。它會協助整理 Skill 的意圖、觸發時機、輸出格式和成功標準，再產生幾個測試 Prompt，實際比較使用 Skill 與沒有使用 Skill 的結果，依回饋持續迭代。
+
+這個流程讓 Skill 從「寫出一份看起來合理的 `SKILL.md`」多走幾步：先把需求說清楚，再用真實請求測試觸發和輸出品質，最後才決定要不要優化 `description`。因此，建立 Skill 時我會把課程的手動建立當成結構入門，把 `skill-creator` 當成實際製作與驗證的工作方法。
+
+### 3. 反向封裝 Skill
+
+這也讓我想到以前寫過的 [Session is Skill](/posts/session-is-skill/)。我把那個做法叫做反向封裝：當你和 agent 在同一個對話完成一件事時，最有價值的不只最後產出的檔案，還有剛剛走過的行為。趁著脈絡還在，立刻把這套行為封裝成 Skill，下次遇到同類任務就能直接重用。
