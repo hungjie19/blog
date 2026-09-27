@@ -18,6 +18,22 @@
 - Dark mode 透過 `html.dark` 覆蓋 token 變數，utility 自動跟著切，不逐一手寫 `dark:`。
 - 字級以語意角色管理（article body、meta、code、sidebar、page title），不要在多個檔案散落同一用途的手寫 font-size。
 
+## Sidebar / Topbar 響應式行為
+
+`src/layouts/BlogLayout.astro` 的 layout chrome：top bar 是獨立於 sidebar 跟 content 之外、橫跨全寬、置頂常駐的一條 `<header>`（不隨 sidebar 開關被蓋住），下面才是 `#body-row`（sidebar + content 橫排）。斷點只有兩條，**768px** 跟 **1024px**：
+
+| 寬度 | Sidebar 呈現方式 | Sidebar 收合機制 | Topbar 品牌 | Topbar 標題 |
+|---|---|---|---|---|
+| ≤768px（手機） | overlay（`position:absolute`，蓋在 content 上，有 backdrop） | `.open` class（`display:none↔flex`） | 顯示，佔滿剩餘寬度 | 隱藏（空間不足） |
+| 769–1023px（iPad 直式） | overlay（同手機） | `.open` class（同手機） | 顯示 | 顯示 |
+| ≥1024px（iPad 橫式／桌面） | in-flow（佔真實版面寬度，推擠 content） | `.collapsed` class（`display:flex↔none`） | 顯示 | 顯示 |
+
+- Topbar 順序固定：`[收合按鈕][品牌 logo+Jasper Hung][文章標題][icons]`，按鈕永遠最左。
+- 收合按鈕只有一顆（`#sidebar-toggle-btn`），JS 用 `sidebarOverlayMedia = matchMedia('(max-width: 1023px)')` 判斷該切 `.open`（overlay）還是 `.collapsed`（in-flow）。
+- Sidebar 自己內部**沒有**品牌列——topbar 常駐品牌後，sidebar 自己那排會變成永遠重複、永遠不可見的死代碼，已移除。
+- Sidebar 寬度調整（`.sidebar-width-btn`，260↔500px，跟收合是不同功能）在所有尺寸都顯示；拖曳調寬（`.sidebar-resize-handle`）只在 ≥1024px。寬度上限用 `min(500, innerWidth)` 動態夾住，不留額外縫，因為收合按鈕在 overlay 外面、永遠點得到。
+- 這條 1024px 分界是刻意選的：多數 iPad 橫向寬度落在 1024–1194px（12.9" 橫向 1366px 本來就 ≥1024 也一致），直向多落在 768–834px。
+
 ## 文章結構
 
 每篇文章一個資料夾：

@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, Layers, UserRound } from '@lucide/astro';
+import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, Layers, PanelLeftClose, PanelLeftOpen, UserRound } from '@lucide/astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -107,9 +107,102 @@ const iconButtonClass =
     <script defer src="https://cloud.umami.is/script.js" data-website-id={import.meta.env.PUBLIC_UMAMI_WEBSITE_ID}></script>
   )}
 </head>
-<body class="flex h-dvh overflow-hidden bg-bg text-text">
+<body class="flex h-dvh flex-col overflow-hidden bg-bg text-text">
   {activeSlug && <div id="reading-progress" class="pointer-events-none fixed left-0 top-0 z-[1000] h-[3px] w-0 bg-accent transition-[width] duration-[80ms] ease-linear"></div>}
 
+  <!-- Top bar: fixed across the full width, above sidebar + content -->
+  <header class="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
+    <!-- Sidebar toggle (always leftmost, like VS Code / Orca's panel toggle) -->
+    <button
+      id="sidebar-toggle-btn"
+      class={`${iconButtonClass} shrink-0 border-0 bg-transparent`}
+      title="收合 sidebar"
+      aria-label="收合 sidebar"
+      aria-expanded="true"
+    >
+      <PanelLeftOpen id="sidebar-toggle-open-icon" class="hidden h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+      <PanelLeftClose id="sidebar-toggle-close-icon" class="h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+    </button>
+
+    <!-- Brand (always visible in the top bar now, not just mobile) -->
+    <a
+      id="topbar-brand"
+      href={base}
+      class="flex shrink-0 items-center gap-2 text-[15px] font-bold leading-none tracking-[-0.02em] text-text no-underline"
+    >
+      <img src={`${base}favicon.svg`} alt="" class="h-5 w-5 shrink-0 rounded-[5px]" />
+      <span>Jasper Hung</span>
+    </a>
+
+    <!-- Title (article title, desktop only) -->
+    <span id="topbar-title" class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-none text-muted">
+      {title ?? ''}
+    </span>
+
+    <!-- Icons -->
+    <div class="flex shrink-0 items-center gap-2">
+      <button
+        id="theme-btn"
+        class={`${iconButtonClass} border-0 bg-transparent`}
+        title="切換深色／淺色"
+        aria-label="切換主題"
+      >
+        <!-- moon (dark mode) -->
+        <svg id="icon-moon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <!-- sun (light mode) -->
+        <svg id="icon-sun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+      {title && (
+        <>
+          <span class="h-4 w-px bg-border" />
+          <button
+            id="share-btn"
+            class={`${iconButtonClass} border-0 bg-transparent`}
+            title="複製連結"
+            data-umami-event="click-share"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </button>
+          <a
+            href={activeSlug ? `${base}posts/${activeSlug}.md` : '#'}
+            class={iconButtonClass}
+            title="Raw Markdown"
+            data-umami-event="click-raw-markdown"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </a>
+        </>
+      )}
+      <a
+        href={`${base}rss.xml`}
+        class={iconButtonClass}
+        title="RSS Feed"
+        data-umami-event="click-rss"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 11a9 9 0 0 1 9 9"/>
+          <path d="M4 4a16 16 0 0 1 16 16"/>
+          <circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- Sidebar + content row, below the top bar -->
+  <div id="body-row" class="relative flex min-h-0 flex-1 overflow-hidden">
   <div id="sidebar-backdrop"></div>
 
   <!-- Sidebar -->
@@ -117,22 +210,6 @@ const iconButtonClass =
     id="sidebar"
     class="relative flex shrink-0 flex-col border-r border-border bg-sidebar transition-[transform,width] duration-200 ease-in-out"
   >
-    <!-- Blog name -->
-    <div class="shrink-0 border-b border-border">
-      <div class="flex items-center">
-        <a
-          href={base}
-          class="flex min-w-0 flex-1 items-center gap-3 p-4 no-underline"
-        >
-          <img src={`${base}favicon.svg`} alt="" class="h-8 w-8 shrink-0 rounded-[7px]" />
-          <div class="min-w-0">
-            <div class="text-base font-bold leading-[1.2] tracking-[-0.02em] text-text">Jasper Hung</div>
-            <div class="mt-[3px] text-[13px] font-medium text-muted">Coworking with AI</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
     <!-- Fixed navigation -->
     <nav class="flex shrink-0 flex-col gap-1 px-1 py-2" aria-label="網站導覽">
       <a
@@ -203,101 +280,8 @@ const iconButtonClass =
     <div id="sidebar-resize-handle" class="sidebar-resize-handle" aria-hidden="true"></div>
   </aside>
 
-  <!-- Main -->
-  <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
-
-    <!-- Topbar -->
-    <header class="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
-      <!-- Mobile hamburger -->
-      <button
-        id="menu-btn"
-        class="hidden shrink-0 cursor-pointer border-0 bg-transparent p-1 text-muted"
-        aria-label="Menu"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-
-      <!-- Mobile blog title (visible only on mobile) -->
-      <a
-        id="mobile-blog-title"
-        href={base}
-        class="hidden shrink-0 items-center gap-2 text-[15px] font-bold tracking-[-0.02em] text-text no-underline"
-      >
-        <img src={`${base}favicon.svg`} alt="" class="h-5 w-5 rounded-[5px]" />
-        <span>Jasper Hung</span>
-      </a>
-
-      <!-- Title (article title, desktop only) -->
-      <span id="topbar-title" class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-muted">
-        {title ?? ''}
-      </span>
-
-      <!-- Icons -->
-      <div class="flex shrink-0 items-center gap-2">
-        <button
-          id="theme-btn"
-          class={`${iconButtonClass} border-0 bg-transparent`}
-          title="切換深色／淺色"
-          aria-label="切換主題"
-        >
-          <!-- moon (dark mode) -->
-          <svg id="icon-moon" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-          </svg>
-          <!-- sun (light mode) -->
-          <svg id="icon-sun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="5"/>
-            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-          </svg>
-        </button>
-        {title && (
-          <>
-            <span class="h-4 w-px bg-border" />
-            <button
-              id="share-btn"
-              class={`${iconButtonClass} border-0 bg-transparent`}
-              title="複製連結"
-              data-umami-event="click-share"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-              </svg>
-            </button>
-            <a
-              href={activeSlug ? `${base}posts/${activeSlug}.md` : '#'}
-              class={iconButtonClass}
-              title="Raw Markdown"
-              data-umami-event="click-raw-markdown"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-              </svg>
-            </a>
-          </>
-        )}
-        <a
-          href={`${base}rss.xml`}
-          class={iconButtonClass}
-          title="RSS Feed"
-          data-umami-event="click-rss"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 11a9 9 0 0 1 9 9"/>
-            <path d="M4 4a16 16 0 0 1 16 16"/>
-            <circle cx="5" cy="19" r="1" fill="currentColor" stroke="none"/>
-          </svg>
-        </a>
-      </div>
-    </header>
-
     <!-- Content -->
-    <main class="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
+    <main class="min-w-0 flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
       <div class="content-wrapper">
         <slot />
       </div>
@@ -329,10 +313,26 @@ const iconButtonClass =
     width: var(--sidebar-width, 260px);
   }
 
-  .sidebar-width-btn,
   .sidebar-resize-handle {
     display: none;
   }
+
+  .sidebar-width-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .sidebar-width-btn:hover { background: var(--surface); color: var(--text); }
+  .sidebar-width-btn:active { transform: scale(0.96); }
 
   .sidebar-posts-row {
     display: flex;
@@ -340,23 +340,8 @@ const iconButtonClass =
     gap: 12px;
   }
 
-  @media (min-width: 1280px) {
-    .sidebar-width-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      margin-right: 8px;
-      padding: 0;
-      color: var(--muted);
-      background: transparent;
-      border: 0;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .sidebar-width-btn:hover { background: var(--surface); color: var(--text); }
-    .sidebar-width-btn:active { transform: scale(0.96); }
+  @media (min-width: 1024px) {
+    #sidebar.collapsed { display: none; }
 
     .sidebar-resize-handle {
       display: block;
@@ -380,22 +365,19 @@ const iconButtonClass =
     #sidebar.is-resizing { transition: none; }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 1023px) {
     #sidebar {
       display: none;
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
       height: 100%;
       z-index: 100;
     }
     #sidebar.open { display: flex; }
-    #menu-btn { display: flex !important; }
-    #mobile-blog-title { display: flex !important; flex: 1; }
-    #topbar-title { display: none; }
     #sidebar-backdrop {
       display: none;
-      position: fixed;
+      position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.5);
       z-index: 99;
@@ -403,8 +385,9 @@ const iconButtonClass =
     #sidebar-backdrop.open { display: block; }
   }
 
-  @media (max-width: 1279px) {
-    #sidebar { width: 260px !important; }
+  @media (max-width: 768px) {
+    #topbar-brand { flex: 1; }
+    #topbar-title { display: none; }
   }
 
   /* 最多 3 行；額外保留 descender 與瀏覽器次像素計算的空間，超出隱藏 */
@@ -453,26 +436,59 @@ const iconButtonClass =
     navigator.clipboard.writeText(url.toString());
   });
 
-  function toggleSidebar() {
-    document.getElementById('sidebar')?.classList.toggle('open');
-    document.getElementById('sidebar-backdrop')?.classList.toggle('open');
-  }
-  document.getElementById('menu-btn')?.addEventListener('click', toggleSidebar);
-  document.getElementById('sidebar-backdrop')?.addEventListener('click', toggleSidebar);
-
   const sidebar = document.getElementById('sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+  const sidebarToggleButton = document.getElementById('sidebar-toggle-btn') as HTMLButtonElement | null;
+  const sidebarToggleOpenIcon = document.getElementById('sidebar-toggle-open-icon');
+  const sidebarToggleCloseIcon = document.getElementById('sidebar-toggle-close-icon');
+  const sidebarOverlayMedia = window.matchMedia('(max-width: 1023px)');
+
+  function isSidebarVisible() {
+    if (!sidebar) return false;
+    return sidebarOverlayMedia.matches
+      ? sidebar.classList.contains('open')
+      : !sidebar.classList.contains('collapsed');
+  }
+
+  function updateSidebarToggleIcon() {
+    const visible = isSidebarVisible();
+    sidebarToggleOpenIcon?.classList.toggle('hidden', visible);
+    sidebarToggleCloseIcon?.classList.toggle('hidden', !visible);
+    if (sidebarToggleButton) {
+      sidebarToggleButton.title = visible ? '收合 sidebar' : '展開 sidebar';
+      sidebarToggleButton.setAttribute('aria-label', sidebarToggleButton.title);
+      sidebarToggleButton.setAttribute('aria-expanded', String(visible));
+    }
+  }
+
+  function toggleSidebar() {
+    if (sidebarOverlayMedia.matches) {
+      sidebar?.classList.toggle('open');
+      sidebarBackdrop?.classList.toggle('open');
+    } else {
+      sidebar?.classList.toggle('collapsed');
+    }
+    updateSidebarToggleIcon();
+  }
+  sidebarToggleButton?.addEventListener('click', toggleSidebar);
+  sidebarBackdrop?.addEventListener('click', toggleSidebar);
+  sidebarOverlayMedia.addEventListener('change', updateSidebarToggleIcon);
+  updateSidebarToggleIcon();
+
   const sidebarWidthButton = document.getElementById('sidebar-width-btn') as HTMLButtonElement | null;
   const sidebarResizeHandle = document.getElementById('sidebar-resize-handle');
   const sidebarExpandIcon = document.getElementById('sidebar-width-expand-icon');
   const sidebarCollapseIcon = document.getElementById('sidebar-width-collapse-icon');
   const sidebarMinWidth = 260;
   const sidebarMaxWidth = 500;
-  const sidebarBreakpoint = window.matchMedia('(min-width: 1280px)');
+  const sidebarBreakpoint = window.matchMedia('(min-width: 1024px)');
   const sidebarStorageKey = 'sidebar-width';
   let sidebarWidth = sidebarMinWidth;
 
   function clampSidebarWidth(width: number) {
-    return Math.min(sidebarMaxWidth, Math.max(sidebarMinWidth, width));
+    // 收合按鈕常駐在 sidebar 之外的頂層 bar，撐滿全寬也還是點得到，不用留縫
+    const max = Math.min(sidebarMaxWidth, window.innerWidth);
+    return Math.min(max, Math.max(sidebarMinWidth, width));
   }
 
   function updateSidebarWidthButton() {
@@ -503,6 +519,8 @@ const iconButtonClass =
   sidebarWidthButton?.addEventListener('click', () => {
     applySidebarWidth(sidebarWidth > sidebarMinWidth ? sidebarMinWidth : sidebarMaxWidth, true);
   });
+
+  window.addEventListener('resize', () => applySidebarWidth(sidebarWidth));
 
   sidebarResizeHandle?.addEventListener('pointerdown', event => {
     if (!sidebarBreakpoint.matches || !sidebar) return;
