@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import remarkDirective from 'remark-directive';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
 import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
+import { rehypeWrapTables } from './src/plugins/rehype-wrap-tables.ts';
 import sitemap from '@astrojs/sitemap';
 import mdx from '@astrojs/mdx';
 import expressiveCode from 'astro-expressive-code';
@@ -40,7 +41,7 @@ export default defineConfig({
   ],
   markdown: {
     remarkPlugins: [remarkDirective, remarkAdmonitions],
-    rehypePlugins: [rehypeFigureCaption],
+    rehypePlugins: [rehypeFigureCaption, rehypeWrapTables],
   },
   vite: {
     plugins: [tailwindcss()]
