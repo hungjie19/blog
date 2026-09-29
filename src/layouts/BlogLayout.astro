@@ -76,6 +76,15 @@ const iconButtonClass =
     const theme = saved ?? (prefersDark ? 'dark' : 'light');
     document.documentElement.classList.add(theme);
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'github-light');
+
+    // Anti-flicker: the sidebar width must land before first paint too. Otherwise every
+    // navigation paints the 260px default first, and the deferred module script's update
+    // to the saved width gets animated by the width transition (a visible shrink-then-grow).
+    const savedWidth = Number(localStorage.getItem('sidebar-width'));
+    if (Number.isFinite(savedWidth) && savedWidth >= 260) {
+      const width = Math.min(Math.min(500, window.innerWidth), savedWidth);
+      document.documentElement.style.setProperty('--sidebar-width', width + 'px');
+    }
   </script>
   <link rel="alternate" type="application/rss+xml" title="Jasper Hung" href={`${siteUrl}/rss.xml`} />
 
