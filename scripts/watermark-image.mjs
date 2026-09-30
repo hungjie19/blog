@@ -6,21 +6,24 @@ import sharp from "sharp";
 
 const DEFAULT_TEXT = "jasperhung.dev";
 const TONES = new Set(["auto", "light", "dark"]);
+const POSITIONS = new Set(["bottom-right", "top-right"]);
 
 function usage() {
 	console.log(`
 Usage:
   pnpm watermark <image> [--out <path>] [--overwrite] [--text <text>] [--tone auto|light|dark]
+                         [--position bottom-right|top-right]
 
 Defaults:
   - Creates a sibling file named <name>-watermarked.<ext>
-  - Burns "${DEFAULT_TEXT}" into the lower-right corner
+	- Burns "${DEFAULT_TEXT}" into the lower-right corner
+	- Burns "${DEFAULT_TEXT}" into the selected right corner
   - Chooses light or dark text from the lower-right image area
 `);
 }
 
 function parseArgs(args) {
-	const options = { input: undefined, output: undefined, overwrite: false, text: DEFAULT_TEXT, tone: "auto" };
+	const options = { input: undefined, output: undefined, overwrite: false, text: DEFAULT_TEXT, tone: "auto", position: "bottom-right" };
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -29,6 +32,7 @@ function parseArgs(args) {
 		else if (arg === "--overwrite") options.overwrite = true;
 		else if (arg === "--text") options.text = args[++i];
 		else if (arg === "--tone") options.tone = args[++i];
+		else if (arg === "--position") options.position = args[++i];
 		else if (!arg.startsWith("-") && !options.input) options.input = arg;
 		else throw new Error(`Unknown or misplaced argument: ${arg}`);
 	}
@@ -36,6 +40,7 @@ function parseArgs(args) {
 	if (!options.input) throw new Error("Missing input image.");
 	if (!options.text) throw new Error("Watermark text cannot be empty.");
 	if (!TONES.has(options.tone)) throw new Error("--tone must be auto, light, or dark.");
+	if (!POSITIONS.has(options.position)) throw new Error("--position must be bottom-right or top-right.");
 	return options;
 }
 
@@ -61,7 +66,7 @@ async function luminanceAtBottomRight(input, width, height) {
 	return (red * 0.2126) + (green * 0.7152) + (blue * 0.0722);
 }
 
-function watermarkSvg({ width, height, text, tone }) {
+function watermarkSvg({ width, height, text, tone, position }) {
 	const shortSide = Math.min(width, height);
 	const fontSize = clamp(Math.round(shortSide * 0.043), 16, 56);
 	const margin = clamp(Math.round(shortSide * 0.035), 16, 48);
@@ -69,9 +74,11 @@ function watermarkSvg({ width, height, text, tone }) {
 	const stroke = tone === "dark" ? "rgba(255,255,255,0.78)" : "rgba(0,0,0,0.72)";
 	const escaped = text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 
+	const y = position === "top-right" ? margin + fontSize : height - margin;
+
 	return Buffer.from(`
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  <text x="${width - margin}" y="${height - margin}" text-anchor="end"
+  <text x="${width - margin}" y="${y}" text-anchor="end"
     font-family="Arial, Helvetica, sans-serif" font-size="${fontSize}" font-weight="700"
     letter-spacing="0.5" fill="${fill}" fill-opacity="0.88"
     stroke="${stroke}" stroke-width="${Math.max(1, Math.round(fontSize * 0.08))}" paint-order="stroke">${escaped}</text>
@@ -99,7 +106,7 @@ async function main() {
 		: options.tone;
 
 	await sharp(input)
-		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text: options.text, tone: resolvedTone }) }])
+		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text: options.text, tone: resolvedTone, position: options.position }) }])
 		.toFile(output);
 
 	console.log(`Watermarked image: ${output}`);

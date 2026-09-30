@@ -15,6 +15,12 @@ export const seriesLists = {
     type: "series",
     cover: "/images/series/ithome-2026-ironman.webp",
   },
+  "orca-ade": {
+    title: "Orca ADE",
+    description: "以 Agent 為核心，整合 IDE、Git、worktree 與 remote control 的開發環境實測。",
+    type: "series",
+    cover: "",
+  },
   openmemory: {
     title: "OpenMemory",
     description: "把本地記憶接進 AI 工作流程後，如何建立可長期使用的記憶策略。",
