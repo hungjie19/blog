@@ -12,7 +12,11 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     <div class="toc-label">目錄</div>
     <nav>
       {tocHeadings.map(h => (
-        <a href={`#${h.slug}`} class={`toc-link toc-h${h.depth}`}>
+        <a
+          href={`#${h.slug}`}
+          class={`toc-link toc-h${h.depth}`}
+          style={`--toc-depth: ${h.depth - 2}`}
+        >
           {h.text}
         </a>
       ))}
@@ -47,8 +51,8 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
 
   .toc-link {
     display: block;
+    padding: 3px 0 3px calc(var(--toc-depth, 0) * 0.75rem);
     text-decoration: none;
-    padding: 3px 0;
     line-height: 1.5;
     transition: color 0.1s;
     overflow: hidden;
@@ -56,9 +60,13 @@ const tocHeadings = headings.filter(h => h.depth >= 2 && h.depth <= 3);
     white-space: nowrap;
   }
 
-  .toc-h2,
-  .toc-h3 {
+  .toc-h2 {
     font-size: 14px;
+    color: var(--muted);
+  }
+
+  .toc-h3 {
+    font-size: 13px;
     color: var(--muted);
   }
 
