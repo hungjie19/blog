@@ -242,7 +242,10 @@ const readingTime = `約 ${minutes} 分鐘`;
     font-size: 18px;
     line-height: 1.8;
     font-family: inherit;
-    text-wrap: pretty;
+    /* 不用 text-wrap: pretty：Safari 把它實作成整段最佳化，
+       中日韓文字每字皆可斷行，會讓整段行寬一起縮短、右側留下大片空白。
+       標題仍保留 pretty（Safari 等同 balance，對短標題有益）。 */
+    text-wrap: auto;
   }
 
   /* H1-H6 (body = 18px) */
