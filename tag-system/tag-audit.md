@@ -128,3 +128,19 @@ tags: [tag-system, blog, changelog]
 已更新 `tag-rules.md`（封閉清單擴充、新增「不合併正交概念」選字守則）、`canonical-tags.md`（AI & tools / Tech stack proper nouns 分組擴充、新增 Remote-Control vs Remote-Access 分家說明）、`aliases.md`（新增 3 筆 confirmed mapping、2 筆 retired-without-replacement）、`generated/tag-inventory.md`、`generated/tag-candidates.md`（皆已依決策後狀態重新產生）。
 
 **原因**：`.mdx` 文件的 corpus 缺口若不修正，之後每次 audit 與 `create-my-blog` 寫作時都會用同一份過時的 glob 規則，持續漏看該篇文章；已發生一次差點漏算的實例，值得直接修正 source of truth 而非依賴人工記得排除。其餘 3 項小寫/合併 drift 屬於「維持現狀 vs. 改動」判斷明確、影響文章數小（各 1 篇）的安全修正；`MacOS`、`Remote-Control`/`Remote-Access`、新專有名詞登記則是「多篇文章已形成穩定慣例，但治理文件沒跟上」的追認型決策——先詢問使用者裁決，避免又落入決策 #6 「auto-mode 保守推進、事後才被使用者推翻」的重工模式。
+
+### 12. 鐵人賽系列建立必帶 tag：`Claude-Academy` + `iThome-Ironman`，刪除 `鐵人賽` 與系列內的 `AI`
+
+**日期**：2026-10-03
+**內容**：使用者發現 `ithome-2026-ironman` 系列 19 篇文章沒有任何統一標籤——tags 全是一般 topic tag（`AI`/`Claude`/`Agent`/`Workflow`/`MCP`/`Skill`…），讀者無法用 tag 瀏覽整個鐵人賽系列，而唯一帶系列識別的 `claude-academy-30-day-roadmap` 掛的是中文 tag `鐵人賽`，違反決策 #7／#10 的 No Chinese tags 規則且從未登記。已執行：
+
+- **新增兩個必帶 tag**：`Claude-Academy`、`iThome-Ironman`，加到全系列 19 篇（18 篇 tracked + `building-effective-human-agent-teams` 尚未 commit 的新檔），一律排在描述性 tag 之後。
+- **`iThome` 小寫開頭例外**：候選寫法是 `IThome-Ironman`（完全照「每個 tag 首字母大寫」規則，與 `MacOS` 判例一致）或 `iThome-Ironman`（保留品牌 casing）。使用者選後者。判準是「品牌大寫後是否還讀得出來」：`MacOS` 還認得出產品，`IThome` 不行。這是本 repo 唯一登記的小寫開頭 tag，**不重啟決策 #11 的 `MacOS`**，也不推論成「品牌 casing 一律優先」。
+- **`鐵人賽` 刪除**：使用者確認直接刪，由 `iThome-Ironman` 取代，已登記進 `aliases.md` Confirmed mappings（alias 欄即黑名單）。
+- **必帶 tag 不計入 3–5 上限**：原規則是每篇 3–5 個 tag，加 2 個必帶會讓 19 篇全部超標。候選方案是「上限放寬到 3–7」或「每篇砍掉 2 個現有 tag」，使用者選第三種——必帶 tag 不計入 3–5，描述性 tag 維持 3–5 不動。已在 `tag-rules.md` 新增 § Mandatory series tags（含 series → 必帶 tag 對照表），並在 § Selection procedure 步驟 3 加註不計入。
+- **系列內移除 `AI`**：使用者判斷 `AI` 在這個系列沒有區辨力（每篇都是 Claude 課程，已有 `Claude` 與 `Claude-Academy`），19 篇全部移除。`AI` 仍是其餘語料庫的 umbrella tag（另有 33 篇非系列文章在用，未動），已在 `canonical-tags.md` 的 `AI` 條目註記這個系列例外。
+- **消費端同步**：`~/ai_session_summary/ironman/blog-prompt.md`（鐵人賽專用 to-blog prompt profile）原本只寫「tags 沿用 Blog repo 現有的 tag system」，已補上必帶 tag、`AI` 排除、iThome casing 與完成後檢查項，避免規則只存在 tag-system 而寫作端不知道——這是決策 #1／#10 同一類的「規則變動沒同步到消費端」缺口。
+
+**未處理（待裁決）**：`claude-academy-30-day-roadmap` 移除 `AI` 後只剩 `Claude`、`LLM` 兩個描述性 tag，低於 3 個下限；未自行補 tag。
+
+**原因**：系列識別原本只靠 `series:` frontmatter，那是版面用的機器欄位、不出現在 tag 瀏覽路徑上，所以讀者端等於沒有系列入口。必帶 tag 不計入 3–5 是為了讓「系列識別」與「內容描述」兩種用途分開計算——否則每加一個治理用 tag 就要犧牲一個描述性 tag，治理會持續侵蝕 tag 的描述力。

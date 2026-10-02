@@ -32,6 +32,7 @@ Single thesaurus file for this repo. Three sections. The alias column in "Confir
 | `Agent` | `agent` |
 | `Codex` | `codex` |
 | `Claude-Code` | `claude-code` |
+| `iThome-Ironman` | `鐵人賽` |
 
 ## Retired without replacement
 

@@ -14,13 +14,19 @@ All tags in this repo are Title Case (see `tag-rules.md` § Normalization) — t
 
 Multi-word proper nouns keep internal casing rather than per-segment Title Case; acronyms are fully uppercase.
 
-- `AI` — broad category, the umbrella tag for any AI-topic post. Always kept as its own tag — never merge into a compound like `AI-Workflow` (`tag-audit.md` decision #11).
+- `AI` — broad category, the umbrella tag for any AI-topic post. Always kept as its own tag — never merge into a compound like `AI-Workflow` (`tag-audit.md` decision #11). **Not used on `ithome-2026-ironman` posts** (decision #12): in a series where every post is a Claude course, `AI` carries no browse value next to `Claude` and `Claude-Academy`. It stays the umbrella tag everywhere else in the corpus.
 - `LLM`, `GPT`, `Claude`, `OpenAI`, `ChatGPT` — specific models/vendors, used alongside `AI` when the post centers on a specific model.
 - `OpenMemory`, `MCP` — specific tools/products, used alongside `AI` and often `Memory` for OpenMemory posts.
 - `Memory` — broader browsable concept, kept distinct from `OpenMemory` (product) even when co-occurring on the same post.
 - `SOP` — process/methodology tag, appears alongside `AI`/`Workflow` for skill-creation posts.
 - `Skill`, `Agent` — Claude Code's named Skill feature and the general "AI agent" concept (summon-agent-*, three-accounts-one-agent-environment). Name specific product/actor concepts, not generic ability — kept in the proper-noun-adjacent list rather than being just "another Title Case word."
 - `Codex` — OpenAI's coding agent/CLI, used alongside `AI`/`Claude` in agent-comparison posts.
+
+### Series & venue
+
+- `Claude-Academy` — Anthropic's official learning platform (academy.claude.com). Mandatory tag on every `ithome-2026-ironman` post (`tag-audit.md` decision #12); also available to any future post about the platform itself.
+- `iThome-Ironman` — the iThome 鐵人賽 publishing venue. Mandatory on every `ithome-2026-ironman` post. Keeps the brand's lowercase `i` and is the repo's only registered lowercase-initial tag (`tag-rules.md` § Normalization). Replaces the retired Chinese tag `鐵人賽` (see `aliases.md`).
+- The mandatory pair is enforced through `tag-rules.md` § Mandatory series tags, which is also where a new series registers its own pair.
 
 ### Tech stack proper nouns
 
