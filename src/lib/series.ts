@@ -19,7 +19,7 @@ export const seriesLists = {
     title: "Orca ADE",
     description: "以 Agent 為核心，整合 IDE、Git、worktree 與 remote control 的開發環境實測。",
     type: "series",
-    cover: "",
+    cover: "/images/series/orca-ade.jpg",
   },
   openmemory: {
     title: "OpenMemory",
@@ -56,6 +56,18 @@ export const seriesLists = {
     description: "把 Agent、帳號與工作目錄組成可操作的召喚流程，最後延伸到手機接手。",
     type: "series",
     cover: "/images/series/summon-agent.jpg",
+  },
+  "macos-fix": {
+    title: "macOS 修復筆記",
+    description: "升級後發燙、CPU 無故飆高、Intel app 跳警告：Mac 出狀況時的實際排查過程與解法。",
+    type: "collection",
+    cover: "/images/series/macos-fix.jpg",
+  },
+  "mac-tools": {
+    title: "Mac 工具箱",
+    description: "讓 Mac 更好用的工具：顯示器縮放、連接埠管理，以及它們在開發工作流裡的實際用法。",
+    type: "collection",
+    cover: "",
   },
 } satisfies Record<string, SeriesList>;
 
