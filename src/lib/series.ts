@@ -67,7 +67,7 @@ export const seriesLists = {
     title: "Mac 工具箱",
     description: "讓 Mac 更好用的工具：顯示器縮放、連接埠管理，以及它們在開發工作流裡的實際用法。",
     type: "collection",
-    cover: "",
+    cover: "/images/series/mac-tools.jpg",
   },
 } satisfies Record<string, SeriesList>;
 
