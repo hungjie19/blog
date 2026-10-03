@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, Layers, PanelLeftClose, PanelLeftOpen, UserRound } from '@lucide/astro';
+import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, UserRound } from '@lucide/astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -133,11 +133,24 @@ const iconButtonClass =
       <PanelLeftClose id="sidebar-toggle-close-icon" class="h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
     </button>
 
+    <!-- Home (explicit entry point: the brand link alone reads as static branding to many visitors) -->
+    <a
+      id="topbar-home"
+      href={base}
+      class={`${iconButtonClass} shrink-0`}
+      title="回到首頁"
+      aria-label="回到首頁"
+      data-umami-event="click-home-topbar"
+    >
+      <House class="h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+    </a>
+
     <!-- Brand (always visible in the top bar now, not just mobile) -->
     <a
       id="topbar-brand"
       href={base}
       class="flex shrink-0 items-center gap-2 text-[15px] font-bold leading-none tracking-[-0.02em] text-text no-underline"
+      data-umami-event="click-brand-topbar"
     >
       <img src={`${base}favicon.svg`} alt="" class="h-5 w-5 shrink-0 rounded-[5px]" />
       <span>Jasper Hung</span>
@@ -395,7 +408,8 @@ const iconButtonClass =
   }
 
   @media (max-width: 768px) {
-    #topbar-brand { flex: 1; }
+    /* 標題隱藏後，由品牌吸收剩餘空間，左側 [收合][home][品牌] 才不會被拆散 */
+    #topbar-brand { margin-right: auto; }
     #topbar-title { display: none; }
   }
 
