@@ -21,6 +21,24 @@ export const seriesLists = {
     type: "series",
     cover: "/images/series/orca-ade.jpg",
   },
+  "macos-fix": {
+    title: "macOS 修復筆記",
+    description: "升級後發燙、CPU 無故飆高、Intel app 跳警告：Mac 出狀況時的實際排查過程與解法。",
+    type: "collection",
+    cover: "/images/series/macos-fix.jpg",
+  },
+  "mac-tools": {
+    title: "Mac 工具箱",
+    description: "讓 Mac 更好用的工具：顯示器縮放、連接埠管理，以及它們在開發工作流裡的實際用法。",
+    type: "collection",
+    cover: "/images/series/mac-tools.jpg",
+  },
+  spokenly: {
+    title: "Spokenly 語音聽寫",
+    description: "從語音輸入工具選擇到成本與自訂流程的實作紀錄。",
+    type: "series",
+    cover: "/images/series/spokenly.jpg",
+  },
   openmemory: {
     title: "OpenMemory",
     description: "把本地記憶接進 AI 工作流程後，如何建立可長期使用的記憶策略。",
@@ -32,12 +50,6 @@ export const seriesLists = {
     description: "把一次 AI 對話與任務，沉澱成下次仍能使用的知識與 Skill。",
     type: "series",
     cover: "/images/series/session-is.jpg",
-  },
-  spokenly: {
-    title: "Spokenly 語音聽寫",
-    description: "從語音輸入工具選擇到成本與自訂流程的實作紀錄。",
-    type: "series",
-    cover: "/images/series/spokenly.jpg",
   },
   "remote-control": {
     title: "Remote Control 方法地圖",
@@ -56,18 +68,6 @@ export const seriesLists = {
     description: "把 Agent、帳號與工作目錄組成可操作的召喚流程，最後延伸到手機接手。",
     type: "series",
     cover: "/images/series/summon-agent.jpg",
-  },
-  "macos-fix": {
-    title: "macOS 修復筆記",
-    description: "升級後發燙、CPU 無故飆高、Intel app 跳警告：Mac 出狀況時的實際排查過程與解法。",
-    type: "collection",
-    cover: "/images/series/macos-fix.jpg",
-  },
-  "mac-tools": {
-    title: "Mac 工具箱",
-    description: "讓 Mac 更好用的工具：顯示器縮放、連接埠管理，以及它們在開發工作流裡的實際用法。",
-    type: "collection",
-    cover: "/images/series/mac-tools.jpg",
   },
 } satisfies Record<string, SeriesList>;
 
