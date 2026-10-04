@@ -1,0 +1,475 @@
+---
+title: "Building with the Claude API（1/6）：API 存取與提示評估"
+ogTitle: "Building with the Claude API（1/6）|API 存取與提示評估"
+date: 2026-10-04T23:17:14+08:00
+description: "Building with the Claude API 前 14 堂，從 API 金鑰、對話狀態、temperature、回應串流與結構化輸出開始，再建立提示評估流程，用資料集與評分器把「感覺變好」換成可追蹤的分數。"
+tags:
+  - Claude
+  - LLM
+  - Prompt-Engineering
+  - Workflow
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 20
+---
+
+import KeyTakeaways from '../../../components/KeyTakeaways.astro';
+
+<KeyTakeaways>
+  <p>
+    要把 Claude 接進應用程式，第一步是把 API 金鑰、對話狀態、輸出格式與請求參數管理好；本篇整理前 14 堂，最後用資料集與評分器把提示品質變成可追蹤的分數，實際 API 行為仍要依 SDK 與模型版本確認。
+  </p>
+</KeyTakeaways>
+
+看到 [Claude Academy 的 Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api) 課程內容時，我先從最靠近實作的地方開始：把 API request 跑起來，再把 prompt 評估流程接起來。
+
+本篇範圍是第一個 section「使用 API 存取 Claude」的 8 堂課，以及第二個 section「提示評估」的 6 堂課，共 14 堂。前半段處理 API 金鑰、對話狀態、temperature、串流和結構化輸出；後半段把 prompt 的好壞交給資料集與評分器衡量。
+
+## 課程資訊一覽
+
+| 項目 | 內容 |
+|---|---|
+| 官方課名 | 使用 Claude API 建構應用程式（Building with the Claude API） |
+| 堂數 | 67 堂課（本篇涵蓋前 14 堂） |
+| 總時長 | 9 小時 |
+| 測驗 | 8 個（含最終評估；本篇範圍內 2 個） |
+| 完成 | 有完成徽章 |
+| 先決條件 | 熟練 Python 程式設計；具備處理 JSON 資料的基本知識；擁有 Anthropic API 金鑰的存取權限 |
+| 適合對象 | 需要將 Claude 整合到生產應用程式中的軟體工程師（聊天機器人、自動化工具、AI 驅動的功能） |
+
+官方列出的整門課學習內容包括 API authentication、單輪與多輪對話、temperature、回應串流、structured output、提示評估、tool use、RAG、MCP、Claude Code、Computer Use，以及平行化、鏈接與路由等 agent workflow。
+
+## 這門課的真實密度
+
+只看堂數，很容易把每個 section 想成差不多大的單位。實際開始寫 code 後，才發現有些 section 是觀念課，有些 section 則是一個需要從頭建立的獨立專案。
+
+| Section | 範圍 | 堂數 | 性質 |
+|---|---:|---:|---|
+| Accessing Claude with the API（使用 API 存取 Claude） | 01–08 | 8 | 重：API request 與 chat helper，已完成 |
+| Prompt evaluation（提示評估） | 09–14 | 6 | 中：評估流水線 |
+| Prompt engineering techniques（提示工程技巧） | 15–19 | 5 | 輕：技巧為主 |
+| Tool use with Claude（使用 Claude 進行工具使用） | 20–31 | 12 | 重：獨立專案 |
+| RAG and Agentic Search（RAG 與代理式搜尋） | 32–38 | 7 | 重：embeddings、BM25、多索引 |
+| Features of Claude（Claude 的功能） | 39–46 | 8 | 中：thinking、圖片、PDF、引用與快取，彼此獨立，可快轉 |
+| Model Context Protocol（Model Context Protocol） | 47–56 | 10 | 重：獨立專案，包含 server 與 client |
+| Anthropic apps - Claude Code and computer use（Anthropic 應用程式 - Claude Code 與 Computer Use） | 57–60 | 4 | 輕：Claude Code 設定與實戰，已有使用經驗會比較容易進入 |
+| Agents and workflows（代理與工作流程） | 61–67 | 7 | 中：平行化、串連與路由三種 pattern |
+
+## Accessing Claude with the API（使用 API 存取 Claude）
+
+這 8 堂是整門課的地基。先理解一個請求從使用者按下「傳送」到畫面出字的完整生命週期，再把 `add_user_message`、`add_assistant_message` 和 `chat` 這組輔助函式一路長出來，後面每個 API 範例都會在這組函式上加參數。
+
+### 1. Accessing the API（存取 API）
+
+第一堂沒有急著寫 code，先把請求生命週期拆開：向自己的伺服器發出請求、由伺服器向 Anthropic API 發出請求、模型處理、Anthropic API 回應伺服器、伺服器回應客戶端。
+
+這個架構安排有一個很實際的原因：API key 是秘密。把它放在網頁或行動 App 的客戶端程式碼裡，使用者就有機會把金鑰取出來，代替你發出未授權的請求。正確的形狀是：
+
+```text
+網頁／行動 App → 你的伺服器（安全保存 API key）→ Anthropic API
+```
+
+一個基本請求需要四個欄位：
+
+| 欄位 | 作用 |
+|---|---|
+| API 金鑰 | 向 Anthropic 識別你的請求 |
+| Model | 要使用的模型名稱 |
+| Messages | 包含使用者輸入文字的列表 |
+| Max Tokens | Claude 可以生成的詞元數量上限 |
+
+Claude 內部處理輸入時，可以先用四個階段理解：分詞（tokenization）、嵌入（embedding）、情境化（contextualization）和生成（generation）。輸入會被切成詞元（token），每個詞元轉成數字表示，再依周圍內容收斂出目前情境下的意義，最後計算下一個詞元的機率並逐步生成回應。
+
+模型每生成一個詞元，就會檢查是否該停止。常見的停止原因有三種：達到最大詞元數量、自然生成結束 token，或遇到 stop sequence。API 回應也會帶回 Message、Usage 和 Stop Reason，應用程式可以依 Stop Reason 分開處理不同情況。
+
+### 2. Getting an API key（取得 API 金鑰）
+
+取得金鑰的流程很短：到 [Claude Platform](https://platform.claude.com/) 登入 Anthropic 帳戶，點右上角的「Get API Keys」，再建立一把新金鑰。課程範例把工作區保留在 `Default`，並用 `Anthropic Course` 作為金鑰名稱。
+
+金鑰只會顯示一次。建立後要立刻複製並妥善保存；如果不小心關掉頁面，做法是刪掉舊金鑰，再產生一把新的。
+
+### 3. Making a request（發出請求）
+
+課程用 `anthropic` 和 `python-dotenv` 建立最小環境，金鑰放在 `.env`，再交給 `.gitignore` 擋住，避免被寫進程式碼或誤 commit。完整專案改用 `uv` 管理依賴，設定和執行方式放在 [source repo 的 README](https://github.com/hungjie19/claude-academy-api-app)。
+
+真正送出請求的是 `client.messages.create()`。先看一個最小版本：
+
+```python
+message = client.messages.create(
+    model=model,
+    max_tokens=1000,
+    messages=[
+        {"role": "user", "content": "What is quantum computing? Answer in one sentence"}
+    ]
+)
+```
+
+取回文字時，讀取 `message.content[0].text`。這裡有一個容易誤解的欄位：`max_tokens=1000` 代表回應長度的安全上限，不代表 Claude 一定會寫到 1000 個詞元。它比較像保險絲，模型認為回答已經完整時，會在碰到上限前結束。
+
+### 4. Multi-Turn conversations（多輪對話）
+
+Claude API 不會替你保存對話歷史。每個 request 都是獨立的，所以「再寫一句」這種追問，如果沒有把前一輪訊息一起送回去，Claude 不知道「再」指的是什麼。
+
+多輪對話需要由應用程式自己維護訊息清單：送出 user 訊息、把 Claude 回應以 assistant 身分 append 進清單、再加入下一則 user 訊息，下一次 request 把完整歷史一起送出。
+
+```python
+def add_user_message(messages, text):
+    messages.append({"role": "user", "content": text})
+
+def add_assistant_message(messages, text):
+    messages.append({"role": "assistant", "content": text})
+
+def chat(messages):
+    message = client.messages.create(
+        model=model,
+        max_tokens=1000,
+        messages=messages,
+    )
+    return message.content[0].text
+```
+
+這裡的「記憶」其實很具體：你的程式每次都把歷史重送一遍。對話狀態由應用程式負責，API 只負責處理這一次收到的 messages。
+
+### 5. System prompts（系統提示）
+
+系統提示（system prompt）用來塑造 Claude 的角色、語氣和處理方式。課程用數學家教作為例子：學生問「我該如何解 `5x + 2 = 3` 中的 x？」時，家教應該先給提示、逐步引導，避免直接把完整答案丟出去。
+
+實作時把這個角色放進 request 的 `system` 欄位即可，並讓 `chat()` 只在真的有值時才加入它：
+
+```python
+if system:
+    params["system"] = system
+```
+
+這裡有個實務細節：Claude API 不接受 `system=None`。完整的 system prompt 與 helper 演化可以直接看 [class 05 的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/c38060a11f6dee43030e66f3636626781843e889)。
+
+### 6. Temperature（Temperature）
+
+生成可以先拆成三步：Tokenization（分詞）、Prediction（預測下一個詞元的機率）和 Sampling（依機率挑一個 token）。假設下一個詞的分佈是 `about` 30%、`would` 20%、`of` 10%，temperature 會影響這些機率最後如何被採樣。
+
+| 範圍 | 適合 |
+|---|---|
+| 低（0.0–0.3） | 事實性回應、程式碼協助、資料提取、內容審核 |
+| 中（0.4–0.7） | 摘要、教育內容、問題解決、有限制的創意寫作 |
+| 高（0.8–1.0） | 腦力激盪、創意寫作、行銷內容、笑話生成 |
+
+temperature 比較像調整機率分佈的旋鈕，不保證每次都得到不同輸出。數值接近 0 時，輸出通常更可預測；數值接近 1 時，可能出現更多樣的選擇。低 temperature 也不等於內容一定正確，它只代表取樣結果比較穩定。
+
+:::caution
+這次實作時，`anthropic` SDK 1.x 的 `messages.create()` 簽名已移除 `temperature`、`top_p` 和 `top_k`，直接照教材傳入會遇到 `TypeError`。這不代表 temperature 這個概念在所有環境都消失了：`class_06` 仍用 Haiku 4.5 實際跑低溫與高溫，只是透過 `extra_body` 把參數送進 request body；4.6 以後的模型世代則會回傳 400。
+:::
+
+實作中的 helper 只需要補上這段：
+
+```python
+if temperature is not None:
+    params["extra_body"] = {"temperature": temperature}
+```
+
+完整版本放在 [`class_06_temperature.py`](https://github.com/hungjie19/claude-academy-api-app/blob/main/class_06_temperature.py) 與 [對應 commit](https://github.com/hungjie19/claude-academy-api-app/commit/92024a5cc914a29d09abdd6b3a572193ad94aefc)。
+
+### 7. Response streaming（回應串流）
+
+一次回應可能需要 10–30 秒。如果介面在整段文字生成完以前只顯示 loading，使用者會覺得應用程式卡住。Response streaming 讓 API 一邊生成、一邊把事件送回來。
+
+事件會屬於同一個 request，常見類型如下：
+
+| 事件 | 意義 |
+|---|---|
+| MessageStart | 正在傳送一則新訊息 |
+| ContentBlockStart | 新內容區塊開始，可能是文字、工具使用或其他內容 |
+| ContentBlockDelta | 實際生成文字的區塊 |
+| ContentBlockStop | 目前內容區塊完成 |
+| MessageDelta | 目前訊息完成 |
+| MessageStop | 目前訊息資訊結束 |
+
+事件順序可以先記成這樣：
+
+```text
+MessageStart
+  → ContentBlockStart
+  → ContentBlockDelta × N   ← 把這些文字即時顯示給使用者
+  → ContentBlockStop
+  → MessageDelta
+  → MessageStop
+```
+
+SDK 提供只處理文字串流的簡化介面：
+
+```python
+with client.messages.stream(model=model, max_tokens=1000, messages=messages) as stream:
+    for text in stream.text_stream:
+        print(text, end="")
+```
+
+串流時可以即時把文字顯示給使用者，完成後再用 `stream.get_final_message()` 取得完整訊息，存進資料庫或交給後續的應用邏輯。
+
+### 8. Structured data（結構化資料）
+
+課程用 AWS EventBridge 規則作為例子：使用者希望複製一段乾淨 JSON 直接使用，但 Claude 預設可能在 JSON 前後加上說明，或把內容包在 Markdown code fence 裡。
+
+教材示範的解法是 assistant prefill 加上 stop sequences：
+
+```python
+messages = []
+add_user_message(messages, "Generate a very short event bridge rule as json")
+add_assistant_message(messages, "```json")
+
+text = chat(messages, stop_sequences=["```"])
+```
+
+它的工作方式是：先用 user message 說明要產生什麼，再用預填的 assistant message 讓 Claude 看起來像已經開始一個 JSON code block。Claude 接著生成 JSON 本體，遇到 ` ``` ` 時由 stop sequence 停止，程式最後可以用 `json.loads(text.strip())` 移除多餘換行並解析。
+
+同樣的思路也能用在 Python、CSV 或項目符號清單：先觀察 Claude 平常會怎麼包裝內容，再把那個包裝拿來當作開始訊號與停止訊號。
+
+:::caution
+assistant prefill 是這段教材的示範方式；我實作時發現，較新的 4.6 世代模型遇到 prefill 會回傳 400，Haiku 4.5 這類較舊模型仍可使用。`class_08` 因此實際比較了三種結果：直接要求 JSON、課程的 prefill 加 stop sequence，以及現行的 structured outputs。
+:::
+
+structured outputs 直接用 `output_config.format` 指定 JSON Schema，不需要再猜 Claude 會用哪一種 Markdown 包裝內容。不過 Schema 也有自己的坑：每一層 object 都要明確寫 `additionalProperties: False`，漏掉巢狀物件那一層時，同樣會收到 400。完整的 A／B／C 對照放在 [`class_08_structured_data.py`](https://github.com/hungjie19/claude-academy-api-app/blob/main/class_08_structured_data.py)。
+
+## Course Quiz 1（使用 API 存取 Claude）
+
+有 8 題。官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 您正在建置一個與 Claude 對話的網頁應用程式。您應該將 API 金鑰儲存在哪裡？
+
+答案：**在使用者無法存取的伺服器上**
+
+### 您正在建置一個需要從 Claude 取得乾淨 JSON、沒有額外文字或格式的應用程式。您如何只取得原始 JSON？
+
+答案：**結合預填訊息和停止序列**
+
+### 您正在建置一個數學輔導機器人。您希望 Claude 提供提示而不是直接答案。您應該使用什麼？
+
+答案：**說明輔導角色的系統提示**
+
+### 您問 Claude「什麼是披薩？」它回答了。然後您問「哪些配料很受歡迎？」但 Claude 不理解您指的是什麼。問題是什麼？
+
+答案：**Claude 不記得之前的訊息**
+
+### 您希望 Claude 為事實問答應用程式提供非常可預測、一致的答案。您應該使用什麼溫度設定？
+
+答案：**低溫度（接近 0.0）**
+
+### 您想要向 Claude 的 API 發送請求。您必須包含的最少資訊是什麼？
+
+答案：**API 金鑰、模型名稱、訊息和最大 token 數**
+
+### 當 Claude 處理您的文字時，它做的第一件事是什麼？
+
+答案：**將其分解成稱為 token 的較小區塊**
+
+### 使用者抱怨您的聊天應用程式感覺很慢，因為他們要盯著載入圖示等待 20 秒，然後所有生成的文字才會一次出現。什麼可以解決這個問題？
+
+答案：**啟用回應串流**
+
+---
+
+## Prompt evaluation（提示評估）
+
+前 8 堂把「請求做對」的基礎接起來，接下來 6 堂開始回答另一個問題：這個 prompt 到底寫得好不好？
+
+課程把提示工程（prompt engineering）和提示評估（prompt evaluation）分開。前者關心怎麼寫出更容易被 Claude 理解的 prompt，後者則用自動化測試衡量 prompt 在不同輸入下的實際效果。官方把提示評估放在提示工程技巧之前，這個順序很有意思：先準備量尺，後面的技巧才知道有沒有帶來改善。
+
+### 9. Prompt evaluation（提示評估）
+
+草擬好 prompt 後，大致有三種做法：
+
+| 選項 | 做法 | 風險 |
+|---|---|---|
+| 選項 1 | 測一次，覺得夠好就上線 | 使用者給出意外輸入時，可能在 production 爆掉 |
+| 選項 2 | 測幾次，修一兩個邊緣情況 | 仍然很難涵蓋真實使用者的輸入多樣性 |
+| 選項 3 | 跑過評估流程、取得分數，再依指標反覆改善 | 需要較多工作量與成本，但可靠性較有依據 |
+
+提示工程比較像「怎麼寫」，提示評估則是在問「寫得好不好」。如果只靠幾次手動測試，很容易把有限的成功案例誤認成穩定的品質。
+
+### 10. A typical eval workflow（典型的評估工作流程）
+
+一條基本的評估流程有五步：
+
+1. 草擬提示，例如 `Please answer the user's question: {question}`。
+2. 建立代表 production 輸入的評估資料集，可以手動準備，也可以用 Claude 生成。
+3. 把每筆資料套進 prompt template，送給 Claude 取得回應。
+4. 將原始問題和 Claude 的答案交給 grader 評分，常見分數範圍是 1–10。
+5. 修改 prompt，重新跑過整個流程，觀察平均分數是否改善。
+
+課程的範例先得到 10、4、9 三個分數，平均是 `(10+4+9)/3 = 7.66`；加上一句 `Answer the question with ample detail` 後，平均分數升到 8.7。重點不在某個神奇的分數，而在於把「感覺變好」換成可比較的結果。
+
+### 11. Generating test datasets（生成測試資料集）
+
+課程接著做一個輸出 AWS 相關 Python、JSON 設定或正規表示式的評估系統，要求回應乾淨，不要附加說明、標頭或頁尾。
+
+先從一個刻意簡單的 prompt 開始：
+
+```python
+prompt = f"""
+Please provide a solution to the following task:
+{task}
+"""
+```
+
+評估資料集是一個 JSON 物件陣列，每個物件至少有 `task` 屬性。生成資料集時，官方建議把任務控制在單一 Python function、單一 JSON object 或單一 regex 可以解決的範圍，避免一開始就把測試案例做得過於龐大。
+
+這裡再次用到第 8 堂的 assistant prefill 和 stop sequence。實作上，生成結果會先用 `json.loads()` 驗證，再把固定的資料集寫入 `dataset.json`，供後面每一輪評估重複使用；完整流程保留在 [class 11 的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/816f9989f438ab78dddff414e314c3c080032569)。
+
+官方特別提醒，生成測試資料時可以使用 Haiku 這種速度較快、成本較低的模型，不需要每個環節都用完整能力的模型。評估流程從這裡開始有了成本意識：資料集本身也可以用更輕量的方式準備。
+
+我實際生成的是 6 筆資料，並把 `dataset.json` 固定下來，讓後面的 class 12–14 都能對同一批測試案例重跑。這個小決定很重要：如果每一輪連測試資料都換掉，最後分數的變化就很難歸因到 prompt 或 grader。
+
+### 12. Running the eval（執行評估）
+
+評估流程可以先拆成三個職責清楚的函式：
+
+| 函式 | 職責 |
+|---|---|
+| `run_prompt(test_case)` | 合併 prompt template 和測試案例，送出請求並取得輸出 |
+| `run_test_case(test_case)` | 呼叫 `run_prompt`，再替結果評分 |
+| `run_eval(dataset)` | 載入資料集，逐筆執行 `run_test_case` 並收集結果 |
+
+這一堂刻意先把評分硬編碼成 10，讓整條管線先跑起來：
+
+```python
+def run_test_case(test_case):
+    output = run_prompt(test_case)
+    score = 10  # TODO - Grading
+    return {"output": output, "test_case": test_case, "score": score}
+```
+
+每筆結果固定保留三個欄位：Claude 的完整回應 `output`、原始測試案例 `test_case`，以及分數 `score`。第一次跑完整資料集，即使使用 Claude Haiku，也可能需要大約 30 秒；後續才會處理評分器設計與效能改善。
+
+先用假分數把資料流接通，再回頭補真正的 grader，這個順序讓問題比較容易切開：先確認資料集、request 和結果收集都能運作，再處理「什麼叫做好的輸出」。
+
+### 13. Model based grading（基於模型的評分）
+
+評分器（grader）會吃 Claude 的輸出，回傳可衡量的回饋。課程列出三種分類方式：
+
+| 類型 | 做法 | 適合評什麼 |
+|---|---|---|
+| 程式碼評分器（Code graders） | 用自訂程式邏輯檢查 | 輸出長度、特定字詞、JSON／Python／Regex 語法、可讀性 |
+| 模型評分器（Model graders） | 再呼叫一次 API 評分 | 回應品質、指令遵循、完整性、有幫助性、安全性 |
+| 人工評分器（Human graders） | 人工審查輸出 | 整體品質、全面性、深度、簡潔性、相關性 |
+
+「程式碼評分器」的分類依據是用什麼來評分，受評的對象仍然是 Claude 的輸出。它不只適合評估程式碼，也可以檢查文案字數、禁用詞或固定格式。這門課剛好在做程式碼生成，所以才會用 `ast.parse()` 驗證 Python 語法。
+
+整條流程可以畫成：
+
+```text
+提示（受測者）→ Claude 生成輸出 → 評分器打分 → 分數代表提示的品質
+```
+
+每一輪都要重新生成輸出。提示改了，受測品就變了，不能沿用上一輪結果；而同一版 prompt 重跑時，輸出也可能因為取樣而改變。若要比較 v1 和 v2，兩輪的輸出原文都應存檔，否則分數從 6.9 變 7.4 時，很難判斷是 prompt 真的變好，還是剛好抽到比較好的輸出。
+
+模型評分器的輸出至少要包含四件事：`strengths`、`weaknesses`、`reasoning` 和 `score`。如果只要求模型回傳分數，它常常會集中在 6 分左右，鑑別力不高；要求它交出理由，才比較有機會知道分數背後發生了什麼。
+
+這裡的資料流可以畫成：
+
+```text
+原始 task + Claude output
+          ↓
+      Model grader
+          ↓
+strengths / weaknesses / reasoning / score
+```
+
+課程示範用 prefill 取得 JSON；我實作時改用 structured outputs，避免評分理由裡的 regex 反斜線造成 JSON 解析失敗。也另外保存每筆 output 原文與評分理由，讓分數變化可以回溯。
+
+實作時還補了一個課程沒有展開的部分：把每筆輸出的原文、測試案例、模型分數和評分理由一起存下來。否則下一輪分數改變時，只有數字，沒有辦法回頭檢查模型到底評了什麼。完整版本見 [class 13 的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/3e6f2e9040ba082a0687f5e30f713d2b94d1b727)。
+
+評分結果最後再計算平均分數。模型評分器可能有些反覆無常，但它仍然能提供一個相對一致的基準，協助追蹤 prompt 版本之間的變化。
+
+### 14. Code based grading（基於程式碼的評分）
+
+程式碼評分器處理格式和有效語法。測試案例增加 `format` 欄位後，評分器就能選對驗證方式：
+
+| `format` | 驗證方式 | 通過條件 |
+|---|---|---|
+| `json` | `json.loads()` | 可以解析成 JSON |
+| `python` | `ast.parse()` | Python 語法有效 |
+| `regex` | `re.compile()` | 正規表示式可以編譯 |
+
+三種驗證器都採用同一個簡單規則：解析成功給 10 分，失敗給 0 分。輸出提示則明確要求只回傳 Python、JSON 或 plain Regex，不附加說明；完整的資料集欄位和 validator 實作放在 [class 14 的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/814776e9883b915730fc9062df15be27e9b0027a)。
+
+最後把模型評分和語法評分合在一起：
+
+```python
+model_grade = grade_by_model(test_case, output)
+model_score = model_grade["score"]
+syntax_score = grade_syntax(output, test_case)
+score = (model_score + syntax_score) / 2
+```
+
+課程對分數的態度很實用：分數本身沒有脫離情境的好壞，重點是能不能靠修改 prompt 讓同一套評估標準下的分數上升。內容品質交給模型判，格式和語法交給程式判，兩種結果合起來才比較接近實際需求。
+
+這次實跑的結果也比課程範例更有感：
+
+| Prompt 版本 | 調整 | 平均分數 |
+|---|---|---:|
+| v1 | `Please provide a solution...` | 3.50 |
+| v2 | 明確要求只回傳程式碼，再加上 ` ```code ` prefill | 7.58 |
+
+這個提升幾乎來自語法分數；模型評分的變化很小，甚至有兩筆因為拿掉 docstring 而被模型評得更低。分數上升不等於所有面向都變好，還是要把模型分數、語法分數和實際需求拆開看。
+
+## Course Quiz 2（提示評估）
+
+有 6 題。官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 您需要為提示評估準備測試案例。您有兩個選項：手動撰寫或使用 Claude 生成。您應該使用哪個模型來生成？
+
+答案：**像 Haiku 這樣更快的模型**
+
+### 您撰寫了一個提示並測試了一次。它運作良好，所以您將其部署到生產環境。這種做法的主要風險是什麼？
+
+答案：**使用者會提供意外的輸入而破壞它**
+
+### 您想要衡量您的提示在實際應用中的效果如何。您應該專注於哪種方法？
+
+答案：**提示評估方法**
+
+### 您正在執行提示評估工作流程。您已使用 Claude 生成了一些回應。下一步是什麼？
+
+答案：**將回應輸入評分器**
+
+### 哪種類型的評分器使用另一個 AI 模型來評估輸出的品質？
+
+答案：**模型評分器**
+
+### 您正在使用模型評分器來評估回應。為了獲得比僅僅中等範圍數字更好的分數，您應該在分數之外要求什麼？
+
+答案：**優點、缺點和推理**
+
+## 實作地圖：每堂課一個 commit
+
+完整程式碼放在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。我按照課程編號保留 commit 歷史，讓每一堂課的變化可以單獨被檢查；文章只放能解釋觀念的 code，想重現完整結果時再從 commit 往回走。
+
+| Class | 課程主題 | 實作內容 | Commit |
+|---:|---|---|---|
+| 01 | Accessing the API | 專案初始化與最小 request | [6125cde](https://github.com/hungjie19/claude-academy-api-app/commit/6125cde0067ee49792a5fe53d87fbe8c1e2fb8be) |
+| 02 | Getting an API key | `.env`、`.gitignore` 與金鑰設定 | [6125cde](https://github.com/hungjie19/claude-academy-api-app/commit/6125cde0067ee49792a5fe53d87fbe8c1e2fb8be) |
+| 03 | Making a request | `smoke_test.py` 驗證 request、stop reason 與 token usage | [6125cde](https://github.com/hungjie19/claude-academy-api-app/commit/6125cde0067ee49792a5fe53d87fbe8c1e2fb8be) |
+| 04 | Multi-Turn conversations | 建立共用的 message helper 與 `chat()` | [1462075](https://github.com/hungjie19/claude-academy-api-app/commit/1462075f17b6170bde9bee9fcb2b8adb5ae7e07b) |
+| 05 | System prompts | 讓 `chat()` 支援 system prompt | [c38060a](https://github.com/hungjie19/claude-academy-api-app/commit/c38060a11f6dee43030e66f3636626781843e889) |
+| 06 | Temperature | 實測低溫與高溫，並處理 SDK／模型版本落差 | [92024a5](https://github.com/hungjie19/claude-academy-api-app/commit/92024a5cc914a29d09abdd6b3a572193ad94aefc) |
+| 07 | Response streaming | 比較 raw events、`text_stream` 與完整訊息 | [3b61cda](https://github.com/hungjie19/claude-academy-api-app/commit/3b61cda31d30317afce40a72538da2f390b5a2fb) |
+| 08 | Structured data | 比較 prefill、stop sequence 與 structured outputs | [8267580](https://github.com/hungjie19/claude-academy-api-app/commit/8267580ffc32b9cf7d599cc04776e7bbb63bb477) |
+| 09 | Prompt evaluation | 評估問題與測試策略，沒有獨立 script | — |
+| 10 | A typical eval workflow | 定義評估流水線，沒有獨立 script | — |
+| 11 | Generating test datasets | 生成並固定評估資料集 fixture | [816f998](https://github.com/hungjie19/claude-academy-api-app/commit/816f9989f438ab78dddff414e314c3c080032569) |
+| 12 | Running the eval | 先用假分數跑通整條 pipeline | [3c05986](https://github.com/hungjie19/claude-academy-api-app/commit/3c05986a4d0206abc7ee714d58b4addf1489b28e) |
+| 13 | Model based grading | 加入模型評分、理由與結果保存 | [3e6f2e9](https://github.com/hungjie19/claude-academy-api-app/commit/3e6f2e9040ba082a0687f5e30f713d2b94d1b727) |
+| 14 | Code based grading | 加入格式／語法評分，並比較兩版 prompt | [814776e](https://github.com/hungjie19/claude-academy-api-app/commit/814776e9883b915730fc9062df15be27e9b0027a) |
+
+前 3 堂共用專案初始化與 `smoke_test.py`，第 9、10 堂則先建立評估概念，程式碼從第 11 堂開始接上。這裡保留 `—`，不替沒有獨立 script 的課堂硬補一個虛構 commit。另有 [查詢可用模型](https://github.com/hungjie19/claude-academy-api-app/commit/beb1dca71ba7bfa0095524c46d1ba10a513c18f5) 和 [選定課程練習模型](https://github.com/hungjie19/claude-academy-api-app/commit/0e2bb736a10b24f7adcba1789ef3adab9bf3ed2b) 兩個支援性 commit，沒有硬塞進課程編號。
+
+## 小結
+
+前 8 堂把 Claude API 的 request loop 建起來：金鑰放在伺服器、對話歷史自己維護、`max_tokens` 當保險絲、temperature 調整取樣分佈、串流改善等待體感，再用 prefill 和 stop sequence 控制輸出格式。後 6 堂則把 prompt 的品質拉出來量，從資料集、Claude 回應、grader 到平均分數，形成一條可以反覆跑的評估管線。
+
+這門課真正開始前，還有一個很現實的門檻：要先到 [Claude Platform](https://platform.claude.com/) 註冊，拿到那張 API key 的「魔法小卡」，完成 billing，並依這次帳戶流程先儲值 5 USD，才會真的開始呼叫 API。這裡的 5 USD 是我這次實際遇到的入門條件，不把它寫成所有帳戶永遠固定的最低門檻。
+
+API 課程比我原本想像中有趣，因為它讓平常用到的東西突然有了可以動手碰的底層視角。Claude Code CLI 或桌面 App 的操作介面背後，至少可以用 request、messages、system prompt、streaming 和 structured output 這些 API 原語來理解；這不代表它們的內部實作完全相同，但「魔法」少了一點。
+
+temperature 這堂也很有意思。課程把它當成控制取樣分佈的旋鈕，但實際跑過才發現，參數是否可用會被 SDK 和模型世代限制。模型評分則是另一個視角：讓模型暫時站到審查者的位置，回頭評估另一個模型輸出的品質。這些東西平常用 App 不一定看得到，放進 API 裡就變成可以觀察、比較和調整的工程問題。
+
+[Building with the Claude API｜GitHub Source Code](https://github.com/hungjie19/claude-academy-api-app)
