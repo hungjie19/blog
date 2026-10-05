@@ -1,0 +1,198 @@
+---
+title: "Building with the Claude API（2/7）：提示工程的評估與迭代"
+ogTitle: "Building with the Claude API（2/7）|提示工程的評估與迭代"
+date: 2026-10-05T22:30:00+08:00
+description: "Building with the Claude API 第 15–19 堂，從清晰指令、具體要求、XML 標籤到範例學習，整理如何用評估分數逐步改善 Prompt。"
+tags:
+  - Claude
+  - LLM
+  - Prompt-Engineering
+  - Workflow
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 21
+---
+
+import KeyTakeaways from '../../../components/KeyTakeaways.astro';
+
+<KeyTakeaways>
+  <p>
+    Prompt engineering 要怎麼從技巧清單變成可驗證的改善流程？這 5 堂課沿著同一個餐食計畫任務，逐次加入清晰指令、輸出要求、XML 標籤與範例，讓 Prompt 的變更可以用評估分數追蹤；課程分數是示範結果，實際表現仍會受模型、資料集與 grader 影響。
+  </p>
+</KeyTakeaways>
+
+接著 [上一篇〈Building with the Claude API：API 存取與提示評估〉](/posts/building-with-the-claude-api-part1/)，看到 [Claude Academy 的 Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api) 開始談提示工程時，我第一個感覺是：這裡沒有突然冒出一個神奇句型，反而像是在替 Prompt 加上測試流程。
+
+本篇涵蓋官方課程的 **Prompt engineering techniques（提示工程技巧）**，也就是第 15–19 堂，共 5 堂課與 Quiz 3。這一組的例子都圍繞同一個任務：替運動員生成一日餐食計畫，然後每次只改 Prompt 的一個地方，觀察輸出品質怎麼變。
+
+## 15. Prompt engineering（提示工程）
+
+課程先把提示工程定義成一個循環：設定目標、寫初始 Prompt、評估、套用技巧，再重新評估。真正值得留下來的規則是後半句：**一次只改一項**。
+
+如果一輪同時改了語氣、格式、資料結構和範例，最後分數變高時，只知道整包變更有效，卻不知道是哪一個改動帶來改善。把變更拆開，Prompt 才有機會像程式一樣被除錯。
+
+課程範例用 `PromptEvaluator` 先生成少量資料集，再把每個案例交給 Claude 回答，最後由 grader 依額外標準評分。開發階段維持 2–3 個案例，可以縮短迭代時間；最後驗證時再增加案例數量。
+
+```python
+evaluator = PromptEvaluator(max_concurrent_tasks=5)
+```
+
+這個 `max_concurrent_tasks` 也有實務上的取捨：併發數太高容易撞到 rate limit，所以官方建議先從較低的數字開始，確認配額和流程都穩定後再調高。
+
+## 先把實驗條件固定下來
+
+這次實作沒有每一堂都重新生成測試資料。`meal_plan_dataset.json` 只建立一次，後面的 Prompt 版本都拿同一批 3 個案例比較；不然分數變化裡會混進「這次剛好換到比較簡單的題目」這個變數。
+
+評估標準也固定在共用的 `EXTRA_CRITERIA`，直接寫出我在意的及格線：
+
+```python
+EXTRA_CRITERIA = """
+The output should include:
+- Daily caloric total
+- Macronutrient breakdown
+- Meals with exact foods, portions, and timing
+"""
+```
+
+這個做法讓評估器多了一個重要角色：它不只負責把答案打分，也把作者心裡的「這份餐食計畫至少要包含什麼」寫成一份可重複檢查的規格。第 17 堂新增的六條指引，其中四條就直接對應到這些評估條件。
+
+我實際跑 script 時把併發數設成 3，和課程片段裡的 5 不同。原因很單純：先讓請求穩定完成，再考慮把速度往上推；這是為了避開 rate limit 的實作取捨，不代表 3 是固定答案。
+
+## 課程示範與這次實作，兩組數字分開看
+
+課程示範的前兩次改善是 **2.32 → 3.92 → 7.86**：先把開頭改成清楚的指示句，再補上輸出品質指引。我在同一份資料集上跑出的五個版本，則是另一組數字。兩組結果要並排看，不能混成同一條分數曲線：
+
+| 版本 | 對應改動 | 課程示範 | 這次實作 |
+|---|---|---:|---:|
+| v1 | 一句很弱的基準提示 | 2.32 | 2.67 |
+| v2 | 清晰且直接的開頭 | 3.92 | 3.67 |
+| v3 | 六條輸出品質指引 | 7.86 | 3.83 |
+| v4 | 用 XML 標籤包住輸入資料 | — | 4.33 |
+| v5 | 加入一組輸入／輸出範例 | — | 4.50 |
+
+這組結果的走勢和課程方向一致，但每一段的幅度不同。v1 到 v2 上升 1 分，v2 到 v3 只有 0.16 分；XML 標籤增加 0.50 分，範例再增加 0.17 分。資料集只有 3 筆，而且 grader 本身也是模型，所以這些數字足以用來觀察這次實作，還不足以宣稱某個技巧在所有任務裡都有效。
+
+這也是我覺得評估流程比單次最高分更重要的原因：它讓我看見「這次改動在這組案例裡發生了什麼」，同時提醒我不要把小幅度差距說成普遍規則。
+
+## 16. Being clear and direct（清晰且直接）
+
+第一個改善很樸素，卻有明顯效果：Prompt 的第一行直接說清楚要 Claude 做什麼。
+
+「我想知道那些人們放在屋頂上、利用太陽的東西」可以改成「寫三段關於太陽能板如何運作的文字」。前者需要 Claude 猜任務，後者直接交代動作和產物。
+
+套回餐食計畫，原本的「這個人應該吃什麼？」改成「**為一位運動員生成一份符合其飲食限制的一日餐食計畫**」。這一句同時交代要生成什麼、服務誰，以及需要遵守的限制。
+
+課程示範的分數從 **2.32 提升到 3.92**，只改了開頭那一行；這次實作則是從 **2.67 提升到 3.67**。兩組數字都支持同一個方向，但幅度不同，表格裡已經把它們分開。
+
+## 17. Being specific（具體明確）
+
+清楚說明任務後，下一個問題是：輸出到底要符合哪些條件？課程把這些要求分成兩種。
+
+| 指引類型 | 作用 | 適合情境 |
+|---|---|---|
+| 輸出品質指引 | 說明長度、格式、內容元素、語氣或限制 | 幾乎每個 Prompt 都適用 |
+| 流程步驟 | 要 Claude 依序考量不同面向再下結論 | 複雜問題、決策與批判性思考 |
+
+餐食計畫的 Prompt 加上六條輸出品質指引，例如每日熱量、蛋白質／脂肪／碳水化合物、用餐時間、符合飲食限制，以及以克為單位列出份量。
+
+課程示範的分數從 **3.92 提升到 7.86**；這次實作則從 **3.67 提升到 3.83**。我覺得這一堂最值得帶走的地方，是把「我沒有寫出來，但我以為 Claude 應該知道」改成明確的輸出規格。評估標準也因此不只負責打分，同時成了 Prompt 的規格書。
+
+## 18. Structure with XML tags（使用 XML 標籤建立結構）
+
+當 Prompt 裡混著指令、程式碼、文件和大量資料時，Claude 需要先分辨每一段內容的角色。這時可以用描述性的 XML 標籤標出界線：
+
+```text
+<athlete_information>
+- Height: 6'2"
+- Weight: 180 lbs
+- Goal: Build muscle
+- Dietary restrictions: Vegetarian
+</athlete_information>
+
+Generate a meal plan based on the athlete information above.
+```
+
+標籤名稱不必是正式 XML schema，但應該能表達內容用途。`<athlete_information>` 比 `<data>` 更容易讓人和模型知道這一段裝的是什麼。
+
+這招的價值和內容複雜度有關。簡單 Prompt 可能看不出差異；當上下文變長、資料類型變多，清楚的界線才比較容易回本。這也是為什麼課程沒有替這一堂安排一個漂亮的分數跳躍：評估的工作之一，就是確認某個技巧在目前情境裡到底有沒有幫助。
+
+## 19. Providing examples（提供範例）
+
+有些規則用文字描述很長，給一組輸入／輸出配對反而更直接。這就是 one-shot（單次示範）和 multi-shot（多次示範）提示。
+
+課程用情感分析示範諷刺語氣：表面上稱讚電影，實際上是在引用一部公認很糟的作品來反諷。單靠「請辨識諷刺」不一定能把判斷邊界講完整，提供具體案例就能把預期結果展示出來。
+
+範例本身也應該用 XML 標籤整理，並說明為什麼理想輸出是好的：
+
+```text
+<sample_input>
+哦耶，我今晚真的很需要航班延誤！太棒了！
+</sample_input>
+
+<ideal_output>
+負面
+</ideal_output>
+
+This example shows how to handle sarcastic language.
+```
+
+範例不只是裝飾。官方建議從評估結果中找出高分輸出，拿來當成 Prompt 的示範，讓「評估」和「提示工程」形成一個循環。這次實作裡的範例是手寫的，還沒有直接把評估報告中的高分案例抽成 Prompt；這是課程方法和目前實作之間需要分開記錄的地方。
+
+## 從技巧清單回到可測量的迭代
+
+四個技巧放在一起看，順序其實很有邏輯：先把任務講清楚，再列出輸出要求；遇到混雜內容時標出資料邊界，遇到難以描述的判斷時直接展示範例。
+
+而真正讓這些技巧有重量的，是每一輪都回到同一個評估流程。沒有評估時，Prompt 很容易變成「這樣寫起來比較專業」的主觀偏好；有了固定資料集、評分標準和一次一項的變更，至少可以知道這次修改有沒有改善目前的任務。
+
+## Course Quiz 3（提示工程技巧測驗）
+
+有 5 題。官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 1. 在提示中使用 XML 標籤的主要目的是什麼？
+
+答案：**增加結構和清晰度，特別是在包含大量內容時**
+
+### 2. Claude 在分析社群媒體貼文時，一直漏掉諷刺性的評論。最好的解決方法是什麼？
+
+答案：**提供範例，將諷刺性貼文標記為負面**
+
+### 3. 「提供範例輸入／輸出配對以引導 AI 回應」描述的是哪種提示工程技巧？
+
+答案：**單樣本或多樣本提示**
+
+### 4. 什麼是提示工程？
+
+答案：**改進提示以獲得更可靠、更高品質的輸出**
+
+### 5. 您想讓 Claude 建立一個健身計畫。哪個開場白效果更好？
+
+答案：**「為初學者建立一個 30 分鐘的健身計畫」**
+
+## 實作地圖：每堂課一個 commit
+
+完整程式碼放在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。這 5 堂課都直接修改同一組餐食計畫 Prompt，每次只推進一個技巧。`8b758e6` 是一次會讓 grader API 回傳 400 的錯誤修正，真正的修法是後面的 `7cf20bf`；回看歷史時不要把前者當成可用版本。
+
+| 課程 | 主題 | 實作內容 | Commit |
+|---:|---|---|---|
+| 15 | Prompt engineering | 建立評估基準線 | [aa21b16](https://github.com/hungjie19/claude-academy-api-app/commit/aa21b16) |
+| 16 | Being clear and direct | 只修改 Prompt 開頭 | [c652c4d](https://github.com/hungjie19/claude-academy-api-app/commit/c652c4d) |
+| 17 | Being specific | 加入六條輸出品質指引 | [f64f508](https://github.com/hungjie19/claude-academy-api-app/commit/f64f508) |
+| 18 | Structure with XML tags | 用 XML 標籤標出輸入資料 | [5325577](https://github.com/hungjie19/claude-academy-api-app/commit/5325577) |
+| 19 | Providing examples | 加入輸入／輸出範例 | [8403d93](https://github.com/hungjie19/claude-academy-api-app/commit/8403d93) |
+
+支援性 commit：[8b758e6](https://github.com/hungjie19/claude-academy-api-app/commit/8b758e6) 是錯誤版本；[7cf20bf](https://github.com/hungjie19/claude-academy-api-app/commit/7cf20bf) 才是補上 1–10 分數範圍後的正確修正。
+
+## 小結
+
+這門課特別的地方，是我們大概都知道提示工程應該往「更清楚、更具體」做。真正有意思的是，課程沒有一次把所有技巧塞進去，而是從最簡單的版本開始，每一堂只調整一個旋鈕、一個數字或一個參數，慢慢看著數值穩定往上走。這個過程很有感，也讓人印象深刻。
+
+我不會執著這次為什麼沒有完全重現課程裡的顯著提升。模型、資料集、grader 和執行狀態都有差異；只要在同一套實驗裡，每次修改後比前一版有改善，就已經足夠讓我理解這個技巧在目前任務裡的作用。
+
+XML 標籤就是一個很好的例子。在輸入資料和格式都正確時，我預期它能幫忙標出界線；我也故意測過格式錯誤的情況，結果反而增加模型處理的時間和 token 消耗。這讓我更確定，Prompt 技巧加上去之後，格式本身也要一起驗證。
+
+而且這不是只看投影片的理解。透過實際開發，我一點一點看見應該在哪裡加哪一行，才能把 Prompt 往前推，再把那顆旋鈕調得更準。這種邊跑、邊比較、邊修正的過程，讓我受益良多。
+
+下一篇 [〈Building with the Claude API：工具使用與代理迴圈〉](/posts/building-with-the-claude-api-part3/) 會從「怎麼把要求講清楚」走到「怎麼讓 Claude 呼叫外部程式」。
+
+[Building with the Claude API｜GitHub Source Code](https://github.com/hungjie19/claude-academy-api-app)
