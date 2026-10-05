@@ -1,0 +1,375 @@
+---
+title: "Building with the Claude API（3/7）：工具使用與代理迴圈"
+ogTitle: "Building with the Claude API（3/7）|工具使用與代理迴圈"
+date: 2026-10-06T01:04:11+08:00
+description: "Building with the Claude API 第 20–31 堂，從工具函式與 JSON schema 到多輪對話、串流、文字編輯與網路搜尋，拆解 Claude 的代理迴圈。"
+tags:
+  - Claude
+  - LLM
+  - Agent
+  - Developer-Tools
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 22
+---
+
+<KeyTakeaways>
+  <p>
+    Claude 能不能自己執行函式？在 Tool use 裡，Claude 負責提出工具請求，你的程式負責執行，再把結果送回對話；第 20–31 堂從自訂工具一路做到多輪工具對話與內建搜尋，核心是用 `stop_reason` 驅動一個可持續的代理迴圈，實際工具行為仍會受模型版本與帳號設定影響。
+  </p>
+</KeyTakeaways>
+
+上一篇 [〈Building with the Claude API：提示工程的評估與迭代〉](/posts/building-with-the-claude-api-part2/) 把 Prompt 寫得更清楚，這一篇開始讓 Claude 碰到 Prompt 以外的世界。問題也跟著換了：如果 Claude 需要現在的時間、資料庫裡的內容，或某個外部 API 的結果，它要怎麼把需求交給你的程式？
+
+本篇涵蓋 [Claude Academy 的 Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api) 中 **Tool use with Claude（使用 Claude 進行工具使用）** 的第 20–31 堂，共 12 堂課與 Quiz 4。這一組從「設定提醒」的小專案開始，把工具函式、JSON schema、訊息區塊、多輪對話、串流，以及文字編輯和網路搜尋工具一路接起來。
+
+## 20. Introducing tool use（工具使用簡介）
+
+工具使用的分工可以先記成四步：
+
+```text
+使用者問題
+    ↓
+Claude 判斷需要工具，提出 tool request
+    ↓
+你的伺服器執行函式，取得外部資料
+    ↓
+把 tool result 送回 Claude
+    ↓
+Claude 根據原問題與新資料產生回應
+```
+
+例如使用者問舊金山的天氣，Claude 不會因為「知道怎麼回答」就突然取得即時天氣。它要先提出需要哪些資料，再由你的伺服器呼叫天氣 API，最後把結果放回對話。
+
+這和一般聊天請求最大的差別，在於工具不是藏在模型裡的一個魔法按鈕。Claude 負責判斷要不要用、要傳哪些參數；實際執行權仍在你的程式。
+
+## 21. Project overview（專案概覽）
+
+課程用「設定未來日期的提醒」當作練習專案。表面上只是請 Claude 設定一個看醫生的提醒，實際上會碰到三個模型本身不一定可靠的地方：
+
+| 模型缺口 | 對應工具 |
+|---|---|
+| 不一定知道精確的現在時間 | 取得目前日期時間 |
+| 日期加法不適合完全交給模型猜 | 將時間長度加到日期時間 |
+| 沒有內建提醒系統 | 設定提醒 |
+
+這個專案的設計起點不是「我想展示三個工具」，而是「模型缺少哪一個能力」。當缺口被定義清楚後，工具才有明確的責任範圍。
+
+## 22. Tool functions（工具函式）
+
+Tool function 就是一個普通的 Python 函式，但它會被 Claude 提出的參數呼叫，所以輸入驗證和錯誤訊息都會成為模型可見的介面。
+
+課程特別強調三件事：函式名和參數名要描述用途；無效輸入要拒絕；錯誤訊息要告訴 Claude 下一步可以怎麼修正。
+
+```python
+def get_current_datetime(date_format="%Y-%m-%d %H:%M:%S"):
+    if not date_format:
+        raise ValueError("date_format cannot be empty")
+    return datetime.now().strftime(date_format)
+```
+
+如果 Claude 傳入空的 `date_format`，`date_format cannot be empty` 比單純的 500 error 更有用。Claude 看得到這段訊息，下一輪有機會帶著修正後的參數重新呼叫。
+
+## 23. Tool schemas（工具結構）
+
+函式寫好後，還要用 JSON schema 告訴 Claude：這個工具叫什麼、什麼時候該用、需要哪些輸入。
+
+一份工具規格至少有三個重要欄位：
+
+| 欄位 | 作用 |
+|---|---|
+| `name` | 清楚、容易辨識的工具名稱 |
+| `description` | 工具做什麼、何時使用、會回傳什麼 |
+| `input_schema` | 參數的 JSON 結構、型別與描述 |
+
+```python
+get_current_datetime_schema = {
+    "name": "get_current_datetime",
+    "description": "Returns the current date and time formatted according to the specified format",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "date_format": {
+                "type": "string",
+                "description": "A string specifying the format of the returned datetime. Uses Python's strftime format codes.",
+                "default": "%Y-%m-%d %H:%M:%S"
+            }
+        },
+        "required": []
+    }
+}
+```
+
+這裡的 `description` 不是文件裡可有可無的註解，它是 Claude 判斷使用時機的重要依據。名稱寫得很清楚，但 description 沒有說明何時該用，模型仍可能在錯的情境呼叫工具。
+
+## 24. Handling message blocks（處理訊息區塊）
+
+一旦把 `tools` 傳進 Messages API，回應就不再保證只有一段文字。Claude 的 assistant message 可能同時包含：
+
+| 區塊 | 用途 |
+|---|---|
+| `text` | 給人看的說明，例如「我來查詢目前時間」 |
+| `tool_use` | 告訴程式要呼叫哪個工具，以及要傳哪些參數 |
+
+`tool_use` 會帶有追蹤用的 ID、工具名稱和輸入字典。對話歷史要把完整的 `response.content` 存回去：
+
+```python
+messages.append({"role": "assistant", "content": response.content})
+```
+
+如果只把文字區塊留下來，下一次請求就失去 Claude 剛才要求執行哪個工具的結構，對話也無法正確接續。
+
+## 25. Sending tool results（傳送工具結果）
+
+工具執行完之後，結果會放在一則 `user` message 裡。這個格式乍看有點反直覺，但它代表「應用程式把外部世界的結果送回對話」。
+
+```python
+messages.append({
+    "role": "user",
+    "content": [{
+        "type": "tool_result",
+        "tool_use_id": response.content[1].id,
+        "content": "15:04:22",
+        "is_error": False
+    }]
+})
+```
+
+這裡最不能弄錯的是 `tool_use_id`。它必須和 Claude 原本提出的 `tool_use` ID 相同，才能把結果配回正確的工具請求。一次回應可以包含多個工具呼叫，即使結果回來的順序不同，也要靠 ID 配對，不能只靠陣列位置。
+
+還有一個容易漏掉的細節：後續請求即使預期 Claude 會直接回答，也要繼續帶上工具 schema。Claude 需要這些 schema 才能理解對話歷史裡提到的工具。
+
+## 26. Multi-turn conversations with tools（使用工具進行多輪對話）
+
+如果問題只需要一個工具，流程是一次請求加一次結果；但「從今天起 103 天後是星期幾」需要先取得現在時間，再把天數加上去。這時一個問題會穿過多輪 API request：
+
+```text
+使用者問題
+  → get_current_datetime
+  → tool result
+  → add_duration_to_datetime
+  → tool result
+  → Claude 的最終回答
+```
+
+這就是為什麼工具使用不只是一個 `if`。應用程式必須保存 assistant 的完整回應、執行所有 `tool_use`、建立 tool result，再把更新後的 messages 送回 Claude。
+
+## 27. Implementing multiple turns（實作多輪對話）
+
+判斷 Claude 是否還要工具的關鍵欄位是 `stop_reason`：
+
+```python
+if response.stop_reason != "tool_use":
+    break  # Claude is done, no more tools needed
+```
+
+把它放進 `while` 迴圈後，工具使用就有了一個明確的終止條件：
+
+```python
+def run_conversation(messages):
+    while True:
+        response = chat(messages, tools=[get_current_datetime_schema])
+        add_assistant_message(messages, response)
+        print(text_from_message(response))
+
+        if response.stop_reason != "tool_use":
+            break
+
+        tool_results = run_tools(response)
+        add_user_message(messages, tool_results)
+
+    return messages
+```
+
+這段迴圈就是整組課程最重要的模型：送出目前對話、保存 Claude 的訊息、判斷是否需要工具、執行工具並送回結果，直到 `stop_reason` 表示 Claude 已經完成回答。
+
+實際執行「從今天起 103 天後是星期幾」時，我看到三次 API 請求：第一次取得目前時間，第二次把 103 天加到日期，第三次才產生最終回答。第二輪使用第一輪的工具結果，這才是 multi-turn 的具體樣子。
+
+實際 run 的 log 長這樣：
+
+:::tip
+為了方便閱讀，以下將長 `id` 簡化成 `111`、`222`，方便看出 `tool_use` 與 `tool_result` 的配對關係。
+:::
+
+```text
+uv run reminder_app.py
+
+[第 1 輪] stop_reason=tool_use
+[text] 我來幫你計算從今天起 103 天後是星期幾。
+
+首先，我需要獲得今天的日期，然後加上 103 天。
+[tool_use] name=get_current_datetime id=111 input={'date_format': '%Y-%m-%d %H:%M:%S'}
+[tool_result] id=111 is_error=False content=2026-10-05 21:26:56
+
+[第 2 輪] stop_reason=tool_use
+[text] 現在我將今天的日期加上 103 天：
+[tool_use] name=add_duration_to_datetime id=222 input={'datetime_str':'2026-10-05 21:26:56', 'duration': 103, 'unit': 'days'}
+[tool_result] id=222 is_error=False content=2027-01-16 21:26:56
+
+[第 3 輪] stop_reason=end_turn
+[text] 根據計算，從今天 (2026年10月5日) 起 103 天後是 **2027年1月16日**，這一天是 **星期六**。
+```
+
+這段 log 可以直接看出對話如何累加：第二輪的 `datetime_str` 來自第一輪工具回傳的字串，而每個 `tool_use` 的 `id` 都和對應的 `tool_result` 一致。最後的「星期六」則是 Claude 從日期推導出來的結果，工具本身只負責日期加法。
+
+## 28. Using multiple tools（使用多個工具）
+
+在既有迴圈上增加工具，主要就是四個步驟：建立函式、定義 schema、把 schema 放進工具清單、在工具路由裡接上實作。
+
+```python
+response = chat(messages, tools=[
+    get_current_datetime_schema,
+    add_duration_to_datetime_schema,
+    set_reminder_schema,
+])
+```
+
+「幫我查詢現在時間，以及 2050 年 1 月 1 日之後的 177 天」這類請求，會讓 Claude 同時提出兩個互不依賴的工具請求。工具增加了，核心的對話迴圈不必跟著重寫，這是前面幾堂課把責任拆開的回報。
+
+這裡其實有兩種工具使用模式。前面的「從今天起 103 天後」需要先知道現在時間，所以是依序連鎖：第一輪取得時間，第二輪才能把天數加上去。這次的日期是固定的 `2050-01-01`，`get_current_datetime` 和 `add_duration_to_datetime` 互不依賴，Claude 可以在同一輪提出兩個 `tool_use`，應用程式再把兩個結果放在同一則 `user` 訊息裡送回去。
+
+這次實際 run 的 log：
+
+```text
+[第 1 輪] stop_reason=tool_use
+[text] 我來幫你查詢這兩個問題。
+[tool_use] name=get_current_datetime id=111 input={}
+[tool_use] name=add_duration_to_datetime id=222 input={'datetime_str':'2050-01-01 00:00:00', 'duration': 177, 'unit': 'days'}
+[tool_result] id=111 is_error=False content=2026-10-05 21:36:45
+[tool_result] id=222 is_error=False content=2050-06-27 00:00:00
+
+[第 2 輪] stop_reason=end_turn
+[text] 根據查詢結果：
+
+1. 現在的時間是 2026-10-05 21:36:45（晚上9點36分45秒）
+2. 2050-01-01 00:00:00 之後 177 天是 2050-06-27 00:00:00（2050年6月27日）
+```
+
+這次只有兩次 API 請求，比前面的三次少一輪，因為第一輪已經送出所有不需要互相等待的工具請求。兩個 `tool_result` 都帶著各自對應的 `tool_use_id`，第二輪收到後直接進入 `end_turn`。這個 commit 的程式沒有再修改，實際版本就是 [cea16fb](https://github.com/hungjie19/claude-academy-api-app/commit/cea16fb)。
+
+## 29. Fine grained tool calling（細粒度工具呼叫）
+
+串流工具參數時，SDK 可能會提供 `InputJsonEvent`，其中包含一段增量 JSON 的 `partial_json`，以及目前累積內容的 `snapshot`。
+
+課程介紹的 fine-grained tool calling 會停用 API 端的 JSON 驗證，讓工具參數更早抵達應用程式，減少頂層欄位之間的緩衝等待；代價是程式必須自己處理無效 JSON：
+
+```python
+try:
+    parsed_args = json.loads(chunk.snapshot)
+except json.JSONDecodeError:
+    print("Received invalid JSON, continuing...")
+```
+
+這個選項適合需要顯示工具參數即時進度，或對延遲非常敏感的情境。官方的結論仍然保守：多數應用程式使用預設驗證行為就足夠。
+
+筆記另外把傳輸層補成 SSE（Server-Sent Events），並指出 SDK 的 `input_json` 和 `snapshot` 是高階封裝，而非 API 原生事件名稱。這段補充目前還沒有逐一對照官方文件確認事件名稱，因此先把它當成實作方向，不把它寫成已驗證的 API 契約。
+
+## 30. The text edit tool（文字編輯工具）
+
+文字編輯工具的特別之處，在於 Claude 已經知道一份內建 schema；但實際檢視、建立、替換、插入和撤銷檔案的程式碼，仍然要由你的應用程式負責。
+
+目前 source repo 的實作依模型版本選擇工具版本字串：Claude 4 以後使用 `text_editor_20250728` 和 `str_replace_based_edit_tool`，較早模型則使用其他版本。這裡正好有一個課程教材和實作版本不同的例子：教材示範仍列出 `text_editor_20250124`、`text_editor_20241022`，不能直接把舊範例當成所有模型的通用設定。
+
+換句話說，內建 schema 減少的是「你要怎麼描述工具」的工作，檔案沙盒、路徑檢查和每個 command 的實作責任仍在你的程式。
+
+## 31. The web search tool（網路搜尋工具）
+
+網路搜尋工具和文字編輯工具剛好相反：搜尋本身由 Claude 的伺服器端能力處理，你主要需要提供 schema 與使用限制。
+
+```python
+web_search_schema = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5
+}
+```
+
+`max_uses` 用來限制一次任務最多搜尋幾次，因為 Claude 可能根據初始結果再發出後續搜尋。需要限定來源時，也可以加上 `allowed_domains`：
+
+```python
+web_search_schema = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,
+    "allowed_domains": ["nih.gov"]
+}
+```
+
+這次實際 run 時，我們沒有執行搜尋函式；回應裡出現的是 `server_tool_use` 和 `web_search_tool_result` 區塊，`stop_reason` 直接是 `end_turn`。這和自訂工具的責任邊界不同，也提醒我：看到「工具」這個名稱時，還要先確認到底是應用程式執行，還是 Anthropic 伺服器端執行。
+
+這次 logger 實際留下的核心 log 是：
+
+```text
+[stop_reason=end_turn]
+[server_tool_use]
+[web_search_tool_result]
+[text] ...（文字被拆成多個區塊，中間夾著引用）
+```
+
+這裡沒有把搜尋 query 和結果內容印出來，所以這段只保留流程證據：搜尋在伺服器端完成，應用程式收到工具結果後直接進入最終回應。若要在產品裡顯示完整搜尋過程，就要像前面的自訂工具一樣，把區塊內容和引用一併記錄下來。
+
+## Course Quiz 4（工具使用測驗）
+
+有 7 題。官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 1. 在使用 Claude 工具時，JSON schema 的主要目的是什麼？
+
+答案：**告訴 Claude 您的函式預期需要哪些參數以及如何使用它**
+
+### 2. Claude 內建的文字編輯器和網路搜尋工具與自訂工具有何不同？
+
+答案：**Claude 提供 schema，但您可能仍需要實作一些功能**
+
+### 3. Claude 預設只能存取其訓練資料中的資訊。是什麼讓 Claude 能夠取得即時、最新的資訊？
+
+答案：**使用工具存取外部資訊**
+
+### 4. 工具使用工作流程中正確的步驟順序是什麼？
+
+答案：**初始請求 → 工具請求 → 資料擷取 → 最終回應**
+
+### 5. 當 Claude 使用工具時，它會回傳什麼類型的訊息結構？
+
+答案：**包含文字和工具使用區塊的多區塊訊息**
+
+### 6. batch 工具解決了什麼問題？
+
+答案：**當需要多個工具時，它減少了來回通訊的次數**
+
+### 7. 您如何判斷 Claude 是否想在對話中進行另一次工具呼叫？
+
+答案：**查看 stop_reason 欄位是否為「tool_use」**
+
+## 實作地圖：每堂課一個 commit
+
+完整程式碼放在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。第 20、21、26 堂是概念或偽程式碼，沒有獨立 commit；第 22 堂開始沿著 `reminder_app.py` 一路累加。
+
+| 課程 | 主題 | 實作內容 | Commit |
+|---:|---|---|---|
+| 20 | Introducing tool use | 工具使用概念 | — |
+| 21 | Project overview | 設定提醒專案的需求 | — |
+| 22 | Tool functions | 工具函式與錯誤訊息 | [6d56234](https://github.com/hungjie19/claude-academy-api-app/commit/6d56234) |
+| 23 | Tool schemas | `name`、`description`、`input_schema` | [e1ac177](https://github.com/hungjie19/claude-academy-api-app/commit/e1ac177) |
+| 24 | Handling message blocks | 處理 `text` 與 `tool_use` | [8a12505](https://github.com/hungjie19/claude-academy-api-app/commit/8a12505) |
+| 25 | Sending tool results | 以 `tool_use_id` 配對工具結果 | [4a1cd22](https://github.com/hungjie19/claude-academy-api-app/commit/4a1cd22) |
+| 26 | Multi-turn conversations with tools | 多輪流程偽程式碼 | — |
+| 27 | Implementing multiple turns | `stop_reason` 與 while 迴圈 | [cd82a7f](https://github.com/hungjie19/claude-academy-api-app/commit/cd82a7f) |
+| 28 | Using multiple tools | 加入日期運算與提醒工具 | [cea16fb](https://github.com/hungjie19/claude-academy-api-app/commit/cea16fb) |
+| 29 | Fine-grained tool calling | 串流工具參數 | [d5ec257](https://github.com/hungjie19/claude-academy-api-app/commit/d5ec257) |
+| 30 | The text edit tool | 文字編輯工具與沙盒 | [a69ccf6](https://github.com/hungjie19/claude-academy-api-app/commit/a69ccf6) |
+| 31 | The web search tool | 伺服器端網路搜尋工具 | [95bd02f](https://github.com/hungjie19/claude-academy-api-app/commit/95bd02f) |
+
+## 小結
+
+這門課專注在處理「對話」本身。外部工具的部分也很新鮮：先寫好一個 function，再寫一份 schema，描述 Claude 什麼時候使用它、需要帶哪些參數。schema 讓模型知道工具怎麼用，訊息區塊保留請求結構，`tool_use_id` 把結果送回正確位置，`stop_reason` 再決定要不要進入下一輪。
+
+平常在 desktop 或 CLI 使用 Claude，我們知道 Context 會一路疊加；API 沒有記憶，所以由 App 保存 messages，再把前面的 Prompt、Claude 的回應和新的問題一起送出去。道理本身不難理解，真正有趣的是課程把這件事拆成一個可以親手實作的過程：先用很簡單的方式記下對話，再在下一次請求時把前面的歷史接回去，看著它怎麼串起來。
+
+看到三輪提醒範例跑完時，我才真正感覺到 agent loop 可以從一個普通的 `while` 迴圈長出來。畫面上看起來只是 Claude 一段一段回覆，拆開 log 之後，背後其實是連續的 API request：先取得現在時間，再把結果交給下一個工具，最後才生成答案。工具算日期、模型推星期幾，兩件事的證據邊界仍然不同，這也提醒我不能只看最後答案正不正確。
+
+因為程式碼在我手上，我刻意把每一次工具呼叫、工具名稱、參數和回傳結果都印出來。這個過程比只看最後答案更有感：你會很清楚看到 Claude 從使用者的意圖判斷要用哪些工具，收到結果後發現資訊還不夠，再提出下一次請求。那些看起來啪啦啪啦出現的文字，拆開來看，其實是連續不斷的工具調用，最後才組成我們看到的答案。把這個過程拆出來觀察，讓我印象非常深刻，也很有趣。
+
+想把今天的範例一路跑起來，可以沿著實作地圖裡的逐堂 commit 重現。
+
+[Building with the Claude API｜GitHub Source Code](https://github.com/hungjie19/claude-academy-api-app)
