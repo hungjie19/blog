@@ -9,6 +9,7 @@ const posts = (await getCollection('blog')).sort(
 ---
 
 <BlogLayout>
+  <h1 class="sr-only">Jasper Hung</h1>
   <div class="feed">
     {posts.map((post, i) => (
       <article class="feed-item" data-index={i}>
