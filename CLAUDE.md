@@ -25,8 +25,8 @@
 | 寬度 | Sidebar 呈現方式 | Sidebar 收合機制 | Topbar 品牌 | Topbar 標題 |
 |---|---|---|---|---|
 | ≤768px（手機） | overlay（`position:absolute`，蓋在 content 上，有 backdrop） | `.open` class（`display:none↔flex`） | 顯示，佔滿剩餘寬度 | 隱藏（空間不足） |
-| 769–1023px（iPad 直式） | overlay（同手機） | `.open` class（同手機） | 顯示 | 顯示 |
-| ≥1024px（iPad 橫式／桌面） | in-flow（佔真實版面寬度，推擠 content） | `.collapsed` class（`display:flex↔none`） | 顯示 | 顯示 |
+| 769–1023px（iPad 直式） | overlay（同手機） | `.open` class（同手機） | 顯示 | 顯示，靠左（flex-1） |
+| ≥1024px（iPad 橫式／桌面） | in-flow（佔真實版面寬度，推擠 content） | `.collapsed` class（`display:flex↔none`） | 顯示 | 顯示，絕對定位置中（`lg:absolute` + 40%／max 480px） |
 
 - Topbar 順序固定：`[收合按鈕][品牌 logo+Jasper Hung][文章標題][icons]`，按鈕永遠最左。
 - 收合按鈕只有一顆（`#sidebar-toggle-btn`），JS 用 `sidebarOverlayMedia = matchMedia('(max-width: 1023px)')` 判斷該切 `.open`（overlay）還是 `.collapsed`（in-flow）。
@@ -41,7 +41,7 @@
 ```
 src/content/blog/
   [slug]/
-    index.mdx   ← 文章本文（固定用 KeyTakeaways 摘要，需要 import，一律 .mdx）
+    index.mdx   ← 文章本文（固定用 KeyTakeaways 摘要，**不需 import**，由 `[slug].astro` 的 MDX components prop 注入；一律 .mdx）
     image.png   ← 圖片放同層
 ```
 

@@ -120,7 +120,7 @@ const iconButtonClass =
   {activeSlug && <div id="reading-progress" class="pointer-events-none fixed left-0 top-0 z-[1000] h-[3px] w-0 bg-accent transition-[width] duration-[80ms] ease-linear"></div>}
 
   <!-- Top bar: fixed across the full width, above sidebar + content -->
-  <header class="flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
+  <header class="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-4">
     <!-- Sidebar toggle (always leftmost, like VS Code / Orca's panel toggle) -->
     <button
       id="sidebar-toggle-btn"
@@ -156,13 +156,13 @@ const iconButtonClass =
       <span>Jasper Hung</span>
     </a>
 
-    <!-- Title (article title, desktop only) -->
-    <span id="topbar-title" class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-none text-muted">
+    <!-- Title (article title, tablet+; centered at ≥1024px, left-aligned in flow below that) -->
+    <span id="topbar-title" class="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-sm leading-none text-muted lg:absolute lg:left-1/2 lg:top-1/2 lg:w-[40%] lg:max-w-[480px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:text-center">
       {title ?? ''}
     </span>
 
     <!-- Icons -->
-    <div class="flex shrink-0 items-center gap-2">
+    <div class="flex shrink-0 items-center gap-2 lg:ml-auto">
       <button
         id="theme-btn"
         class={`${iconButtonClass} border-0 bg-transparent`}
@@ -222,6 +222,13 @@ const iconButtonClass =
       </a>
     </div>
   </header>
+
+  <!-- Mobile only: slim title strip that fades in once the Key Takeaways block scrolls out of view -->
+  {title && (
+    <div id="mobile-title-bar" class="pointer-events-none fixed inset-x-0 top-12 z-50 flex h-8 items-center border-b border-border bg-bg px-4 text-xs text-muted opacity-0 transition-opacity duration-200">
+      <span class="truncate">{title}</span>
+    </div>
+  )}
 
   <!-- Sidebar + content row, below the top bar -->
   <div id="body-row" class="relative flex min-h-0 flex-1 overflow-hidden">
@@ -413,6 +420,13 @@ const iconButtonClass =
     #topbar-title { display: none; }
   }
 
+  /* Mobile title strip shown after scrolling; hidden on tablet and desktop */
+  #mobile-title-bar { display: none; }
+  @media (max-width: 768px) {
+    #mobile-title-bar { display: flex; }
+    #mobile-title-bar.is-visible { opacity: 1; pointer-events: auto; }
+  }
+
   /* 最多 3 行；額外保留 descender 與瀏覽器次像素計算的空間，超出隱藏 */
   .sidebar-tags {
     display: flex;
@@ -569,6 +583,18 @@ const iconButtonClass =
   });
 
   const main = document.querySelector('main');
+  const mobileTitleBar = document.getElementById('mobile-title-bar');
+  // Trigger on the opening Key Takeaways block; fall back to the H1 when an article has no summary
+  const trigger = document.querySelector('.key-takeaways') ?? document.querySelector('.article-title');
+  if (main && mobileTitleBar && trigger) {
+    // Show the strip only when the trigger has fully left the <main> viewport by scrolling up past it
+    const io = new IntersectionObserver(([entry]) => {
+      const scrolledPast = !entry.isIntersecting && entry.boundingClientRect.bottom <= entry.rootBounds!.top;
+      mobileTitleBar.classList.toggle('is-visible', scrolledPast);
+    }, { root: main, threshold: 0 });
+    io.observe(trigger);
+  }
+
   const bar = document.getElementById('reading-progress');
   if (main && bar) {
     let sent50 = false;
