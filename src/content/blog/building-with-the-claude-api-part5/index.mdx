@@ -1,0 +1,468 @@
+---
+title: "Building with the Claude API（5/7）：Claude 的功能與提示快取"
+ogTitle: "Building with the Claude API（5/7）|Claude 的功能與提示快取"
+date: 2026-10-08T08:20:17+08:00
+description: "Building with the Claude API 第 39–46 堂，整理擴展思考、圖片與 PDF、引用、提示快取，以及 Code Execution 與 Files API 的 API 邊界與實作取捨。"
+tags:
+  - Claude
+  - LLM
+  - Prompt-Engineering
+  - Developer-Tools
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 24
+---
+
+<KeyTakeaways>
+  <p>
+    Claude API 的進階功能怎麼選？從擴展思考、圖片與 PDF、引用、提示快取到 Code Execution 與 Files API，這一篇整理它們各自解決的問題與 request 邊界；範圍是 Features of Claude 的第 39–46 堂，提示快取門檻與 context compaction 仍要依模型、版本和實測確認。
+  </p>
+</KeyTakeaways>
+
+前幾篇把 Claude API 的基本請求、Prompt 評估、工具使用和 RAG 一路接起來。走到這裡，我開始遇到另一種問題：Claude 能處理的輸入變多了，API 回傳的結構也變複雜了，該怎麼知道哪個功能值得打開？
+
+這次打開 [Claude Academy 的 Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)，再回到 [Claude Platform](https://platform.claude.com/) 的 API 文件對照細節。這一段從擴展思考一路走到提示快取和程式碼執行，剛好把「模型能做什麼」和「應用程式要怎麼接」放到同一張地圖上。
+
+## Features of Claude（Claude 的功能）
+
+### 39. Extended thinking（擴展思考）
+
+擴展思考可以讓模型在產生最終回應前，先花更多 token 處理複雜問題。回應結構會從單純的文字，變成推理過程和最終答案兩個部分；對應用程式來說，解析與儲存方式也會跟著改變。
+
+| 優點 | 取捨 |
+|---|---|
+| 複雜任務的推理能力較好 | 思考 token 會增加成本 |
+| 困難問題的準確性可能提高 | 思考需要時間，延遲會增加 |
+| 可以觀察更多思考相關資訊 | 程式碼處理 response 時更複雜 |
+
+官方給的使用判準很實用：先用提示評估確認標準提示已經調校過；如果準確性仍然不夠，再考慮開啟 thinking。它比較適合當成評估結果指向的工具，而非遇到難題就固定打開的總開關。
+
+```python
+def chat(messages, system=None, temperature=1.0, stop_sequences=[],
+         tools=None, thinking=False, thinking_budget=1024):
+    ...
+
+if thinking:
+    params["max_tokens"] = thinking_budget + 1000
+    params["thinking"] = {"type": "enabled", "budget_tokens": thinking_budget}
+```
+
+這裡有兩個數字要記：`budget_tokens` 最小是 1024，`max_tokens` 必須大於 `budget_tokens`，留出空間給最後的答案。`budget_tokens` 是思考 token 的上限，不代表每次都會用滿；實際計費依模型真正使用的思考 token 計算。
+
+`thinking` 是每一次 API 呼叫各自設定的參數。多輪對話裡，簡單的一輪可以關掉，遇到需要更多推理的那一輪再打開。純文字對話不需要把上一輪的 thinking 區塊原樣存回 `messages`；如果思考和工具呼叫交錯，就要保留 thinking 區塊，並和對應的 `tool_use` 一起送回，讓簽名驗證能通過。
+
+擴展思考也有相容性邊界。官方特別提醒，它和訊息預填（message pre-filling）不相容，也會限制 temperature 的使用方式；完整限制要以 [Extended thinking 的官方文件](https://platform.claude.com/docs/en/build-with-claude/thinking#limits-and-feature-compatibility)為準。這代表前一篇用預填取得乾淨 JSON 的做法，不能直接和 thinking 疊在一起。
+
+### 40. Image support（圖片支援）
+
+圖片請求的介面和文字訊息放在同一個 `messages` 結構裡，圖片來源可以是 base64 或圖片 URL。課程先把限制列清楚：
+
+| 項目 | 限制 |
+|---|---|
+| 單次請求所有訊息的圖片數 | 最多 100 張 |
+| 每張圖片大小 | 最大 5MB |
+| 單張圖片尺寸 | 最大高／寬 8000px |
+| 多張圖片尺寸 | 最大高／寬 2000px |
+| 傳入方式 | base64 編碼或圖片 URL |
+| token 計算 | `tokens = (width px × height px) / 750` |
+
+用 base64 傳圖片的基本寫法如下：
+
+```python
+with open("image.png", "rb") as f:
+    image_bytes = base64.standard_b64encode(f.read()).decode("utf-8")
+
+add_user_message(messages, [
+    {"type": "image", "source": {
+        "type": "base64", "media_type": "image/png", "data": image_bytes}},
+    {"type": "text", "text": "What do you see in this image?"},
+])
+```
+
+這堂真正值得帶走的地方，落在 Prompt 寫法。圖片輸入不會自動替你補上分析方法；只問「這張圖片中有多少顆彈珠？」仍然可能數錯。比較可靠的做法是提供明確步驟、加入 one-shot 或 multi-shot 範例，再把複雜任務拆成幾個可以檢查的小步驟。
+
+官方的數彈珠範例，還要求模型換另一種方法驗算一次：
+
+```text
+Analyze this image of marbles and determine the exact count using this methodology:
+1. Begin by identifying each unique marble one at a time. Assign each a number as you identify it.
+2. Verify your result by counting with a different method. Start from the bottom-left corner and work row by row, from left to right.
+
+What is the exact, verified number of marbles in this image?
+```
+
+課程也用住宅保險的火災風險評估當案例。模型要從衛星影像找出住宅附近密集的樹木、緊急服務難以進入的通道，以及懸垂在住宅上方的樹枝；提示把任務拆成主建物辨識、樹冠覆蓋分析、火災風險、可防禦空間和 1–4 級風險評分五步。
+
+圖片輸入帶來的直覺是：視覺任務仍然需要 Prompt Engineering。只是把文字換成圖片，模型就能看見內容，卻不代表它會自動採用適合的計數、驗證或評分流程。
+
+### 41. PDF support（PDF 支援）
+
+PDF 的送法和圖片很接近，主要差在四個地方：副檔名從 `.png` 換成 `.pdf`、變數名改成 `file_bytes`、區塊 `type` 使用 `document`，以及 `media_type` 使用 `application/pdf`。
+
+```python
+with open("earth.pdf", "rb") as f:
+    file_bytes = base64.standard_b64encode(f.read()).decode("utf-8")
+
+add_user_message(messages, [
+    {"type": "document", "source": {
+        "type": "base64", "media_type": "application/pdf", "data": file_bytes}},
+    {"type": "text", "text": "Summarize the document in one sentence"},
+])
+```
+
+Claude 從 PDF 取得的內容包含文字、嵌在文件裡的圖像與圖表、表格及其資料關係，連文件結構和格式也在處理範圍裡。對一次性分析、需要理解版面，或需要精準頁碼引用的任務，原生 PDF 支援很方便。
+
+成本則需要另外看。這次實作使用同一份一頁測試文件和同一個問題，比較原生 PDF 與先抽成純文字的差異：
+
+| 送法 | `input_tokens` |
+|---|---:|
+| 原生 PDF（`document` 區塊） | 1963 |
+| 先抽成純文字 | 346 |
+
+這次觀察裡，原生 PDF 約是純文字的 5.7 倍。量大的文件、需要建立 RAG 索引，或成本很敏感時，先用工具抽成 Markdown／純文字再送給 Claude 會比較適合；要保留圖表版面或精準引用時，才讓原生 PDF 的多模態處理承擔它的成本。
+
+### 42. Citations（引用）
+
+假設 Claude 根據你提供的文件回答問題，但使用者看不到資訊從哪裡來。Citations 功能處理的就是這條回溯路徑：讓 response 裡的回答片段，連回來源文件的特定內容。
+
+啟用方式是在 `document` 區塊加上 `title` 和 `citations`：
+
+```python
+{
+    "type": "document",
+    "source": {"type": "base64", "media_type": "application/pdf", "data": file_bytes},
+    "title": "earth.pdf",
+    "citations": {"enabled": True}
+}
+```
+
+回應裡的引用資料包含：
+
+| 欄位 | 內容 |
+|---|---|
+| `cited_text` | 佐證 Claude 陳述的文件確切文字 |
+| `document_index` | 多份文件時，指出是哪一份 |
+| `document_title` | 送入請求時提供的文件標題 |
+| `start_page_number`／`end_page_number` | 被引用文字的起訖頁碼 |
+
+純文字來源也能使用 citations，只要把 `source` 換成 `type: "text"`。這時回傳的是字元位置，頁碼資訊則不會出現。API 會把回答切成多個文字區塊，每個區塊各自帶著自己的 citations 清單；應用程式就能做出 hover 或點擊後顯示原文的介面。
+
+這裡的邊界很重要：Citations 只處理這次 request 裡提供的文件。它和 web search 無關，也不會告訴你某個回答是否來自模型訓練資料。它提供的是 API 層的來源連結，UI 互動仍然要由應用程式自己完成。
+
+### 43. Prompt caching（提示快取）
+
+沒有快取時，每次送出相同的大型系統提示，Claude 都要重新做預處理：分詞、建立每個 token 的嵌入，再依周圍文字整理上下文。回應完成後，這些前置運算就被丟掉；下一次請求再次遇到同樣內容，又得重做一次。
+
+Prompt caching 保存的就是這段預處理工作。之後看到相同內容時，Claude 可以重用已完成的工作，減少等待時間和輸入成本。
+
+| 優點 | 限制 |
+|---|---|
+| 回應速度較快 | 預設存活 5 分鐘，每次命中會刷新計時器 |
+| 快取部分的輸入成本較低 | 只有重複送出相同內容才有收益 |
+| 首次寫入、後續讀取可以自動分工 | 快取寫入的價格較高，可選 1 小時 TTL |
+
+比較適合的情境是文件分析工作流程和迭代編輯任務：同一份大型文件會被反覆詢問，或基礎系統提示固定、只有最後一段要求一直改變。快取保存的是預處理結果，並非長期儲存；前綴是否完全相同、下一次請求來得夠不夠快，會直接決定它值不值得開。
+
+### 44. Rules of prompt caching（提示快取的規則）
+
+提示快取需要手動放置快取斷點。斷點之前（包含斷點本身）的內容會被納入快取，後續請求只有在那段前綴完全相同時才會命中。
+
+- 對訊息做的工作不會自動快取。
+- 必須手動把快取斷點加到某個區塊。
+- 斷點之前的所有工作會一起被快取。
+- 後續請求的斷點前綴必須完全相同，才有機會讀取快取。
+- 系統提示、工具定義、圖片、工具使用和工具結果區塊都可以放斷點。
+- Claude 處理請求的順序是工具、系統提示、訊息；系統提示和工具定義通常是收益較高的位置。
+- 最多可以放四個斷點。
+
+文字區塊要使用完整格式，才有地方放 `cache_control`：
+
+```python
+cache_control = {"type": "ephemeral"}
+```
+
+即使只在前綴裡多加一個 `please`，也足以讓快取失效。斷點可以跨越多個訊息與訊息類型；如果斷點放在較後的位置，前面的 user、assistant 訊息也會一起被納入。
+
+這堂課用 1024 token 作為快取的最低長度示範，實作時卻發現門檻和模型有關：
+
+| 模型 | 最小快取門檻 |
+|---|---:|
+| Opus 5.5／Opus 5／Fable 5／Sonnet 5.5 等最新一代 | 512 token |
+| Opus 4.8／Sonnet 5／Sonnet 4.6 等 | 1024 token |
+| Opus 4.7／Haiku 3.5 | 2048 token |
+| Opus 4.6／Opus 4.5／Haiku 4.5 | 4096 token |
+
+這個 repo 預設使用的 `claude-haiku-4-5-20251001` 剛好落在 4096 token 的門檻。短的 system prompt 在 Haiku 上可能完全不會進入快取，API 也未必回傳錯誤，只會看不到 `cache_creation_input_tokens`。因此，判斷快取是否有效，不能只看程式碼裡有沒有放 `cache_control`。
+
+### 45. Prompt caching in action（實戰提示快取）
+
+實際該快取什麼？大型 system prompt、複雜的工具 schema，以及會重複送出的訊息內容，都是合理候選。工具清單的最後一個工具可以加上 `cache_control`；用複製的方式處理，避免直接改掉原始定義：
+
+```python
+if tools:
+    tools_clone = tools.copy()
+    last_tool = tools_clone[-1].copy()
+    last_tool["cache_control"] = {"type": "ephemeral"}
+    tools_clone[-1] = last_tool
+    params["tools"] = tools_clone
+```
+
+system prompt 則可以從字串改成文字區塊：
+
+```python
+if system:
+    params["system"] = [{
+        "type": "text",
+        "text": system,
+        "cache_control": {"type": "ephemeral"}
+    }]
+```
+
+驗收快取命中的方式，是查看 response 的 `usage`：
+
+| 情況 | 會看到 |
+|---|---|
+| 第一個請求 | `cache_creation_input_tokens=1772`，寫入快取 |
+| 後續請求 | `cache_read_input_tokens=1772`，從快取讀取 |
+| 內容變更 | 出現新的快取建立 token |
+
+如果工具沒有變、system prompt 有變，細粒度快取可以讓工具部分繼續讀取，只有新 system prompt 重新寫入。這讓「整組前綴全部重算」變成「真正變動的那一段重新付費」。
+
+## 延伸理解：Prompt caching in action
+
+下面這段不是課程內容，而是我上完課後繼續追問 Claude 快取機制的問題。我保留一問一答的方式整理在下面，提供參考；其中有些內容會是日常使用 AI 時實際遇到的問題，但部分結論仍是依 request 結構和實作結果整理出的推論，遇到不同 SDK 或版本時還是要自己驗證。
+
+### 斷點是分段 hash，還是累積前綴？
+
+```text
+❌ 斷點2 = md5(斷點1～斷點2之間的內容)   ← 獨立分段，不對
+✅ 斷點2 = md5(從最開頭一路到斷點2為止的全部內容)   ← 累積，正確
+```
+
+因此，四個斷點可以想成四個「失敗後可以退回去重試」的存檔點。只有一個斷點時，前面任何小改動都可能讓整段失效；斷點較多時，快取可以逐層回退，只重新處理真正變動的區段。
+
+### 伺服器會自動比對，那最多四個斷點限制了什麼？
+
+自動的是「給定斷點後，伺服器比對前綴是否相同」這件事。需要開發者決定的是「在哪些位置放標記」。沒有標記的位置，伺服器就不會為那個位置建立這個比對點；最多四個斷點，限制的是你能指定的檢查位置數量。
+
+### 多輪對話的斷點怎麼擺？
+
+對話通常只會往後增加新訊息，所以實務上兩個斷點就很夠用：第一個固定在工具和 system prompt 後面，第二個則每輪動態移到這次要送出的完整訊息列表尾端。
+
+```text
+這輪：  工具＋系統提示<1> 對話1 ... 對話12 <2> 新對話
+下一輪：工具＋系統提示<1> 對話1 ... 對話13 <2> 新對話
+```
+
+舊斷點這一輪就算沒有重新標記，前面的內容仍然逐位元組相同，系統可以找到最長匹配前綴。斷點 2 後面的新訊息則不會被快取，會依標準價格處理。用固定不動的第二個斷點時，沒有被保護的尾巴會越積越大；對話 agent loop 來說，動態往後移比較合理。
+
+### 中途新增工具會破壞快取嗎？
+
+如果新工具附加在工具陣列最後面，前面的工具仍可能命中；如果新工具插進中間，或既有工具被重新排序，原本工具的位置改變，前綴就對不上。
+
+```text
+原本：   [工具A]<斷點>
+附加在後：[工具A][工具B（新）]<斷點>  → 工具A 照樣命中快取，只有工具B 重新付費
+插在中間或重排序：[工具B（新）][工具A] → 工具A 的位置變了，整段重新處理
+```
+
+這次實作用一個足夠大的 `SYSTEM_PROMPT` 撐過門檻，看到的結果是：
+
+```text
+暖身（只有工具A）         : creation=5031  read=0
+同樣工具清單，問題不同     : creation=0     read=5031   ← 命中
+新增工具B（附加在最後面）  : creation=154   read=5031   ← 工具A 還是命中
+```
+
+這讓工具陣列的順序穩定性變成一個實際的成本設計問題。裝 Skill、MCP 斷線重連，或 Claude Desktop 暫時停用某個 Skill，都可能讓工具消失、重排，再造成一次性重算。
+
+### 中途換模型、改 effort，是不是也會讓快取重算？
+
+對，簡單講就是：換模型、換 effort，兩個都算「內容／設定變了」，預設都會讓快取失效——只是換模型沒有任何例外（直接是不同快取池），換 effort 在少數新模型上有個專門機制可以繞過。跟你一路理解的「斷點涵蓋範圍內任何東西變了就重算」是同一條規則，只是這次變的不是訊息內容本身，是模型或設定參數這種更上層的東西。
+
+換模型時，快取是 **per-model** 的。Claude Opus 5 和 Claude Sonnet 5.5 使用不同的快取命名空間；即使送出的前綴完全相同，新模型也查不到舊模型累積的 entry，會從自己的快取池重新建立。官方的 [Cache diagnostics](https://platform.claude.com/docs/en/build-with-claude/cache-diagnostics) 也把這類情況列成 `model_changed`，建議在同一段會話裡維持模型固定。
+
+所以，先用便宜模型處理一般輪次，再中途切到另一個模型處理難題時，前一個模型的快取通常無法直接沿用。若是拒答後的跨模型 fallback，官方另有 [fallback credit](https://platform.claude.com/docs/en/build-with-claude/fallback-credit) 機制處理額外的寫入成本；那是計費補償，不代表兩個模型共用同一個快取池。
+
+改 `output_config.effort` 時，直接改 request 頂層參數也會讓 message cache 失效；把 effort 明確設定成模型的預設值，效果等同於省略它，不會平白造成一次失效。
+
+補充：少數新模型支援用對話中途的 system message 改 effort，在不改寫前面快取前綴的情況下繞過失效；若直接改 request 頂層參數，仍會走一般的失效路徑，詳細條件以 [Effort 官方文件](https://platform.claude.com/docs/en/build-with-claude/effort)為準。
+
+### 手動壓縮時，工具和 system prompt 會一起被壓縮嗎？
+
+依照這個快取模型，只有第二個斷點涵蓋的對話內容會換成摘要，第一個斷點的工具和 system prompt 保持不動：
+
+```text
+壓縮前：工具＋系統提示<1> 對話1 ... 對話12 <2> 新對話
+壓縮後：工具＋系統提示<1> 壓縮對話摘要    <2> 新對話
+```
+
+摘要是全新的內容，所以壓縮當下那一輪會重新建立快取；下一輪再從新的對話基準累積命中。這也解釋了為什麼手動壓縮當下通常是整個壓縮生命週期裡較貴的一輪。
+
+### Context compaction 會自動發生嗎？
+
+這個 beta API 功能要先主動加入，帶上 `compact-2026-01-12` beta header，而且只支援特定模型。啟用之後，對話接近 150K token 門檻時，Claude 才會在 response 裡夾帶壓縮區塊；應用程式必須把完整的 `response.content`（包含壓縮區塊）存回 `messages`，只存文字會悄悄丟掉壓縮狀態。
+
+目前記錄的支援模型包含 Fable 5／5.1、Opus 5.5／5／4.8／4.7／4.6，以及 Sonnet 5.5／5／4.6，不包含 Haiku。至於 Claude Code CLI 的 `/compact` 是否直接使用這套 beta API，仍需要另外核對；CLI 也可能有自己的 client-side 壓縮邏輯。
+
+### Agent 直接改檔案，和先印出檔案再寫入，context 差多少？
+
+兩種流程可以畫成這樣：
+
+```text
+需求 → 文件（印出來，進 context 第1次）→ ok → 文件改進去（工具參數，進 context 第2次）→ 新對話
+需求 → 文件改進去（工具參數，只進 context 1次）→ 新對話
+```
+
+前者讓同一份內容進入 context 兩次，後續每一輪都可能重複攜帶；後者只送一次。差距大小取決於實際修改內容，折衷方法是印出 diff 摘要，而非完整檔案，或讓 Edit 工具只帶 `old_string`／`new_string`。
+
+### 休息超過 TTL 再回來，會發生什麼事？
+
+快取 entry 過期後，涵蓋的完整前綴會重新建立，沒有一段內容會自動保留：
+
+```text
+5 分鐘 TTL：休息超過 5 分鐘，快取就可能過期
+1 小時 TTL：休息超過 60 分鐘，快取也會過期
+resume 好幾天前的對話：工具、system prompt 和歷史訊息整段重新寫入
+```
+
+重新回來的第一輪會付快取寫入價；接著要有足夠多輪的快取讀取，才有機會攤平這次重新建立的成本。依記錄中的估算，5 分鐘 TTL 約需要兩輪以上，1 小時 TTL 約需要三輪以上，實際仍取決於請求內容與定價。
+
+### 5 分鐘和 1 小時 TTL 怎麼選？
+
+這兩個都屬於 Prompt caching 的 TTL（存活時間），底層仍然是同一套快取機制，差別在於 entry 可以存活多久，以及建立快取時採用哪一種寫入價格。預設的 **5-minute cache** 使用 `cache_control: {"type": "ephemeral"}`；延長版叫 **1-hour cache**，要另外加入 `"ttl": "1h"`：
+
+```json
+{
+  "cache_control": {
+    "type": "ephemeral",
+    "ttl": "1h"
+  }
+}
+```
+
+5 分鐘快取寫入價格是基本 input token 價格的 1.25 倍，1 小時快取寫入價格是 2 倍；兩者的 cache read 都比一般 input token 便宜，實際倍率依模型而異。5 分鐘快取每次被使用都會免費刷新，適合連續互動；1 小時快取適合兩次 request 可能間隔超過 5 分鐘、但仍會在一小時內回來的 agent 或長對話。兩者的延遲表現基本相同，差別主要落在存活窗口與寫入成本。
+
+API response 會把兩種寫入拆開記錄在 `usage.cache_creation`：
+
+```json
+{
+  "cache_creation": {
+    "ephemeral_5m_input_tokens": 148,
+    "ephemeral_1h_input_tokens": 100
+  }
+}
+```
+
+外層的 `cache_creation_input_tokens` 是兩者加總；`cache_read_input_tokens` 則代表這次從既有快取讀了多少 token。換句話說，兩種 TTL 沒有各自不同的快取名稱或資料內容，差異可以從 `cache_control` 的 `ttl` 設定和 response usage 看出來。
+
+判斷依據是兩次會共用前綴的 request 間隔：
+
+| 請求間隔 | 比較適合的 TTL |
+|---|---|
+| 小於 5 分鐘，像連續互動或 agent loop | 5 分鐘 TTL；每次命中會刷新計時器 |
+| 5～60 分鐘，像隔一段時間回來或單次生成很久 | 1 小時 TTL |
+| 超過 60 分鐘 | 兩種 TTL 都救不了，只能接受重算或自行預先暖機 |
+
+因此，Prompt caching 的核心取捨不只在「要不要快取」，也在「我的應用程式多久會再次送出同樣的前綴」。把大型內容放進 1 小時快取，卻每次都隔幾個小時才用一次，仍然會重新建立；把每五分鐘內會反覆使用的內容放進 1 小時快取，則可能只是多付較高的寫入價格。官方也提醒，快取生命週期從寫入或讀取 request 開始計算，生成回應花掉的時間也包含在窗口裡。
+
+最後一個實作細節是工具 schema 的順序：如果新增工具時一律附加在尾端，前面已經暖好的工具前綴比較容易繼續命中；若工具清單在每輪任意排序，快取就很難穩定累積。
+
+### 46. Code execution and the Files API（程式碼執行與 Files API）
+
+Files API 和 Code Execution 分開看各自獨立，接起來就變成一條很完整的資料分析流程。
+
+Files API 讓應用程式先上傳檔案，取得唯一的 file ID，之後在訊息中參照這個 ID。這適合同一份檔案要被多次使用，或檔案較大、不想每次都重新塞進 request 的情境。
+
+Code Execution 是 Anthropic 提供的伺服器端工具，應用程式只需要在 request 裡放入預定義的 schema，Claude 就能在隔離的 Docker container 裡執行 Python。這個 container 沒有網路存取權，不能直接呼叫外部 API；Claude 可以在同一次對話裡多次執行程式碼，讀取輸出後繼續分析。
+
+兩者合在一起的典型流程是：
+
+```text
+上傳 CSV → 取得 file ID → container upload
+                         ↓
+               Claude 在隔離 container 分析
+                         ↓
+              產生圖表或其他檔案 → 下載
+```
+
+```python
+file_metadata = upload('streaming.csv')
+
+add_user_message(messages, [
+    {"type": "text", "text": """Run a detailed analysis to determine major drivers of churn.
+    Your final output should include at least one detailed plot summarizing your findings."""},
+    {"type": "container_upload", "file_id": file_metadata.id},
+])
+
+chat(messages, tools=[{"type": "code_execution_20250522", "name": "code_execution"}])
+```
+
+回應裡會出現文字區塊、伺服器工具使用區塊，以及程式碼執行工具結果區塊。Claude 可能在單次回應中多次執行程式碼，逐步完成分析。若程式產生了圖表或其他檔案，從 `type: "code_execution_output"` 區塊取得 file ID，再下載檔案：
+
+```python
+download_file("file_id_from_response")
+```
+
+這一堂是整門課第一次清楚出現「把運算交給模型所在的環境處理」的感覺：Claude 不只回覆文字，也可以在沙箱裡跑程式、產生圖表，最後把檔案交回應用程式。
+
+## 實作地圖：每堂課一個 commit
+
+完整程式碼都在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。第 43、44 堂是提示快取的規則課，沒有獨立的 lesson script；第 45 堂則把前面兩堂的規則串成可觀察的實作。
+
+| 課程 | 主題 | 實作內容 | Commit |
+|---:|---|---|---|
+| 39 | Extended thinking | 啟用擴展思考，處理 thinking budget 與回應區塊 | [f74176e](https://github.com/hungjie19/claude-academy-api-app/commit/f74176e) |
+| 40 | Image support | 以 base64 傳送圖片，測試圖片輸入 | [acac3af](https://github.com/hungjie19/claude-academy-api-app/commit/acac3af) |
+| 41 | PDF support | 傳送 PDF，觀察原生 PDF 與純文字抽取的差異 | [39f7ce2](https://github.com/hungjie19/claude-academy-api-app/commit/39f7ce2) |
+| 42 | Citations | 啟用文件引用，讀取 response 裡的 citations 結構 | [f7b49e8](https://github.com/hungjie19/claude-academy-api-app/commit/f7b49e8) |
+| 43 | Prompt caching | 認識快取用途與適用情境 | — |
+| 44 | Rules of prompt caching | 認識快取斷點、TTL、前綴匹配和模型門檻 | — |
+| 45 | Prompt caching in action | 快取工具 schema 與 system prompt，讀取 usage 驗證命中 | [1d0b95d](https://github.com/hungjie19/claude-academy-api-app/commit/1d0b95d) |
+|  |  | 補上每次 usage readout 對應的問題文字，讓多輪快取測試比較容易逐筆檢查 | [78f230d](https://github.com/hungjie19/claude-academy-api-app/commit/78f230d) |
+| 46 | Code execution and the Files API | 上傳 CSV、交給 Code Execution 分析，再下載輸出檔案 | [96e7f63](https://github.com/hungjie19/claude-academy-api-app/commit/96e7f63) |
+
+## Course Quiz（課程測驗）
+
+官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 1. Citations 的主要目的
+
+答案：**建立從 Claude 的回應回溯到來源文件特定部分的清晰路徑**
+
+### 2. PDF 與圖片的主要差異
+
+答案：**將 type 改為 `"document"`，media_type 改為 `"application/pdf"`**
+
+### 3. Code Execution 工具的關鍵限制
+
+答案：**它沒有網路存取權限，並在隔離的 Docker 容器中執行**
+
+### 4. Files API 的用途
+
+答案：**提前上傳檔案，之後引用它們，而不是直接在訊息中編碼**
+
+### 5. 擴展思考回應中的兩個部分
+
+答案：**推理過程和最終答案**
+
+### 6. 快取運作的最低要求
+
+答案：**內容長度必須至少為 1024 個 token**
+
+### 7. 相同大型系統提示發出許多請求時，哪個功能更快更便宜
+
+答案：**提示快取**
+
+## 小結
+
+這門課最精髓、也最紮實的地方，是把 Prompt caching 的機制和結構拆開來看。API 提供了自動往前推移的快取斷點，包好的 Claude Code CLI 讓使用者不必逐輪手動管理；但只要工具定義、MCP／Plugin 的連線狀態、模型或 effort 改變，快取就可能從新的前綴重新開始。這些規則看起來簡單，放進真實的 agent loop 後才會發現每一個變動都有成本。
+
+持續互動時，只要共用前綴的 request 還在 5 分鐘窗口裡，快取通常可以一路延續；隔了午休再回來，第一輪重新建立快取，往往就是整段工作裡最貴的一輪。5 分鐘與 1 小時兩個 TTL、工具順序、換模型和切換 effort，讓「什麼時候會斷掉快取」終於有了比較具體的答案。
+
+圖片和 PDF 則補上另一個很實用的取捨：Claude 能解析多種載體，代表多模態能力很完整；實際工作時，PDF 或 Word 轉 Markdown、Excel 轉 CSV，再交給 agent 讀取，通常更省 token，也能少掉重新解析資料的時間。能解析，不代表每次都該把原始載體直接塞進對話；這個差異在 API 的每一輪 context 都會被放大。
+
+目前最想補上的驗證，是 context compaction 和 Claude Code `/compact` 到底是不是同一套 API 機制。至少在這一段，Claude API 已經從「送一個問題、收一段文字」長成了會處理文件、執行程式、保存前綴，還要自己管理狀態的完整應用程式介面。功能清單看完了，接下來就要面對它們如何和外部工具接在一起。
+
+[Building with the Claude API｜GitHub Source Code](https://github.com/hungjie19/claude-academy-api-app)
