@@ -1,0 +1,320 @@
+---
+title: "Building with the Claude API（6/7）：Tools, Resources & Prompts"
+ogTitle: "Building with the Claude API（6/7）|Tools, Resources & Prompts"
+date: 2026-10-09T00:13:57+08:00
+description: "Building with the Claude API 第 47–56 堂，從 MCP 的 server/client 架構走到 tools、resources、prompts 與 Inspector，用一個 CLI 專案把外部資料與預先測試的指令接進 Claude，也整理資源注入的限制。"
+tags:
+  - Claude
+  - MCP
+  - Agent
+  - Developer-Tools
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 25
+---
+
+<KeyTakeaways>
+  <p>
+    MCP 怎麼把 Claude 接到外部工具和資料？它用 tools、resources、prompts
+    三種原語，搭配 MCP client 與 server 把整合責任拆開；本篇涵蓋 Model Context
+    Protocol 的第 47–56 堂與 Quiz 6，實作以 Python SDK 和本機 stdio
+    為主，資源注入的錯誤處理仍有明確邊界。
+  </p>
+</KeyTakeaways>
+
+前幾篇把 Claude API 的工具使用、RAG 和提示快取一路接起來。到了 MCP，問題換成了另一個角度：如果每一個外部服務都要自己寫 schema、函式和維護流程，應用程式很快就會長成一團整合程式碼，這些工具能不能被整理成可重複使用的介面？
+
+這次打開 [Claude Academy 的 Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)，也回到 [Claude Platform](https://platform.claude.com/) 對照 API 的位置。本篇涵蓋官方 **Model Context Protocol** 的第 47–56 堂，共 10 堂課與 Quiz 6；課程用同一個 CLI 聊天機器人專案，同時建立 MCP server 和 client，走過 tools、resources、prompts 三條路徑。
+
+## 章節課程地圖
+
+Model Context Protocol 的第 47–56 堂，沿著同一個 CLI 聊天機器人專案，同時修改 `mcp_server.py`、`mcp_client.py` 和 `main.py`，把三種 MCP primitives 逐步接起來。
+
+| 課程  | 加進 `mcp_server.py`                                       | 加進 `mcp_client.py`／`main.py`                                |
+| ----- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| 47–49 | MCP 架構、server／client 分工與專案骨架                    | CLI 聊天機器人與連線準備                                       |
+| 50    | `docs` 字典、`read_doc_contents`、`edit_document` 兩個工具 | —                                                              |
+| 51    | 不改程式碼，使用 `mcp dev` 測試工具                        | —                                                              |
+| 52    | —                                                          | `MCPClient`、`list_tools()`、`call_tool()`，接上 tool-use 迴圈 |
+| 53    | `list_docs`、`fetch_doc` 兩個 resources                    | —                                                              |
+| 54    | —                                                          | `read_resource()`，加入 `@文件名` 自動帶入文件內容             |
+| 55    | `format` prompt：預寫的 Markdown 格式化指令                | —                                                              |
+| 56    | —                                                          | `list_prompts()`、`get_prompt()` 與斜線指令選單                |
+
+## Model Context Protocol
+
+### 47. Introducing MCP（介紹 MCP）
+
+MCP（Model Context Protocol）是一層通訊協定，讓 Claude 取得外部工具與上下文。它處理的重點，是把工具的定義與執行責任交給專門的 MCP server，應用程式可以透過 client 使用這些能力。
+
+官方用 GitHub 做了一個很容易理解的例子：使用者想問「我所有 repository 裡有哪些開放中的 pull request？」。如果每一項 GitHub 功能都直接塞進聊天應用程式，儲存庫、PR、issue、project 都要各自寫 schema、函式、測試和維護邏輯。MCP 把這些能力放在專用 server 裡，應用程式透過標準介面使用它們。
+
+課程把三個常見問題整理成這張表：
+
+| 問題                           | 課程中的回答                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| 誰寫 MCP server？              | 任何人都可以，通常由服務提供商製作官方實作，例如 AWS 為自己的服務發布 MCP server |
+| 跟直接呼叫 API 有什麼差別？    | MCP server 已經定義好 schema 與函式；直接呼叫 API 時，這些定義由你的應用程式負責 |
+| MCP 和 tool use 是同一件事嗎？ | 兩者互補；MCP 關注的是工具由誰建立、維護與提供                                   |
+
+我會把它記成「工具的供應鏈重組」：Claude 仍然可以提出工具請求，但工具怎麼被定義、放在哪裡執行，以及由誰長期維護，被拆到另一個可以獨立演進的 server。
+
+### 48. MCP clients（MCP 客戶端）
+
+MCP client 是你的應用程式和 MCP server 之間的橋。它負責處理訊息傳遞與協定細節，讓主程式不必自己拼裝每個外部服務的通訊格式。
+
+MCP 的傳輸層與應用程式邏輯分開。client 和 server 可以透過不同方式溝通；最常見的設定是兩者在同一台機器上，透過標準輸入／輸出（stdio）通訊，也可以使用 HTTP、WebSockets 或其他網路協定。
+
+最基本的兩組訊息是：
+
+| 訊息                                   | 作用                                                    |
+| -------------------------------------- | ------------------------------------------------------- |
+| `ListToolsRequest` / `ListToolsResult` | client 詢問 server 提供哪些工具，取得工具清單           |
+| `CallToolRequest` / `CallToolResult`   | client 要求 server 用指定參數執行某個工具，取得執行結果 |
+
+完整流程可以先畫成這樣：
+
+```text
+使用者 → 你的伺服器 → MCP client → MCP server（真的打 GitHub）→ 原路送回
+            ↑
+        Claude 只跟你的伺服器講話
+```
+
+假設使用者問「我有哪些 repository？」：你的伺服器先從 MCP client 取得工具清單，再把問題和工具送給 Claude。Claude 判斷要用哪個工具後，你的伺服器把請求交給 client，client 再交給 MCP server。GitHub 的結果沿著原路回來，最後由你的伺服器把結果交給 Claude 整理。
+
+這張圖的重點是責任邊界：Claude 不直接碰 GitHub；它只和你的伺服器溝通，伺服器再透過 MCP client 使用外部能力。
+
+### 49. Project setup（專案設定）
+
+課程接著建立一個 CLI 聊天機器人，讓使用者透過命令列和一組文件互動。專案裡有兩個元件：處理使用者互動的 MCP client，以及管理文件操作的自訂 MCP server。文件先放在記憶體裡，不使用資料庫。
+
+這個範例同時實作 client 和 server，主要是為了把完整流程走過一次。實際專案通常會依角色選擇其中一邊：做 server，是把自己的服務公開給其他開發者；做 client，則是連到已經存在的 MCP server。
+
+設定完成後，課程提供兩種啟動方式：
+
+```bash
+uv run main.py      # 建議
+python main.py      # 標準 Python
+```
+
+這堂最值得留下來的習慣，出現在真正開始加工具之前。先問一個你能立刻驗證的問題，例如「1+1 等於多少？」確認回覆確實是 2，再問「文件裡寫了什麼？」。第二個問題在文件工具還沒建立以前，不可能真的讀到文件；模型回什麼，都是之後加入工具前可以對照的基準。
+
+這個步驟很小，卻把驗證成本和出錯代價接在一起：如果金鑰、相依套件或聊天迴圈一開始就有問題，後面每一堂都會被錯誤拖著走。先用已知答案建立基準，後續每加一層就有東西可以比較。
+
+### 50. Defining tools with MCP（使用 MCP 定義工具）
+
+Python SDK 把定義工具的工作縮短到 decorator、type hints 和 `Field`。你不必手寫完整的 JSON schema，SDK 會從函式簽名和參數描述產生 Claude 需要的結構。
+
+初始化 MCP server：
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("DocumentMCP", log_level="ERROR")
+```
+
+文件先用一個 dictionary 放在記憶體裡，key 是文件 ID，value 是文件內容。
+
+讀取工具的定義如下：
+
+```python
+@mcp.tool(
+    name="read_doc_contents",
+    description="Read the contents of a document and return it as a string."
+)
+def read_document(doc_id: str = Field(description="Id of the document to read")):
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+```
+
+另一個 `edit_document` 工具則要求 `doc_id`、要尋找的文字，以及要替換成的新文字；完整實作可以直接看 [第 50 堂的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/b1b4d4a)。
+
+這段設計有三個實用細節：函式名稱和 description 讓 Claude 知道工具用途，`Field` 描述參數的意義，`ValueError` 則把「找不到文件」這件事變成模型可以理解的錯誤訊息。相較於只回傳一個模糊的 server error，具體錯誤讓 Claude 有機會修正下一次呼叫的參數。
+
+### 51. The server inspector（伺服器檢查工具）
+
+MCP server 還沒接進完整應用程式前，可以先用 Python MCP SDK 內建的瀏覽器版 inspector 單獨測試：
+
+```bash
+mcp dev mcp_server.py
+```
+
+它會啟動一個開發伺服器，預設使用 port `6277`，並提供本機 URL 開啟 MCP Inspector。操作流程是先按 **Connect** 啟動 server，再到 Tools → **List Tools**，選取工具、填入參數，最後按 **Run Tool** 看回傳結果。
+
+Inspector 也能把操作串起來驗證：先用 `edit_document` 修改文件，再用 `read_doc_contents` 讀回來，確認兩個工具之間真的共享同一份資料。
+
+官方提醒 Inspector 仍在積極開發，畫面可能和課程截圖不同。這個提醒很重要：可依賴的是它提供獨立測試 tools、resources、prompts 的能力，畫面配置和細節則要以目前版本為準。
+
+### 52. Implementing a client（實作客戶端）
+
+MCP client 可以拆成兩層：
+
+| 元件               | 來源                                            |
+| ------------------ | ----------------------------------------------- |
+| **MCP Client**     | 自己建立的類別，讓 session 的使用方式更容易管理 |
+| **Client Session** | MCP Python SDK 提供的實際連線                   |
+
+多包一層自訂類別的理由，是把 session 的資源清理集中管理。CLI 對 MCP server 的核心工作只有兩件事：取得工具清單，以及在 Claude 要求時呼叫工具。
+
+```python
+async def list_tools(self) -> list[types.Tool]:
+    result = await self.session().list_tools()
+    return result.tools
+
+async def call_tool(self, tool_name: str, tool_input: dict) -> types.CallToolResult | None:
+    return await self.session().call_tool(tool_name, tool_input)
+```
+
+把完整流程接起來後，資料會依序經過：取工具清單、把使用者問題送給 Claude、Claude 決定呼叫 `read_doc_contents`、client 執行工具、結果回到 Claude，最後才產生回覆。這個 client 的程式碼比我原本預期的小：兩個 async 方法，加上一個負責清理的 context manager，連線與協定的複雜度大多由 SDK 處理。
+
+### 53. Defining resources（定義資源）
+
+工具適合執行動作；資源則適合向 client 公開資料。課程用 HTTP 的 GET handler 來類比 resources：你想取得資訊時讀取資源，需要改變狀態時才呼叫工具。
+
+文件提及功能就是一個好例子。使用者輸入 `@` 時，需要先拿到所有可用文件供自動完成；選定文件後，再依 URI 取得特定文件內容。資源的 URI 就像資料的位址。
+
+MCP 有兩種資源：
+
+| 類型           | 特徵                 | 例子                        |
+| -------------- | -------------------- | --------------------------- |
+| **直接資源**   | 固定、不帶參數的 URI | `docs://documents`          |
+| **範本化資源** | URI 裡帶參數         | `docs://documents/{doc_id}` |
+
+Python SDK 會從範本化 URI 解析參數，再以關鍵字引數傳給函式：
+
+```python
+@mcp.resource("docs://documents", mime_type="application/json")
+def list_docs() -> list[str]:
+    return list(docs.keys())
+
+
+@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")
+def fetch_doc(doc_id: str) -> str:
+    if doc_id not in docs:
+        raise ValueError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+```
+
+`mime_type` 是給 client 的提示，告訴它回傳內容應該如何理解。SDK 會依回傳型別自動序列化，程式碼不用自己把資料轉成 JSON 字串。
+
+### 54. Accessing resources（存取資源）
+
+client 這一側要加上 `read_resource`：
+
+```python
+import json
+from pydantic import AnyUrl
+
+async def read_resource(self, uri: str) -> Any:
+    result = await self.session().read_resource(AnyUrl(uri))
+    resource = result.contents[0]
+```
+
+回應裡有一個 `contents` 清單，通常先取第一個元素，再依 MIME type 決定解析方式：
+
+```python
+if isinstance(resource, types.TextResourceContents):
+    if resource.mimeType == "application/json":
+        return json.loads(resource.text)
+    return resource.text
+```
+
+使用者輸入 `@report.pdf 這份文件在講什麼？` 時，client 會先完成文件選擇，再把資源內容放進送給 Claude 的提示。這和讓 Claude 另外呼叫一個讀檔工具的流程不同：文件已經在提示裡，模型收到上下文後就能直接回答。
+
+一次提及多份文件時，也能把比較資料一併注入：
+
+```text
+You: @report.pdf 這份文件在講什麼？
+     @financials.docx 跟 @outlook.pdf 有什麼差異？
+```
+
+多份文件注入後，文件內容會直接進入提示，Claude 不需要再透過另一輪工具呼叫取回它們。
+
+### 55. Defining prompts（定義提示）
+
+MCP 的 prompts 是 server 作者預先寫好、測試過的高品質指令。使用者仍然可以自己輸入「把 report.pdf 轉成 Markdown」，但如果 server 已經把格式、結構和輸出要求整理成一份可重複呼叫的 prompt，結果比較容易維持一致。
+
+這個 prompt 會回傳一組 user／assistant 訊息，client 取得後可以直接送給 Claude。完整的 `format` prompt 與 `edit_document` 呼叫方式放在 [第 55 堂的 commit](https://github.com/hungjie19/claude-academy-api-app/commit/6fa7e9f)，文章保留它的設計重點就好：資源提供內容，prompt 提供經過測試的任務指令，工具負責真的修改文件。
+
+這段的關鍵在於 prompt 會明確告訴 Claude 下一步可以使用 `edit_document`。提示、工具和資源因此形成一組設計。
+
+Inspector 的 Prompts 區段可以選擇 prompt、填入參數，直接查看展開後要送給 Claude 的訊息。測試不同輸入時，這個畫面能確認變數真的插入指令，也能確認 prompt 和 server 的工具是否配得起來。
+
+### 56. Prompts in the client（客戶端中的提示）
+
+client 需要實作兩個方法，分別列出可用的 prompts，以及依名稱和參數取得某一個 prompt：
+
+```python
+async def list_prompts(self) -> list[types.Prompt]:
+    result = await self.session().list_prompts()
+    return result.prompts
+
+async def get_prompt(self, prompt_name, args: dict[str, str]):
+    result = await self.session().get_prompt(prompt_name, args)
+    return result.messages
+```
+
+伺服器端 prompt 函式的參數，會對應到 client 呼叫 `get_prompt` 時傳入的 dictionary key。CLI 裡的使用者體驗則像 slash command：輸入斜線，看到可用指令，選取 prompt，再填入文件 ID，完整 prompt 就會送給 Claude。
+
+以 `/format financials.docx` 為例，使用者只選一個指令和文件，剩下的工具順序由 Claude 依 prompt 內容完成。
+
+走到這裡，我會把 `/指令` 記成 `get_prompt`：server 把一段測過的對話開場白交給 client，Claude 再從這個起點繼續使用工具。
+
+## Course Quiz 6（課程測驗）
+
+有 6 題。官方頁面本身是繁中，以下保留實際題目與正確答案。
+
+### 1. 您想為您的 MCP 伺服器建立一個讀取文件內容的工具。使用 Python SDK，定義此工具最簡單的方法是什麼？
+
+答案：**在函式上使用 @mcp.tool 裝飾器**
+
+### 2. 您正在建立一個文件系統，使用者可以輸入 @document_name 來引用檔案。哪個 MCP 功能最適合用於公開文件內容？
+
+答案：**Resources**
+
+### 3. 您想為使用者提供一個高品質、經過預先測試的文件格式化指令。您應該使用哪個 MCP 功能？
+
+答案：**Prompts**
+
+### 4. 您正在建立一個需要存取 GitHub 資料的聊天機器人。使用 MCP 而不是自行編寫 GitHub 整合的主要好處是什麼？
+
+答案：**MCP 會為您處理工具定義和執行**
+
+### 5. 您已經建立了一個 MCP 伺服器，並想在將工具連接到 Claude 之前測試您的工具。最好的測試方式是什麼？
+
+答案：**在瀏覽器中使用 MCP Inspector**
+
+### 6. 您的 MCP 伺服器和客戶端需要進行通訊。在開發過程中，它們最常見的連接方式是什麼？
+
+答案：**透過同一台機器上的標準輸入/輸出**
+
+## 實作地圖：每堂課一個 commit
+
+完整程式碼放在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。
+
+| 課程 | 主題                    | 實作內容                                                                      | Commit                                                                        |
+| ---: | ----------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+|   47 | Introducing MCP         | MCP 架構與工具供應鏈概念                                                      | —                                                                             |
+|   48 | MCP clients             | client、server 與訊息流程                                                     | —                                                                             |
+|   49 | Project setup           | 建立 CLI 聊天機器人骨架（REPL 迴圈）                                          | [df2b5c7](https://github.com/hungjie19/claude-academy-api-app/commit/df2b5c7) |
+|   50 | Defining tools with MCP | docs dictionary，以及 `read_doc_contents`、`edit_document` 兩個工具           | [b1b4d4a](https://github.com/hungjie19/claude-academy-api-app/commit/b1b4d4a) |
+|   51 | The server inspector    | 以 `mcp dev` 測試第 50 堂加入的工具                                           | —                                                                             |
+|   52 | Implementing a client   | `MCPClient` 類別、`list_tools()`、`call_tool()`，`main.py` 接上 tool-use 迴圈 | [2e8e584](https://github.com/hungjie19/claude-academy-api-app/commit/2e8e584) |
+|   53 | Defining resources      | `list_docs`、`fetch_doc`，以及兩種 `docs://` URI                              | [f94219c](https://github.com/hungjie19/claude-academy-api-app/commit/f94219c) |
+|   54 | Accessing resources     | `read_resource()` 與 `@文件名` 自動注入                                       | [c895bc0](https://github.com/hungjie19/claude-academy-api-app/commit/c895bc0) |
+|   55 | Defining prompts        | `format` prompt：預寫的 Markdown 格式化指令                                   | [6fa7e9f](https://github.com/hungjie19/claude-academy-api-app/commit/6fa7e9f) |
+|   56 | Prompts in the client   | `list_prompts()`、`get_prompt()` 與斜線指令選單                               | [90a9f65](https://github.com/hungjie19/claude-academy-api-app/commit/90a9f65) |
+
+## 小結
+
+這堂課最像在看一個 MCP 專案慢慢長出來：先把 client 和 server 的骨架接起來，再一個功能一個功能往上疊，從 tools 到 resources、prompts，讓我看懂 MCP 接進 CLI 之後，兩邊的訊息怎麼流動。
+
+我覺得更值得留下來的是課程的開發順序。它採用交叉開發：先在 server 加上一個能力，再用 MCP Inspector 單獨測試，確認可以運作後，回到 client 把它串起來，接著才進下一個功能。一次只走完一條完整路徑，出了問題比較容易知道是哪一段造成的，也能理解為什麼這一堂先改 server，下一堂再回 client。
+
+上到前面幾堂時，我一度覺得這些內容好像已經學過了。回頭和第八天的[〈Model Context Protocol 簡介：從零打造 MCP 客戶端與伺服器〉](/posts/introduction-to-model-context-protocol/)比對，我粗略估計重疊程度大概有 90%。但跟著課程章節一路開發，把整個流程實際跑通，直到 client 和 server 真的串通，理解會深很多，也更有感。
+
+所以我會建議至少跟著這門 MCP 課程完整走過一次。它適合邊看邊寫；把每一段實際接起來之後，才會比較清楚每個元件各自負責什麼。
+
+[Building with the Claude API｜GitHub Source Code](https://github.com/hungjie19/claude-academy-api-app)
