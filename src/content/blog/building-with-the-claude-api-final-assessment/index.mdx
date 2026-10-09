@@ -1,0 +1,248 @@
+---
+title: "Building with the Claude API：Final Assessment 最終測驗"
+ogTitle: "Building with the Claude API|Final Assessment 最終測驗"
+date: 2026-10-09T23:25:34+08:00
+description: "Building with the Claude API 最終評量 23 題，按 API 存取、提示評估、工具使用、MCP、Claude Code 與代理工作流程整理每題考點與答案。"
+tags:
+  - Claude
+  - Agent
+  - Workflow
+  - MCP
+  - Prompt-Engineering
+  - Claude-Academy
+  - iThome-Ironman
+series: ithome-2026-ironman
+seriesOrder: 26.1
+---
+
+<KeyTakeaways>
+  <p>
+    Building with the Claude API 的最終測驗在考什麼？23 題把 API 存取、提示評估、Prompt Engineering、工具使用、Claude 的進階功能、MCP、Computer Use 與代理工作流程串回同一張考題地圖；以下保留官方繁中題目與正確答案，再依課程內容補上章節、考點和理解理由。
+  </p>
+</KeyTakeaways>
+
+[〈Building with the Claude API：Claude Code 與代理工作流程〉](/posts/building-with-the-claude-api-part7/)整理了最後一段課程內容，但最終評量的 23 題如果全部放在那篇裡，主文的閱讀節奏會被考題切斷。於是我把它們獨立出來，讓這篇文章專心做一件事：把答案放回課程脈絡。
+
+這份評量的題目來自官方繁中頁面，以下不自行回譯英文。`考點` 和 `為什麼` 是依各章課程內容整理的理解線索，不是官方逐題解析；遇到跨章主題時，標示最直接的主要章節。
+
+## 考題地圖
+
+| Section | 題號 | 主要考點 |
+|---|---:|---|
+| Accessing Claude with the API（使用 API 存取 Claude） | 4、11、12、15、19 | 對話歷史、請求必要欄位、temperature、system prompt、API 金鑰 |
+| Prompt evaluation（提示評估） | 5、7、13、16 | 評估流程、model grader、評分與自動化測試 |
+| Prompt engineering techniques（提示工程技巧） | 10、23 | XML tags、清晰直接的指令 |
+| Tool use with Claude（使用 Claude 進行工具使用） | 1、3、18、21 | 訊息區塊、batch tool、工具函式、外部資訊 |
+| RAG and Agentic Search（RAG 與代理式搜尋） | — | 本次最終評量沒有直接題目 |
+| Features of Claude（Claude 的功能） | 14、22 | Citations、prompt caching |
+| Model Context Protocol | 2、6、17 | MCP server/client、通訊層、transport |
+| Anthropic apps - Claude Code and computer use（Anthropic 應用程式 - Claude Code 與 Computer Use） | 20 | Computer Use |
+| Agents and workflows（代理與工作流程） | 8、9 | 環境檢查、workflow 與 agent 的選擇 |
+
+這張表也透露一件事：最終測驗不會平均覆蓋每個 section。RAG 沒有直接題目，最後幾題則把工具、MCP、Computer Use 和 workflow／agent 的概念拉回同一個應用情境裡。
+
+## Accessing Claude with the API（使用 API 存取 Claude）
+
+### 4. 您問 Claude「什麼是披薩？」，它回答了。然後您問「哪些配料很受歡迎？」，但 Claude 不知道您還在談論披薩。問題出在哪裡？
+
+答案：**您需要在每個請求中傳送整個對話歷史記錄**
+
+考點：Multi-Turn conversations（多輪對話）和 API 的無狀態請求。
+
+為什麼：前一次請求的內容不會自動成為下一次請求的上下文。應用程式需要把先前的 user／assistant messages 按順序放回新的 request，Claude 才能理解「哪些配料」仍然指向披薩。
+
+### 11. 您想要透過 API 向 Claude 傳送訊息。您絕對需要包含哪四項內容？
+
+答案：**API 金鑰、模型名稱、訊息和最大 token 數**
+
+考點：一個基本 Claude API request 的必要組成。
+
+為什麼：API 金鑰負責驗證，模型名稱決定由哪個模型處理，messages 提供對話內容，最大 token 數則限制回應長度。少了其中一項，request 就無法完整描述要由誰、依據什麼內容、產生多少輸出。
+
+### 12. 您希望 Claude 寫出非常有創意、不可預測的故事。您應該使用什麼溫度設定？
+
+答案：**1.0（非常高）**
+
+考點：Temperature 對輸出隨機性和可預測性的影響。
+
+為什麼：較高的 temperature 會讓模型更容易選擇不那麼保守的下一個詞元，適合需要創意和變化的內容。它不代表品質一定更高，而是把輸出的變化範圍拉大。
+
+### 15. 您正在製作一個數學輔導應用程式。您希望 Claude 給出提示而不是直接答案。您應該使用什麼？
+
+答案：**一個說明 Claude 應該扮演輔導老師角色的系統提示**
+
+考點：System prompts（系統提示）如何設定角色和行為邊界。
+
+為什麼：把「扮演輔導老師」和「提供提示、不要直接給答案」寫進 system prompt，可以在每次使用者提問前先建立穩定的行為方向。使用者訊息只描述題目，角色規則則集中放在 system prompt。
+
+### 19. 您正在建置一個與 Claude 通訊的網頁應用程式。您應該將 API 金鑰儲存在哪裡？
+
+答案：**在您的伺服器上，對使用者隱藏**
+
+考點：API key management（API 金鑰管理）與前端／後端邊界。
+
+為什麼：瀏覽器裡的程式碼和網路請求都可能被使用者看到。金鑰放在伺服器端，由伺服器代替前端呼叫 Claude，才能避免把可以直接使用的憑證送到客戶端。
+
+## Prompt evaluation（提示評估）
+
+### 5. 您正在改進一個效果不佳的提示。在應用提示工程技術後，您應該做什麼？
+
+答案：**使用提示評估來查看是否真的有改善**
+
+考點：Prompt engineering 和 prompt evaluation 的迭代循環。
+
+為什麼：加上一條規則後覺得輸出比較好，仍然只是印象。把同一組測試資料交給新舊 Prompt，再比較評估結果，才有機會知道改善是否可重現。
+
+### 7. 在提示評估中，什麼是模型評分器（model grader）？
+
+答案：**另一個用於評估輸出品質的 AI 模型**
+
+考點：Model-based grading（模型評分）。
+
+為什麼：模型評分器會依照額外的評估標準讀取輸出並給分，適合檢查「是否完整」「是否符合風格」這類難以只用字串比對判斷的品質。它仍然需要清楚的評分標準與測試資料。
+
+### 13. 您正在執行提示評估。在從 Claude 取得回應後，典型工作流程中的下一步是什麼？
+
+答案：**將回應輸入評分器進行評分**
+
+考點：評估流水線中的順序。
+
+為什麼：一條基本 eval workflow 可以記成「準備測試資料 → 呼叫 Claude → 把輸出交給 grader → 彙整分數」。拿到回應只是中間結果，必須經過評分才知道這次 Prompt 變更的效果。
+
+### 16. 您想要衡量您的 AI 提示在實際應用中的效果如何。您應該專注於哪種方法？
+
+答案：**使用自動化測試進行提示評估**
+
+考點：用自動化 eval 取代一次性的手動印象。
+
+為什麼：實際應用會遇到一批不同輸入，單看一個成功案例很容易高估 Prompt。自動化測試可以固定資料集、評分標準和比較方式，讓後續調校有一致的基準線。
+
+## Prompt engineering techniques（提示工程技巧）
+
+### 10. 您要求 AI 分析客戶評論和銷售資料。您應該如何在提示中組織這些資訊？
+
+答案：**使用像 `<reviews>` 和 `<sales_data>` 這樣的 XML 標籤來分隔它們**
+
+考點：使用 XML tags 分隔不同資料來源。
+
+為什麼：標籤可以把客戶評論和銷售資料的邊界寫清楚，讓 Claude 知道每段內容扮演什麼角色。這種結構對需要同時提供背景資料、條件和輸出要求的 Prompt 特別有用。
+
+### 23. 您希望 AI 撰寫產品描述。哪個開頭最清楚直接？
+
+答案：**「為跑鞋寫一篇產品描述。」**
+
+考點：Clear and direct（清晰直接）的指令。
+
+為什麼：這句話直接交代任務和對象，沒有先塞入多餘背景或模糊的開場。當需求本身很簡單時，先把要完成的動作說清楚，通常比堆疊抽象形容詞更容易得到可用輸出。
+
+## Tool use with Claude（使用 Claude 進行工具使用）
+
+### 1. Claude 對您的請求回應了說明文字和工具使用區塊。這是什麼類型的訊息結構？
+
+答案：**一個包含不同內容類型的多區塊訊息**
+
+考點：Claude response 裡的 content blocks。
+
+為什麼：一次回應可以同時含有文字區塊和 tool-use 區塊。應用程式需要逐一檢查內容類型，不能假設每次 response 都只有一段純文字。
+
+### 3. 在 Claude 的工具系統中，批次工具（batch tool）的主要目的是什麼？
+
+答案：**接受多個工具呼叫並同時執行它們**
+
+考點：Batch tool calls（批次工具呼叫）。
+
+為什麼：有些任務需要同時取得多份彼此獨立的資料。批次工具可以把多個呼叫集中處理，減少逐個來回等待的成本；它適合獨立子任務，不能取代有先後依賴的串連流程。
+
+### 18. 在 Claude 的工具使用系統中，什麼是工具函式？
+
+答案：**一個在 Claude 需要額外資訊或需要執行動作時被執行的普通函式**
+
+考點：Tool function（工具函式）的分工。
+
+為什麼：Claude 會依照工具 schema 提出呼叫和參數，實際執行函式、取得外部資料或採取動作的工作仍由應用程式負責。工具函式就是模型和外部世界之間的執行介面。
+
+### 21. Claude 中工具使用的主要目的是什麼？
+
+答案：**讓 Claude 能夠存取其訓練資料之外的即時資訊和外部系統**
+
+考點：Tool use 為模型延伸外部能力。
+
+為什麼：模型本身不能因為收到問題就自動知道現在的天氣、資料庫內容或某個 API 的最新回應。工具把這些外部資訊帶回對話，也讓 Claude 可以交給程式執行實際動作。
+
+## Features of Claude（Claude 的功能）
+
+### 14. 您正在建置一個應用程式，使用者需要驗證 Claude 從文件中提供的資訊。您應該啟用什麼功能？
+
+答案：**引用（Citations）**
+
+考點：Citations 如何建立回答和來源文件之間的回溯路徑。
+
+為什麼：如果應用程式把文件交給 Claude，使用者仍然需要知道回答是根據哪一段內容產生。Citations 可以把回應連回這次 request 提供的文件來源，讓驗證有一條可追蹤的路徑。
+
+### 22. 您不斷向 Claude 傳送相同的長文件，並提出不同的問題。您如何讓這個過程更快、更便宜？
+
+答案：**使用帶有快取斷點的提示快取**
+
+考點：Prompt caching（提示快取）與重複前綴。
+
+為什麼：相同的長文件如果每次都重新送出，會重複消耗輸入處理成本。放置快取斷點後，固定的前綴可以在後續請求重複使用，問題則放在後面變動的部分。
+
+## Model Context Protocol
+
+### 2. 就角色而言，MCP 伺服器和 MCP 客戶端之間的主要差異是什麼？
+
+答案：**MCP 伺服器包含工具、提示和資源，而 MCP 客戶端則作為存取這些工具的通訊橋樑**
+
+考點：MCP server／client 的角色分工。
+
+為什麼：server 公開 tools、prompts 和 resources，client 連上 server、列出能力，再把它們接回模型使用。把供應能力的一方和發起連線、協調使用的一方分開，整合責任就能各自維護。
+
+### 6. 什麼是 Model Context Protocol（MCP）？
+
+答案：**一個為 Claude 提供上下文和工具的通訊層，無需繁瑣的整合程式碼**
+
+考點：MCP 想解決的整合問題。
+
+為什麼：每個外部服務都自行處理工具定義、資料存取和訊息格式，整合程式碼很快會重複。MCP 提供一套標準化的連線方式，把這些能力整理成 client 可以使用的介面。
+
+### 17. 在 MCP 通訊的背景下，「transport agnostic」（傳輸無關）是什麼意思？
+
+答案：**MCP 客戶端和伺服器可以使用不同的方法進行通訊，例如 HTTP 或標準輸入/輸出**
+
+考點：Transport 和 MCP 應用層的分離。
+
+為什麼：MCP server 和 client 的工具、資源、提示定義，不必綁死在某一種傳輸方式上。開發時可以用同一台機器上的 stdio，部署到遠端服務時則可以選擇 HTTP 等方式。
+
+## Anthropic apps - Claude Code and computer use（Anthropic 應用程式 - Claude Code 與 Computer Use）
+
+### 20. 以下哪一項最能描述 Claude 中的 Computer Use（電腦使用）？
+
+答案：**一種讓 Claude 能像人類一樣直接與桌面環境互動的能力**
+
+考點：Computer Use 的環境互動方式。
+
+為什麼：Computer Use 讓 Claude 透過螢幕狀態和操作動作與桌面環境互動，例如輸入文字、點擊按鈕，再根據新的畫面決定下一步。它的關鍵不只在於能操作介面，也在於能觀察操作結果。
+
+## Agents and workflows（代理與工作流程）
+
+### 8. 以下哪一項最能描述為什麼環境檢查對 AI 代理至關重要？
+
+答案：**它讓代理能夠觀察並理解其行動的結果**
+
+考點：Environment inspection（環境檢查）與 agent feedback loop。
+
+為什麼：代理執行工具後，如果沒有讀檔、截圖、檢查 API response 或驗證輸出的手段，就不知道剛才的動作有沒有成功。觀察結果讓它能繼續、修正，或在資訊不足時停下來詢問。
+
+### 9. 在處理使用者任務時，您應該在什麼情況下選擇工作流程（workflows）而非代理（agents）？
+
+答案：**當您能夠清楚描繪出 Claude 解決問題應經歷的確切流程或步驟時**
+
+考點：Workflow 和 agent 的選擇準則。
+
+為什麼：流程清楚時，把步驟寫死可以帶來較高的可預測性，也比較容易測試和評估。代理的彈性留給那些輸入、路徑或任務本身難以事前規劃的情境。
+
+## 小結
+
+最終測驗考的不是一串孤立的名詞，而是同一條設計思路在不同章節的變形：API 要保存對話狀態，Prompt 要能被評估，工具要有清楚的執行分工，MCP 要把整合責任拆開，代理則要能觀察自己的行動結果。
+
+如果只留下最後一個判斷，我會選「能預先定義就先用 workflow；需要探索未知路徑再用 agent」。這也是為什麼最後兩題會把環境檢查和 workflow／agent 的取捨放在一起：代理的價值來自適應性，但產品的底線仍然是可靠地完成工作。
