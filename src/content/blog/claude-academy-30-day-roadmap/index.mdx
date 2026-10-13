@@ -2,7 +2,7 @@
 title: "跟著 Claude Academy，重新認識 Claude：這 30 天怎麼走？"
 ogTitle: "跟著 Claude Academy，重新認識 Claude|這 30 天怎麼走？"
 date: 2026-09-15T23:28:20+08:00
-description: "我會跟著 Claude Academy 的 26 堂課，花 30 天重新整理 Claude 從對話、Cowork、Claude Code 到 API 的完整使用地圖。"
+description: "我從 Claude Academy 挑選 18 門課，安排成 30 天學習挑戰，從 Claude、Claude Code、Cowork 到 MCP、AI Fluency 與 Claude API，整理每堂課值得帶回工作的實用重點。"
 tags:
   - Claude
   - LLM
@@ -16,15 +16,19 @@ seriesOrder: 1
 <KeyTakeaways>
   <p>
     Claude Academy 是 Anthropic 整理 Claude
-    使用方式的官方學習平台；這個系列會把目前的 26 堂課重新排成 30
-    天，搭配工作、Claude Code、Cowork 與多代理系統裡的實際使用經驗，重新認識
-    Claude 到底能做什麼。
+    使用方式的官方學習平台；這個系列挑選 18 門課，安排成 30 天的學習挑戰，從 Claude 101、
+    Claude Code、Cowork 開始，接著進入 MCP、Subagents、AI Fluency 與 Claude API。每天讀完
+    課程後，整理值得帶回工作的重點，並搭配 Claude Code、Cowork 與多代理系統的實際使用經驗。
   </p>
 </KeyTakeaways>
+
+![Claude Academy 30 天學習路線](/images/series/ithome-2026-ironman.webp)
 
 我每天都在用 Claude：用它協助工作、在 Claude Code 裡一起改 code，也會讓 Cowork 處理一些日常任務。最近為了規劃鐵人賽，我重新打開 Anthropic 的課程平台，卻發現它已經從 Skilljar 改版成了 Claude Academy，還多了繁體中文介面與新課程。
 
 那一刻我突然覺得，自己好像一直在使用 Claude，卻沒有好好重新認識它。熟悉工具的操作，不代表真的理解它的能力邊界；更不代表知道官方希望使用者建立什麼樣的工作方法。
+
+其實 Claude Academy 一直都在那裡，我也知道它有一整套官方課程，只是一直沒有實際去看。每天都在用的工具，反而最容易變成「會用就好」的東西，認真學的機會就一直往後放。這次剛好藉著參加鐵人賽的機會，把挑選的 18 門課逐一走過，邊學邊整理成文章。寫成紀錄，一方面給自己留下學習的痕跡，另一方面也希望推廣給同樣每天在用 Claude、卻還沒好好學過的人。
 
 ## 先認識 Claude Academy
 
@@ -34,198 +38,209 @@ seriesOrder: 1
 
 當然，部分新課程目前還是英文。這沒有關係，反而可以把它當成另一種學習機會：先用繁體中文掌握概念，再接觸英文原文與最新術語。課程內容本來就會持續更新，能讀懂英文版本，也比較容易跟上後續新增的內容。中文化是讓更多人開始，而不是把學習的路線縮短。
 
-所以這 30 天，我想跟著 Claude Academy 走一遍。這不會是把課程大綱逐段翻成中文的筆記，而是每一天讀完一段課程後，整理一個官方講到、但我覺得值得帶回工作裡的細節，再加上自己的實際案例。
+所以這 30 天，我想沿著這 18 門課的學習路線走一遍。這不會是把課程大綱逐段翻成中文的筆記，而是每一天讀完一段課程後，整理一個官方講到、但我覺得值得帶回工作裡的細節，再加上自己的實際案例。
 
-## Day 1 - 序曲：為什麼要重新認識 Claude？
+下面每門課都附上官方課程連結、實際發布的 iThome 文章，以及 blog 上的對應版本。
 
-官方網站：[Claude Academy 課程總覽](https://academy.claude.com/zh-TW/courses)
+## 序曲
 
-Claude Academy 目前的課程分成五大分類：開始您的旅程、了解產品、精通 AI、AI Fluency 為您的世界而生，以及使用 API 進行開發。總共有 26 堂課，原本照課程數量直接切成 26 天就好，但有些課程內容很適合拆開，有些則是同一套框架換不同身分別重新講一次。
+### 為什麼要重新認識 Claude？
 
-因此我會把該拆的拆開、該合的合起來，保留全部課程，但讓每天的主題比較適合閱讀。每篇文章固定回答四件事：這堂課教什麼、哪個細節容易被滑過去、我會怎麼用，以及最後留下一句評論或延伸想法。
+系列開場，不對應單一課程。說明為什麼想花 30 天重新走過 Claude Academy，平台已經改版，熟悉工具不代表理解全部能力。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses)）
+
+- Day 1 跟著 Claude Academy，重新認識 Claude：這 30 天怎麼走？
+  - [ithome Ironman](https://ithelp.ithome.com.tw/articles/10411349)
+
+Claude Academy 目前的課程分成五大分類。每篇文章固定回答四件事：這堂課教什麼、哪個細節容易被滑過去、我會怎麼用，以及最後留下一句評論或延伸想法。
 
 ## 開始您的旅程
 
-### Day 2 - Claude 101
+### Claude 101
 
-官方課程：[Claude 101](https://academy.claude.com/zh-TW/courses/claude-101)
+從第一次對話、有效提示開始，認識 Projects、Artifacts、Skills、Connectors、Enterprise Search 與 Research，並整理 Chat、Cowork、Code 的選擇邏輯。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/claude-101)）
 
-從第一次對話、有效提示開始，一路看到 Projects、Artifacts、Skills、Connectors、Enterprise Search 與 Research，也會整理 Chat、Cowork、Code 的選擇邏輯，以及 Claude Code、Claude for Excel、Claude for Chrome 等周邊工具。
+- Day 2 Claude 101 功能全介紹：Chat、Cowork、Projects、Skills、企業搜尋與 Research
+  - [Blog](https://jasperhung.dev/posts/claude-101/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-101) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10412153)
 
-### Day 3 - Claude Code 101
+### Claude Code 101
 
-官方課程：[Claude Code 101](https://academy.claude.com/zh-TW/courses/claude-code-101)
+建立 Claude Code 的基本使用方式，理解它和一般聊天視窗的差別，後面再把實戰、Skills、subagents 與工程流程拆開談。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/claude-code-101)）
 
-先建立 Claude Code 的基本使用方式，理解它和一般聊天視窗的差別，後面再把實戰、Skills、subagents 與工程流程拆開談。
+- Day 3 Claude Code 101：從 AI 編碼代理到工作流程與 Subagent、Skill、MCP、Hooks 簡介
+  - [Blog](https://jasperhung.dev/posts/claude-code-101/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-code-101) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10412872)
 
-### Day 4 - Claude Cowork 簡介（上）
+### Introduction to Claude Cowork
 
-官方課程：[Introduction to Claude Cowork](https://academy.claude.com/zh-TW/courses/introduction-to-claude-cowork)
+認識 Cowork，整理怎麼讓它真的替自己工作，並補上 Chrome、Office 外掛、分享與安全的工作邊界。這會是日常案例最多的一天。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/introduction-to-claude-cowork)）
 
-認識 Cowork，並整理怎麼讓 Cowork 真的替自己工作。這會是日常案例最多的一天。
+- Day 4 Claude Cowork（上）：委派、多步驟任務與常駐上下文
+  - [Blog](https://jasperhung.dev/posts/introduction-to-claude-cowork/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=introduction-to-claude-cowork) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10413351)
+- Day 5 Claude Cowork（下）：Chrome、M365 與安全工作
+  - [Blog](https://jasperhung.dev/posts/claude-cowork-browser-m365-safety/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-cowork-browser-m365-safety) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10413768)
 
-### Day 5 - Claude Cowork 簡介（下）
+### Claude Platform 101
 
-官方課程：[Introduction to Claude Cowork](https://academy.claude.com/zh-TW/courses/introduction-to-claude-cowork)
+把 Claude 產品與平台放回同一張地圖裡，理解一般使用者、團隊與開發者使用 Claude 時，彼此怎麼接起來。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/claude-platform-101)）
 
-接著看 Chrome 與 Office 外掛、跨裝置使用、分享與安全，補上「會用」之外的工作邊界。
+- Day 6 Claude Platform 101：從 API、Tool Use 到 Managed Agents
+  - [Blog](https://jasperhung.dev/posts/claude-platform-101/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-platform-101) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10414508)
 
-### Day 6 - Claude Platform 101
-
-官方課程：[Claude Platform 101](https://academy.claude.com/zh-TW/courses/claude-platform-101)
-
-把 Claude 產品與平台放回同一張地圖裡，理解一般使用者、團隊與開發者使用 Claude 時，彼此怎麼接起來。
+---
 
 ## 了解產品
 
-### Day 7 - Claude Code 實戰
+### Claude Code in Action
 
-官方課程：[Claude Code in Action](https://academy.claude.com/zh-TW/courses/claude-code-in-action)
+從基本操作進入實際開發流程，整理 Claude Code 如何讀專案、改 code 與驗證結果。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/claude-code-in-action)）
 
-從基本操作進入實際開發流程，對照我平常如何讓 Claude Code 讀專案、改 code 與驗證結果。
+- Day 7 Claude Code in Action：指令、Hooks 與驗證，讓 Agent 長時間工作
+  - [Blog](https://jasperhung.dev/posts/claude-code-in-action/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-code-in-action) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10414877)
 
-### Day 8 - Model Context Protocol 簡介
+### Introduction to Model Context Protocol
 
-官方課程：[Introduction to Model Context Protocol](https://academy.claude.com/zh-TW/courses/introduction-to-model-context-protocol)
+理解 MCP 想解決什麼問題，以及它如何讓 Claude 連上外部工具與資料。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/introduction-to-model-context-protocol)）
 
-理解 MCP 想解決什麼問題，以及它如何讓 Claude 連上外部工具與資料。
+- Day 8 Model Context Protocol 簡介：從零打造 MCP 客戶端與伺服器
+  - [Blog](https://jasperhung.dev/posts/introduction-to-model-context-protocol/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=introduction-to-model-context-protocol) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10415619)
 
-### Day 9 - Model Context Protocol：進階主題
+### Model Context Protocol: Advanced Topics
 
-官方課程：[Model Context Protocol: Advanced Topics](https://academy.claude.com/zh-TW/courses/model-context-protocol-advanced-topics)
+往權限、工具設計與實際整合再走一步，看「接上工具」之後還有哪些工程問題。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/model-context-protocol-advanced-topics)）
 
-往權限、工具設計與實際整合再走一步，看看「接上工具」之後還有哪些工程問題。
+- Day 9 Model Context Protocol：進階主題、取樣與 StreamableHTTP
+  - [Blog](https://jasperhung.dev/posts/model-context-protocol-advanced-topics/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=model-context-protocol-advanced-topics) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10416181)
 
-### Day 10 - 子代理入門
+### Introduction to subagents
 
-官方課程：[Introduction to subagents](https://academy.claude.com/zh-TW/courses/introduction-to-subagents)
+整理什麼工作適合拆給 subagent，以及什麼時候拆了反而增加溝通成本。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/introduction-to-subagents)）
 
-用自己的 subagent 案例對照官方課程，整理什麼工作適合拆出去，以及什麼時候拆了反而增加溝通成本。
+- Day 10 Subagents 入門：為何、何時使用 Subagent 來節省 Context
+  - [Blog](https://jasperhung.dev/posts/introduction-to-subagents/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=introduction-to-subagents) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10416571)
 
-### Day 11 - The AI-Native SDLC Playbook
+### The AI-Native SDLC Playbook
 
-官方課程：[The AI-Native SDLC Playbook](https://academy.claude.com/zh-TW/courses/ai-native-sdlc-playbook)
+AI 大量寫 code 之後，規劃、審查、測試與部署會變成新的瓶頸。看 `intent.md`、`CLAUDE.md`、Skills、持續評測與 hooks 如何組成治理閉環。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-native-sdlc-playbook)）
 
-這堂新課談的是 AI 大量寫 code 之後，規劃、審查、測試與部署會變成新的瓶頸。會特別看 `intent.md`、`CLAUDE.md`、Skills、持續評測與 hooks 如何組成治理閉環，也會對照自己在權限管理與平台治理上的經驗。
+- Day 11 The AI-Native SDLC Playbook：Artifacts、Hooks 與 Evals
+  - [Blog](https://jasperhung.dev/posts/ai-native-sdlc-playbook/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-native-sdlc-playbook) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10416988)
 
-### Day 12 - 代理技能簡介
+### Introduction to agent skills
 
-官方課程：[Introduction to agent skills](https://academy.claude.com/zh-TW/courses/introduction-to-agent-skills)
+把 Skill 當成可重複使用的工作方法，整理它和單次 prompt 的差別。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/introduction-to-agent-skills)）
 
-把 Skill 當成可重複使用的工作方法，對照自己做過的 Skill，整理它和單次 prompt 的差別。
+- Day 12 Introduction to Agent Skills：建立、分享與除錯 Skill
+  - [Blog](https://jasperhung.dev/posts/introduction-to-agent-skills/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=introduction-to-agent-skills) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10417453)
 
-### Day 13 - Deploying Claude Enterprise with Confidence（上）
+### Deploying Claude Enterprise with Confidence
 
-官方課程：[Deploying Claude Enterprise with Confidence](https://academy.claude.com/zh-TW/courses/deploying-claude-enterprise-with-confidence)
+從結構與身分、存取權限、治理，到支出、可見性與部署方案，整理企業導入 Claude 時，哪些決策一開始就會影響之後能不能調整。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/deploying-claude-enterprise-with-confidence)）
 
-從 Structure & Identity、Access、Governance 三個面向開始，看看企業導入 Claude 時，哪些決策一開始就會影響後面能不能調整。
+- Day 13 Deploying Claude Enterprise with Confidence（上）：結構、存取權限與治理
+  - [Blog](https://jasperhung.dev/posts/deploying-claude-enterprise-with-confidence-part1/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=deploying-claude-enterprise-with-confidence-part1) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10417976)
+- Day 14 Deploying Claude Enterprise with Confidence（下）：支出、可見性與部署方案
+  - [Blog](https://jasperhung.dev/posts/deploying-claude-enterprise-with-confidence-part2/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=deploying-claude-enterprise-with-confidence-part2) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10418345)
 
-### Day 14 - Deploying Claude Enterprise with Confidence（下）
-
-官方課程：[Deploying Claude Enterprise with Confidence](https://academy.claude.com/zh-TW/courses/deploying-claude-enterprise-with-confidence)
-
-接著看 Spend、Visibility 與 work-along 實作，並對照自己做權限管理系統評估時的視角。
+---
 
 ## 精通 AI
 
-### Day 15 - AI 流暢度：Delegation
+### AI Fluency: Framework & Foundations
 
-官方課程：[AI Fluency: Framework & Foundations](https://academy.claude.com/zh-TW/courses/ai-fluency-framework-foundations)
+用 4D 框架（Delegation、Description、Discernment、Diligence）練習判斷什麼工作該交給 AI、什麼工作仍然需要自己掌握。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-fluency-framework-foundations)）
 
-從 4D 框架的第一個 D——Delegation 開始，練習判斷什麼工作該交給 AI、什麼工作仍然需要自己掌握。
+- Day 15 AI Fluency（上）: Framework and foundations：4D 框架與 Delegation 委派
+  - [Blog](https://jasperhung.dev/posts/ai-fluency-framework-foundations-delegation/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-fluency-framework-foundations-delegation) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10418912)
+- Day 16 AI Fluency（下）：Description 描述、Discernment 辨別、Diligence 審慎
+  - [Blog](https://jasperhung.dev/posts/ai-fluency-framework-foundations-description-discernment-diligence/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-fluency-framework-foundations-description-discernment-diligence) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10419086)
 
-### Day 16 - AI 流暢度：Description、Discernment、Diligence
+### AI Capabilities and Limitations
 
-官方課程：[AI Fluency: Framework & Foundations](https://academy.claude.com/zh-TW/courses/ai-fluency-framework-foundations)
+理解模型如何生成下一個詞元、工作記憶與可操控性，看 Claude 為什麼有時記得、有時偏掉，以及怎麼把它拉回來。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-capabilities-and-limitations)）
 
-把 Description、Discernment、Diligence 三個 D 接起來，看清楚描述問題、判斷結果與持續修正，如何比「會不會下 prompt」更重要。
+- Day 17 AI Capabilities and Limitations（上）：下一個詞元預測與知識邊界
+  - [Blog](https://jasperhung.dev/posts/ai-capabilities-and-limitations-part1/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-capabilities-and-limitations-part1) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10419491)
+- Day 18 AI Capabilities and Limitations（下）：工作記憶與可操控性
+  - [Blog](https://jasperhung.dev/posts/ai-capabilities-and-limitations-part2/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-capabilities-and-limitations-part2) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10419817)
 
-### Day 17 - AI 能力與限制：Next Token Prediction、Knowledge
+### Building Effective Human Agent Teams
 
-官方課程：[AI Capabilities and Limitations](https://academy.claude.com/zh-TW/courses/ai-capabilities-and-limitations)
+用這門 Beta 課程對照多代理系統：人和多個 Agent 到底要怎麼分工，才不會只是同時開很多視窗。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/building-effective-human-agent-teams)）
 
-先理解模型如何生成下一個 token，以及它所謂的 knowledge 到底代表什麼。
+- Day 19 Building effective human-agent teams (beta)：從私人助理到共享 AI 隊友
+  - [Blog](https://jasperhung.dev/posts/building-effective-human-agent-teams/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-effective-human-agent-teams) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10420340)
 
-### Day 18 - AI 能力與限制：Working Memory、Steerability
-
-官方課程：[AI Capabilities and Limitations](https://academy.claude.com/zh-TW/courses/ai-capabilities-and-limitations)
-
-再看 working memory 與 steerability，理解 Claude 為什麼有時候記得、有時候偏掉，以及我們可以怎麼把它拉回來。
-
-### Day 19 - Building Effective Human Agent Teams
-
-官方課程：[Building Effective Human Agent Teams](https://academy.claude.com/zh-TW/courses/building-effective-human-agent-teams)
-
-這堂 Beta 課程很短，但剛好可以拿來對照自己正在使用的多代理系統：人和多個 Agent 到底要怎麼分工，才不會只是同時開很多視窗。
-
-## AI Fluency，為您的世界而生
-
-### Day 20 - AI Fluency 身分別：適合開發者
-
-官方課程：[AI Fluency for Builders](https://academy.claude.com/zh-TW/courses/ai-fluency-for-builders)
-
-同一套 4D 框架換成開發者案例，延伸到 code 與 UX 判斷，看看工程師需要的 AI 能力不只是在 IDE 裡產生 code。
-
-### Day 21 - AI Fluency 身分別：適用於創意工作
-
-官方課程：[AI Fluency for Creative Work](https://academy.claude.com/zh-TW/courses/ai-fluency-for-creative-work)
-
-整理 Creative Value Lens 與 Production Lens，看看創意工作如何在保留人的判斷下，讓 Claude 參與發想與製作。
-
-### Day 22 - AI Fluency 身分別：其餘身分
-
-官方課程：
-
-- [AI Fluency for Educators](https://academy.claude.com/zh-TW/courses/ai-fluency-for-educators)
-- [AI Fluency for K–12 Educators](https://academy.claude.com/zh-TW/courses/ai-fluency-for-k-12-educators)
-- [AI Fluency for pK–12 Train the Trainer](https://academy.claude.com/zh-TW/courses/ai-fluency-for-pk-12-train-the-trainer)
-- [Teaching AI Fluency](https://academy.claude.com/zh-TW/courses/teaching-ai-fluency)
-- [AI Fluency for Nonprofits](https://academy.claude.com/zh-TW/courses/ai-fluency-for-nonprofits)
-- [AI Fluency for Small Businesses](https://academy.claude.com/zh-TW/courses/ai-fluency-for-small-businesses)
-- [AI Fluency for Students](https://academy.claude.com/zh-TW/courses/ai-fluency-for-students)
-
-把教育工作者、K-12 培訓師、引導者、非營利組織、小型企業與學生等課程放在一起比較。重點不是逐堂重複 4D，而是看同一個框架換了案例之後，哪些地方真的不同。
+---
 
 ## 使用 API 進行開發
 
-### Day 23 - 使用 Claude API：API 存取與提示工程
+### Building with the Claude API
 
-官方課程：[Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)
+從 API 存取、提示評估與工程技巧，到工具使用、RAG、功能、MCP 與代理工作流程，實際寫程式走完 Claude API 的開發主線。這門課拆成 7 天、7 篇。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)）
 
-從 API 存取 Claude 與提示工程開始，這一天會實際申請 Anthropic API key，不只讀課程大綱。
+- Day 20 Building with the Claude API（1/7）：API 存取與提示評估
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part1/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part1) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10421002)
+- Day 21 Building with the Claude API（2/7）：提示工程的評估與迭代
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part2/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part2) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10421420)
+- Day 22 Building with the Claude API（3/7）：工具使用與代理迴圈
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part3/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part3) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10421503)
+- Day 23 Building with the Claude API（4/7）：RAG、Embeddings、BM25 與 RRF
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part4/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part4) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10422155)
+- Day 24 Building with the Claude API（5/7）：Claude 的功能與提示快取
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part5/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part5) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10422262)
+- Day 25 Building with the Claude API（6/7）：MCP - Tools, Resources & Prompts
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part6/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part6) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10422544)
+- Day 26 Building with the Claude API（7/7）：Claude Code 與代理工作流程
+  - [Blog](https://jasperhung.dev/posts/building-with-the-claude-api-part7/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=building-with-the-claude-api-part7) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10422892)
 
-### Day 24 - 使用 Claude API：工具使用與 RAG
+---
 
-官方課程：[Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)
+## AI Fluency，為您的世界而生
 
-實際跑過 Tool Use 與 RAG 範例，理解 Claude 如何使用工具，以及如何在外部資料加入後建立比較可靠的工作流程。
+這一組原本有 9 門身分別課程，實測後只挑 3 門完整上。挑選的標準不是堂數，而是三個不同受眾切面：開發者、教育者、創意工作者。
 
-### Day 25 - 使用 Claude API：MCP、Claude Code、電腦使用與代理
+### AI Fluency for Builders
 
-官方課程：[Building with the Claude API](https://academy.claude.com/zh-TW/courses/building-with-the-claude-api)
+用 4D 框架看建構者的 AI 協作，核心是 AI 強在實作、人仍要掌握同理心、判斷與交付。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-fluency-for-builders)）
 
-把 MCP、Claude Code、computer use、代理與工作流程串在一起，整理從單次 API 呼叫走向完整 Agent workflow 時，新增了哪些設計問題。
+- Day 27 AI Fluency for builders：建構者六大能力的人機分工
+  - [Blog](https://jasperhung.dev/posts/ai-fluency-for-builders/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-fluency-for-builders) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10423464)
 
-### Day 26 - Claude 與 Amazon Bedrock
+### AI Fluency for K–12 Educators
 
-官方課程：[Claude with Amazon Bedrock](https://academy.claude.com/zh-TW/courses/claude-with-amazon-bedrock)
+用 4D 框架談教育現場的 AI 使用，包含「探索！」互動工具、六項倫理張力，以及 AI 的憲法與教學法。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-fluency-for-k-12-educators)）
 
-粗略看課程是相同所以主要也是差異比較，主要看 AWS 帳號、Bedrock 存取權限與 API 存取差異，再抽幾堂確認其餘內容只是換 SDK 或平台。
+- Day 28 AI Fluency for pK–12 educators：教育現場的 4D 框架
+  - [Blog](https://jasperhung.dev/posts/ai-fluency-for-k-12-educators/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-fluency-for-k-12-educators) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10423718)
 
-### Day 27 - 透過 Google Cloud 的 Vertex AI 使用 Claude
+### AI Fluency for Creative Work
 
-官方課程：[Claude with Google Cloud’s Vertex AI](https://academy.claude.com/zh-TW/courses/claude-with-google-cloud-s-vertex-ai)
+用創意價值透鏡與生產透鏡決定 AI 在創意工作中的角色，最後產出一份自己簽署的個人 AI 使用政策。（[Claude Academy 官方課程](https://academy.claude.com/zh-TW/courses/ai-fluency-for-creative-work)）
 
-粗略看課程是相同所以主要也是差異比較，集中看 GCP 帳號、Vertex AI 存取設定與 API 入口，讓讀者知道什麼時候平台差異真的值得處理。
+- Day 29 AI Fluency for creative work：用創意價值透鏡決定 AI 角色
+  - [Blog](https://jasperhung.dev/posts/ai-fluency-for-creative-work/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=ai-fluency-for-creative-work) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10424060)
 
-## 緩衝與總結
+這 30 天先聚焦在三個不同受眾切面：開發者、教育者、創意工作者，讓學習路線不只停留在單一使用情境。
 
-### Day 28, 29 緩衝
+---
 
-目前是暫時規劃每日預訂要學習的課程進度，但實際上遇到課程內容比較精實或沒接觸過的地方在拆開說明會比較好。
+## 終曲
 
-### Day 30 - 系列總結：資源整理與學習路徑
+### 系列總結：資源整理與學習路徑
 
-最後一天不再介紹新課程，而是把 30 天走過的內容重新畫成學習路徑：如果你剛接觸 Claude，從哪裡開始；如果你已經在用 Claude Code，下一步該補什麼；如果你要做企業導入或 API 開發，又該把時間放在哪裡。
+最後一天不再介紹新課程，而是把 30 天走過的內容重新畫成學習路徑：剛接觸 Claude 從哪裡開始、已經在用 Claude Code 下一步該補什麼、做企業導入或 API 開發時時間該放在哪裡。
 
-這就是這次鐵人賽的起點。以前我把 Claude 當成每天打開來工作的工具，這次想把它當成一門值得重新修一次的課。
+- Day 30 系列總結：資源整理與學習路徑
+  - [Blog](https://jasperhung.dev/posts/claude-academy-learning-path/?utm_source=blog&utm_medium=roadmap&utm_campaign=ithome-2026-ironman&utm_content=claude-academy-learning-path) | [ithome Ironman](https://ithelp.ithome.com.tw/articles/10424347)
+
+---
+
+## 小結
+
+這就是這次鐵人賽的起點。以前我把 Claude 當成每天打開來工作的工具，會寫 prompt、丟檔案、請它改 code，但很少停下來想它到底能做什麼、官方怎麼建議使用，以及我有哪些地方其實一直用錯。這次把挑選的 18 門課走一遍，就是想把這些零散的使用經驗，接回官方的教學脈絡。
+
+30 天的排程目前只是粗略排出來的。我先把課程依序分到每一天，其中有些課程看起來超過三小時，實際上課時可能要拆開，或是調整時間。等真正開始上課、看到每門課的內容密度之後，再依照課程內容修正時間，不急著把每天的安排定死。
+
+每一篇文章我都會用同樣的方式寫：先講這堂課教什麼，再挑一兩個官方講了但容易被滑過去的細節，接著放進自己的工作案例裡，最後留一句評論或延伸想法。如果你只想快速看懂某一門課，直接看那一天的文章就好；如果想從頭照著走，這篇就是地圖。
+
+這 30 天結束時，我希望留下的不只是一份筆記，而是一張重新整理過的 Claude 使用地圖：哪些事情適合交給它，哪些地方仍然需要自己判斷，哪些能力值得在團隊裡推廣。如果你在某一天讀到不同的看法，或是有自己用 Claude 的經驗，都歡迎告訴我。
+
