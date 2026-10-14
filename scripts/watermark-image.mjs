@@ -12,7 +12,7 @@ function usage() {
 	console.log(`
 Usage:
   pnpm watermark <image> [--out <path>] [--overwrite] [--text <text>] [--tone auto|light|dark]
-                         [--position bottom-right|top-right]
+                         [--position bottom-right|top-right] [--scale <number>]
 
 Defaults:
   - Creates a sibling file named <name>-watermarked.<ext>
@@ -23,7 +23,7 @@ Defaults:
 }
 
 function parseArgs(args) {
-	const options = { input: undefined, output: undefined, overwrite: false, text: DEFAULT_TEXT, tone: "auto", position: "bottom-right" };
+	const options = { input: undefined, output: undefined, overwrite: false, text: DEFAULT_TEXT, tone: "auto", position: "bottom-right", scale: 1 };
 
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
@@ -33,6 +33,7 @@ function parseArgs(args) {
 		else if (arg === "--text") options.text = args[++i];
 		else if (arg === "--tone") options.tone = args[++i];
 		else if (arg === "--position") options.position = args[++i];
+		else if (arg === "--scale") options.scale = Number(args[++i]);
 		else if (!arg.startsWith("-") && !options.input) options.input = arg;
 		else throw new Error(`Unknown or misplaced argument: ${arg}`);
 	}
@@ -41,6 +42,7 @@ function parseArgs(args) {
 	if (!options.text) throw new Error("Watermark text cannot be empty.");
 	if (!TONES.has(options.tone)) throw new Error("--tone must be auto, light, or dark.");
 	if (!POSITIONS.has(options.position)) throw new Error("--position must be bottom-right or top-right.");
+	if (!(options.scale > 0)) throw new Error("--scale must be a positive number.");
 	return options;
 }
 
@@ -66,9 +68,9 @@ async function luminanceAtBottomRight(input, width, height) {
 	return (red * 0.2126) + (green * 0.7152) + (blue * 0.0722);
 }
 
-function watermarkSvg({ width, height, text, tone, position }) {
+function watermarkSvg({ width, height, text, tone, position, scale }) {
 	const shortSide = Math.min(width, height);
-	const fontSize = clamp(Math.round(shortSide * 0.043), 16, 56);
+	const fontSize = Math.max(8, Math.round(clamp(Math.round(shortSide * 0.043), 16, 56) * scale));
 	const margin = clamp(Math.round(shortSide * 0.035), 16, 48);
 	const fill = tone === "dark" ? "#151515" : "#ffffff";
 	const stroke = tone === "dark" ? "rgba(255,255,255,0.78)" : "rgba(0,0,0,0.72)";
@@ -106,7 +108,7 @@ async function main() {
 		: options.tone;
 
 	await sharp(input)
-		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text: options.text, tone: resolvedTone, position: options.position }) }])
+		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text: options.text, tone: resolvedTone, position: options.position, scale: options.scale }) }])
 		.toFile(output);
 
 	console.log(`Watermarked image: ${output}`);
