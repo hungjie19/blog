@@ -96,9 +96,8 @@ def generate_embedding(text, model="voyage-4", input_type="query"):
 
 這個小改動在實作時很有感。沒有綁付款方式的 Voyage 帳號，這次遇到的限制是每分鐘 3 個請求；一段文字一個 request，很快就會撞上。把多個文件一次以列表送出，文件批次只需要一次請求，也讓第 36、38 堂的範例可以順利跑完。
 
-:::tip
-`input_type="document"` 和 `input_type="query"` 要分清楚。前者用來建立文件索引，後者用來處理使用者查詢；兩邊仍要使用同一個 embedding model，距離比較才有意義。
-:::
+> [!TIP]
+> `input_type="document"` 和 `input_type="query"` 要分清楚。前者用來建立文件索引，後者用來處理使用者查詢；兩邊仍要使用同一個 embedding model，距離比較才有意義。
 
 ### Voyage AI 是什麼？
 

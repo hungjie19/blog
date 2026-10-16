@@ -154,9 +154,8 @@ if system:
 
 temperature 比較像調整機率分佈的旋鈕，不保證每次都得到不同輸出。數值接近 0 時，輸出通常更可預測；數值接近 1 時，可能出現更多樣的選擇。低 temperature 也不等於內容一定正確，它只代表取樣結果比較穩定。
 
-:::caution
-這次實作時，`anthropic` SDK 1.x 的 `messages.create()` 簽名已移除 `temperature`、`top_p` 和 `top_k`，直接照教材傳入會遇到 `TypeError`。這不代表 temperature 這個概念在所有環境都消失了：`class_06` 仍用 Haiku 4.5 實際跑低溫與高溫，只是透過 `extra_body` 把參數送進 request body；4.6 以後的模型世代則會回傳 400。
-:::
+> [!CAUTION]
+> 這次實作時，`anthropic` SDK 1.x 的 `messages.create()` 簽名已移除 `temperature`、`top_p` 和 `top_k`，直接照教材傳入會遇到 `TypeError`。這不代表 temperature 這個概念在所有環境都消失了：`class_06` 仍用 Haiku 4.5 實際跑低溫與高溫，只是透過 `extra_body` 把參數送進 request body；4.6 以後的模型世代則會回傳 400。
 
 實作中的 helper 只需要補上這段：
 
@@ -221,9 +220,8 @@ text = chat(messages, stop_sequences=["```"])
 
 同樣的思路也能用在 Python、CSV 或項目符號清單：先觀察 Claude 平常會怎麼包裝內容，再把那個包裝拿來當作開始訊號與停止訊號。
 
-:::caution
-assistant prefill 是這段教材的示範方式；我實作時發現，較新的 4.6 世代模型遇到 prefill 會回傳 400，Haiku 4.5 這類較舊模型仍可使用。`class_08` 因此實際比較了三種結果：直接要求 JSON、課程的 prefill 加 stop sequence，以及現行的 structured outputs。
-:::
+> [!CAUTION]
+> assistant prefill 是這段教材的示範方式；我實作時發現，較新的 4.6 世代模型遇到 prefill 會回傳 400，Haiku 4.5 這類較舊模型仍可使用。`class_08` 因此實際比較了三種結果：直接要求 JSON、課程的 prefill 加 stop sequence，以及現行的 structured outputs。
 
 structured outputs 直接用 `output_config.format` 指定 JSON Schema，不需要再猜 Claude 會用哪一種 Markdown 包裝內容。不過 Schema 也有自己的坑：每一層 object 都要明確寫 `additionalProperties: False`，漏掉巢狀物件那一層時，同樣會收到 400。完整的 A／B／C 對照放在 [`class_08_structured_data.py`](https://github.com/hungjie19/claude-academy-api-app/blob/main/class_08_structured_data.py)。
 

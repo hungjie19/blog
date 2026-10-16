@@ -1,20 +1,11 @@
 import { h as _h, type Properties } from "hastscript";
-import type { Node, Paragraph as P } from "mdast";
-import type { Directives } from "mdast-util-directive";
+import type { Paragraph as P } from "mdast";
 
 declare module "mdast" {
 	interface Data {
 		hName?: string;
 		hProperties?: Properties;
 	}
-}
-
-export function isNodeDirective(node: Node): node is Directives {
-	return (
-		node.type === "containerDirective" ||
-		node.type === "leafDirective" ||
-		node.type === "textDirective"
-	);
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: allow hast-compatible children

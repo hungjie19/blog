@@ -74,9 +74,8 @@ URL 的 `claude` 是 client name，`<user>` 是 user namespace。我會讓 Claud
 
 我最後先用 OpenAI。不是因為本地模型不能做語意搜尋，而是我不想在剛開始驗證記憶工作流時，同時處理模型下載、runtime、記憶體和換模型後的重新索引。預設設定會用同一把 API key 呼叫兩種模型：寫入時由 `gpt-4o-mini` 把對話萃取成記憶，再由 `text-embedding-3-small` 為每條記憶建立向量；查詢時通常只需要後者把問題轉成向量，再交給 Qdrant 比對。`text-embedding-3-small` 的 input 價格目前是每百萬 tokens US$0.02，對這個使用量來說，比起硬體與維運時間更不像主要成本。[OpenAI 的 API 資料控管](https://platform.openai.com/docs/models/default-usage-policies-by-endpoint)與 [Embedding 模型文件](https://developers.openai.com/api/docs/models/text-embedding-3-small)可供確認條款與價格。
 
-:::tip
-以我實際使用的量來看，一天大約只會消耗 US$0.01–0.02；先儲值 US$5，通常已經足夠用接近一年。這是個人記憶工作流的觀察值，批次匯入大量資料或提高寫入頻率時，成本會跟著改變。
-:::
+> [!TIP]
+> 以我實際使用的量來看，一天大約只會消耗 US$0.01–0.02；先儲值 US$5，通常已經足夠用接近一年。這是個人記憶工作流的觀察值，批次匯入大量資料或提高寫入頻率時，成本會跟著改變。
 
 ![OpenAI API Usage 顯示 OpenMemory 在一段測試期間的每日用量與總花費](./openai-api-usage.jpg)
 

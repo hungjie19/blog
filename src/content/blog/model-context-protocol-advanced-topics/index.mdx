@@ -215,9 +215,8 @@ Roots 同時處理了幾種需求：
 
 但安全邊界不會因為 SDK 有 Roots API 就自動生效。典型做法是自己寫 `is_path_allowed()`：接收請求路徑，取得核准的 roots 清單，確認請求路徑落在其中一個 root 底下，再回傳 `true` 或 `false`。任何真正讀寫檔案的工具，都要在操作前執行這個檢查。
 
-:::caution
-MCP SDK 不會自動替檔案工具強制執行 root 限制。Roots 提供的是授權資訊，實際檔案存取仍要由伺服器在每個工具裡自行驗證。
-:::
+> [!CAUTION]
+> MCP SDK 不會自動替檔案工具強制執行 root 限制。Roots 提供的是授權資訊，實際檔案存取仍要由伺服器在每個工具裡自行驗證。
 
 ### 6. Roots walkthrough
 

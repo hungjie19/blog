@@ -42,9 +42,8 @@ seriesOrder: 2
 
 先把 API key file 這條線排除後，我回到 Cloudflare。這次真正先漏掉的設定其實更簡單——Cloudflare Crawler Hints 根本沒有啟用。
 
-:::tip
-**Cloudflare 操作路徑**：`Caching → Configuration → Crawler Hints`
-:::
+> [!TIP]
+> **Cloudflare 操作路徑**：`Caching → Configuration → Crawler Hints`
 
 ![Cloudflare Crawler Hints 已啟用](./crawler-hints-enabled.jpg)
 
@@ -70,9 +69,8 @@ Cloudflare 預設會快取 `.png`、`.css`、`.js` 這類靜態檔案，但 HTML
 
 到 Cloudflare Dashboard，選擇網站後打開 Cache Rules。先前這個頁面是空的，代表沒有任何額外規則讓 HTML 具備快取資格：
 
-:::tip
-**Cloudflare 操作路徑**：`Caching → Cache Rules`
-:::
+> [!TIP]
+> **Cloudflare 操作路徑**：`Caching → Cache Rules`
 
 ![Cloudflare Cache Rules 原本沒有任何規則](./cache-rules-empty.jpg)
 

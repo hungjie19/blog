@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import remarkDirective from 'remark-directive';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
 import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
 import { rehypeWrapTables } from './src/plugins/rehype-wrap-tables.ts';
@@ -40,7 +39,7 @@ export default defineConfig({
     sitemap(),
   ],
   markdown: {
-    remarkPlugins: [remarkDirective, remarkAdmonitions],
+    remarkPlugins: [remarkAdmonitions],
     rehypePlugins: [rehypeFigureCaption, rehypeWrapTables],
   },
   vite: {

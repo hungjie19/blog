@@ -130,9 +130,8 @@ Safe zone 的 bottom 是 57px：33px margin + 24px 底線，底線故意延伸�
 <meta name="twitter:image" content="https://jasperhung.dev/og/{slug}.png" />
 ```
 
-:::caution
-og:image 的 URL 必須是完整的絕對路徑（`https://`開頭），不能用相對路徑（`/og/slug.png`）。相對路徑在瀏覽器正常運作，但社群平台的爬蟲不知道你的 domain，圖就不會出現。
-:::
+> [!CAUTION]
+> og:image 的 URL 必須是完整的絕對路徑（`https://`開頭），不能用相對路徑（`/og/slug.png`）。相對路徑在瀏覽器正常運作，但社群平台的爬蟲不知道你的 domain，圖就不會出現。
 
 ---
 
@@ -212,9 +211,8 @@ export const { getStaticPaths, GET } = await OGImageRoute({
 
 傳入 `title + description + logo` build time 自動生成，不用自己寫 Canvas 程式碼。
 
-:::tip
-方便快速，但版面是固定模板，不能改結構。沒有客製需求的話，裝這個比自己寫 Canvas 快很多；如果想完全控制設計，就只能自己來。
-:::
+> [!TIP]
+> 方便快速，但版面是固定模板，不能改結構。沒有客製需求的話，裝這個比自己寫 Canvas 快很多；如果想完全控制設計，就只能自己來。
 
 ---
 

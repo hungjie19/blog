@@ -59,13 +59,12 @@ Spotlight 的工作不是保護檔案，也不是備份。它是在替搜尋準�
 
 第一種：做法是從 macOS 的 Spotlight 隱私權設定中，將指定資料夾加入排除清單。
 
-:::note
-操作路徑：
-
-「 → 系統設定 → Spotlight → Search Privacy（或 Spotlight Privacy）→ ＋」
-
-再選擇要排除的資料夾或磁碟。這很適合只想排除一兩個資料夾，也最容易從系統介面確認設定。[Apple 的操作說明](https://support.apple.com/en-au/guide/mac-help/mchl1bb43b84/mac)
-:::
+> [!NOTE]
+> 操作路徑：
+>
+> 「 → 系統設定 → Spotlight → Search Privacy（或 Spotlight Privacy）→ ＋」
+>
+> 再選擇要排除的資料夾或磁碟。這很適合只想排除一兩個資料夾，也最容易從系統介面確認設定。[Apple 的操作說明](https://support.apple.com/en-au/guide/mac-help/mchl1bb43b84/mac)
 
 第二種：做法是在要排除的資料夾中放入 `.metadata_never_index`。它是空白標記檔，告訴 Spotlight 不要為這個資料夾建立索引；日後移除它，就能讓索引恢復。對開發專案而言，這比逐一調整每個子資料夾更容易維護。
 

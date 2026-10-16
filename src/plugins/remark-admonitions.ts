@@ -1,11 +1,7 @@
-import type { Parent, PhrasingContent, Root } from "mdast";
-import type { LeafDirective, TextDirective } from "mdast-util-directive";
-import { directiveToMarkdown } from "mdast-util-directive";
-import { toMarkdown } from "mdast-util-to-markdown";
-import { toString as mdastToString } from "mdast-util-to-string";
+import type { Root } from "mdast";
 import type { Plugin } from "unified";
 import { visit } from "unist-util-visit";
-import { h, isNodeDirective } from "../utils/remark";
+import { h } from "../utils/remark";
 
 type AdmonitionType = "tip" | "note" | "important" | "caution" | "warning";
 
@@ -15,49 +11,32 @@ function isAdmonition(s: string): s is AdmonitionType {
 	return Admonitions.has(s as AdmonitionType);
 }
 
-function transformUnhandledDirective(node: LeafDirective | TextDirective, index: number, parent: Parent) {
-	const textNode = {
-		type: "text",
-		value: toMarkdown(node, { extensions: [directiveToMarkdown()] }),
-	} as const;
-	if (node.type === "textDirective") {
-		parent.children[index] = textNode;
-	} else {
-		parent.children[index] = { children: [textNode], type: "paragraph" };
-	}
-}
+// GitHub alert syntax: a blockquote whose first line is `[!TIP]`, `[!NOTE]`, etc.
+const ALERT_MARKER = /^\[!(\w+)\][ \t]*(?:\r?\n|$)/;
 
 export const remarkAdmonitions: Plugin<[], Root> = () => (tree) => {
-	visit(tree, (node, index, parent) => {
-		if (!parent || index === undefined || !isNodeDirective(node)) return;
-		if (node.type === "textDirective" || node.type === "leafDirective") {
-			transformUnhandledDirective(node, index, parent);
-			return;
-		}
+	visit(tree, "blockquote", (node, index, parent) => {
+		if (!parent || index === undefined) return;
 
-		const admonitionType = node.name;
+		const firstParagraph = node.children[0];
+		if (firstParagraph?.type !== "paragraph") return;
+		const firstText = firstParagraph.children[0];
+		if (firstText?.type !== "text") return;
+
+		const match = firstText.value.match(ALERT_MARKER);
+		if (!match) return;
+		const admonitionType = match[1].toLowerCase();
 		if (!isAdmonition(admonitionType)) return;
 
-		let title: string = admonitionType;
-		let titleNode: PhrasingContent[] = [{ type: "text", value: title }];
-
-		const firstChild = node.children[0];
-		if (
-			firstChild?.type === "paragraph" &&
-			firstChild.data &&
-			"directiveLabel" in firstChild.data &&
-			firstChild.children.length > 0
-		) {
-			titleNode = firstChild.children;
-			title = mdastToString(firstChild.children);
-			node.children.splice(0, 1);
-		}
+		firstText.value = firstText.value.slice(match[0].length);
+		if (!firstText.value) firstParagraph.children.shift();
+		if (!firstParagraph.children.length) node.children.shift();
 
 		const admonition = h(
 			"aside",
-			{ "aria-label": title, class: "admonition", "data-admonition-type": admonitionType },
+			{ "aria-label": admonitionType, class: "admonition", "data-admonition-type": admonitionType },
 			[
-				h("p", { class: "admonition-title", "aria-hidden": "true" }, [...titleNode]),
+				h("p", { class: "admonition-title", "aria-hidden": "true" }, [{ type: "text", value: admonitionType }]),
 				h("div", { class: "admonition-content" }, node.children),
 			],
 		);

@@ -46,9 +46,8 @@ curl -I http://jasperhung.dev/
 
 預期會看到 301 或 308，`Location` 指向 `https://jasperhung.dev/`。設定頁只是設定已儲存的證據；response header 才是確認訪客實際收到導向的最後一步。
 
-:::tip
-Cloudflare 介面提到 redirect loop，是提醒 origin 也可能有衝突規則；它不是說開啟 Always Use HTTPS 一定會造成迴圈。仍應以實際 HTTP response 驗證。
-:::
+> [!TIP]
+> Cloudflare 介面提到 redirect loop，是提醒 origin 也可能有衝突規則；它不是說開啟 Always Use HTTPS 一定會造成迴圈。仍應以實際 HTTP response 驗證。
 
 ## 一個鎖頭，背後是兩段 HTTPS
 

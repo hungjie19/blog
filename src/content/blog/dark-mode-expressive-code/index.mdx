@@ -104,9 +104,8 @@ export default defineConfig({
 });
 ```
 
-:::tip
-`pluginLineNumbers` 是 named export，不是 default export。寫成 `import pluginLineNumbers from ...` 不會報錯，但行號不會出現——這個坑很多人會踩。
-:::
+> [!TIP]
+> `pluginLineNumbers` 是 named export，不是 default export。寫成 `import pluginLineNumbers from ...` 不會報錯，但行號不會出現——這個坑很多人會踩。
 
 換完之後，手刻的行號 CSS、copy button script 全部拔掉，code block 的 UX 反而比之前好。
 
