@@ -207,6 +207,62 @@ const readingTime = `約 ${minutes} 分鐘`;
     new PhotoSwipeDynamicCaption(lightbox, { type: 'below' });
     lightbox.init();
   }
+
+  // Heading anchors: click a heading to copy its link and scroll it to the top
+  const anchorHeadings = document.querySelectorAll<HTMLHeadingElement>(
+    '.article-body :is(h2, h3)[id]:not(.key-takeaways *)',
+  );
+  const anchorIcon =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+    '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
+    '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+  let toastTimer: number | undefined;
+
+  function showCopiedToast() {
+    const toast =
+      document.querySelector<HTMLDivElement>('.heading-anchor-toast') ??
+      document.body.appendChild(
+        Object.assign(document.createElement('div'), {
+          className: 'heading-anchor-toast',
+          role: 'status',
+          textContent: '已複製段落連結',
+        }),
+      );
+    toast.classList.add('is-visible');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1600);
+  }
+
+  for (const heading of anchorHeadings) {
+    const anchor = document.createElement('a');
+    anchor.className = 'heading-anchor';
+    anchor.href = `#${heading.id}`;
+    anchor.setAttribute('aria-label', `複製「${heading.textContent?.trim() ?? ''}」段落連結`);
+    anchor.innerHTML = anchorIcon;
+    heading.prepend(anchor);
+    heading.classList.add('has-anchor');
+
+    heading.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      // Let inline links inside the heading navigate normally
+      if (target.closest('a') && target.closest('a') !== anchor) return;
+      // Don't hijack a text selection drag
+      if (window.getSelection()?.toString()) return;
+      event.preventDefault();
+
+      const shareUrl = new URL(window.location.href);
+      shareUrl.searchParams.set('utm_source', 'copy_link');
+      shareUrl.searchParams.set('utm_medium', 'heading_anchor');
+      shareUrl.hash = heading.id;
+      navigator.clipboard?.writeText(shareUrl.toString()).then(showCopiedToast, () => {});
+
+      history.replaceState(null, '', `#${heading.id}`);
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      heading.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+
+      window.umami?.track('copy-heading-link', { heading: heading.id });
+    });
+  }
 </script>
 
 <style>
@@ -294,6 +350,74 @@ const readingTime = `約 ${minutes} 分鐘`;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--heading);
+  }
+
+  .article-body :global(.has-anchor) {
+    position: relative;
+    cursor: pointer;
+    scroll-margin-top: 12px;
+  }
+  .article-body :global(.heading-anchor) {
+    display: none;
+  }
+  /* 手機版 #mobile-title-bar（32px fixed）會蓋住捲到頂的標題 */
+  @media (max-width: 768px) {
+    .article-body :global(.has-anchor) {
+      scroll-margin-top: 44px;
+    }
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .article-body :global(.heading-anchor) {
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin-right: 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      opacity: 0;
+      transform: translateY(-50%);
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .article-body :global(.heading-anchor svg) {
+      width: 12px;
+      height: 12px;
+    }
+    .article-body :global(.has-anchor:hover .heading-anchor),
+    .article-body :global(.heading-anchor:focus-visible) {
+      opacity: 1;
+    }
+    .article-body :global(.heading-anchor:hover) {
+      color: var(--heading);
+      text-decoration: none;
+    }
+  }
+
+  :global(.heading-anchor-toast) {
+    /* topbar（48px）正下方右側，點標題後視線在上方 */
+    position: fixed;
+    top: 52px;
+    right: 4px;
+    z-index: 60;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--heading);
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  :global(.heading-anchor-toast.is-visible) {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .article-body :global(p) {
