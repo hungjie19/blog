@@ -12,9 +12,11 @@ interface Props {
   date?: string;
   canonicalPath?: string;
   ogImageUrl?: string;
+  /** Card-grid pages (e.g. Series) use a wider content column. */
+  wide?: boolean;
 }
 
-const { title, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl } = Astro.props;
+const { title, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl, wide = false } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
 const SITE_NAME = 'Jasper Hung';
@@ -318,7 +320,7 @@ const iconButtonClass =
 
     <!-- Content -->
     <main class="min-w-0 flex-1 overflow-x-hidden overflow-y-auto [-webkit-overflow-scrolling:touch]">
-      <div class="content-wrapper">
+      <div class:list={["content-wrapper", { "content-wrapper--wide": wide }]}>
         <slot />
       </div>
     </main>
@@ -335,6 +337,8 @@ const iconButtonClass =
     margin: 0 auto;
     padding: 34px 24px 48px;
   }
+
+  .content-wrapper--wide { max-width: 1280px; }
 
   @media (min-width: 640px) {
     .content-wrapper { padding: 40px 28px; }
