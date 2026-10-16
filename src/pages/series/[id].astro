@@ -13,8 +13,9 @@ const series = getSeries(id);
 if (!series) throw new Error(`Unknown series: ${id}`);
 
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
-const posts = sortSeriesEntries((await getCollection('blog')).filter(post => post.data.series === id));
 const isCollection = series.type === 'collection';
+// 最新的放最上面：series 與 collection 都倒序顯示
+const posts = sortSeriesEntries((await getCollection('blog')).filter(post => post.data.series === id)).reverse();
 const ListTag = isCollection ? 'ul' : 'ol';
 ---
 
@@ -50,9 +51,12 @@ const ListTag = isCollection ? 'ul' : 'ol';
               data-umami-event-destination={post.id}
             >
               <div class="flex items-baseline gap-3">
-                {!isCollection && <span class="shrink-0 text-sm tabular-nums text-muted">{String(index + 1).padStart(2, '0')}</span>}
+                {!isCollection && <span class="shrink-0 text-sm tabular-nums text-muted">{String(posts.length - index).padStart(2, '0')}</span>}
                 <h3 class="m-0 text-base font-semibold leading-snug tracking-[-0.01em] text-text group-hover:text-accent">{post.data.title}</h3>
               </div>
+              <p class:list={['mb-0 mt-1 text-sm text-muted', !isCollection && 'pl-8']}>
+                {post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
               {post.data.description && <p class:list={['mb-0 mt-2 text-sm leading-relaxed text-muted', !isCollection && 'pl-8']}>{post.data.description}</p>}
             </a>
           </li>

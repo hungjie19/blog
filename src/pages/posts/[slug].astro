@@ -27,9 +27,11 @@ export async function getStaticPaths() {
       seriesId = post.data.series;
       seriesName = series?.title ?? seriesLabel(post.data.series);
       seriesType = series?.type ?? "series";
+      // 跟系列頁一致：最新的放最上面
       seriesList = sortSeriesEntries(
         posts.filter((p) => p.data.series === post.data.series),
       )
+        .reverse()
         .map((p) => ({
           slug: p.id,
           title: p.data.title,
@@ -116,7 +118,7 @@ const readingTime = `約 ${minutes} 分鐘`;
                 )}
               </ul>
             ) : (
-              <ol class="series-box-list">
+              <ol class:list={["series-box-list", seriesList.length >= 10 && "series-box-list-wide"]} reversed>
                 {seriesList.map((item) =>
                   item.current ? (
                     <li class="series-box-current">
@@ -626,6 +628,15 @@ const readingTime = `約 ${minutes} 分鐘`;
 
   .series-box-list li {
     margin-bottom: 6px;
+  }
+
+  .series-box-list li::marker {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 兩位數編號（10 篇以上）要多留一格，marker 才不會超出標題左緣 */
+  .series-box-list-wide {
+    padding-left: 3.6ch;
   }
 
   .series-box-list li:last-child {
