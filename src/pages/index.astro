@@ -8,7 +8,7 @@ const posts = (await getCollection('blog')).sort(
 );
 ---
 
-<BlogLayout>
+<BlogLayout metaTitle="Jasper Hung — Coworking with AI">
   <h1 class="sr-only">Jasper Hung</h1>
   <div class="feed">
     {posts.map((post, i) => (

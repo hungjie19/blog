@@ -7,6 +7,8 @@ import '../styles/global.css';
 
 interface Props {
   title?: string;
+  /** Complete metadata title override; does not change the visible top-bar title. */
+  metaTitle?: string;
   activeSlug?: string;
   description?: string;
   date?: string;
@@ -16,16 +18,17 @@ interface Props {
   wide?: boolean;
 }
 
-const { title, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl, wide = false } = Astro.props;
+const { title, metaTitle, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl, wide = false } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
 const SITE_NAME = 'Jasper Hung';
 const TITLE_SUFFIX = ` — ${SITE_NAME}`;
 // Bing Site Scan flags long titles; only append the site name when the result still fits.
 const MAX_TITLE_LENGTH = 60;
-const pageTitle = !title
+const defaultPageTitle = !title
   ? SITE_NAME
   : (title + TITLE_SUFFIX).length <= MAX_TITLE_LENGTH ? title + TITLE_SUFFIX : title;
+const pageTitle = metaTitle ?? defaultPageTitle;
 const pageDescription = description ?? 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。';
 const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}/` : `${siteUrl}${canonicalPath ?? '/'}`;
 const mdUrl = `${siteUrl}/posts/${activeSlug}.md`;
@@ -46,6 +49,7 @@ const jsonLd = activeSlug
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: 'Jasper Hung',
+      alternateName: ['Jasper Hung Blog', 'jasperhung.dev'],
       url: `${siteUrl}/`,
       author: { '@type': 'Person', name: 'Jasper Hung' },
     });
