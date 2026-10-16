@@ -75,7 +75,6 @@ tags:
   - tag2
 series: openmemory
 seriesOrder: 1
-draft: true
 ---
 ```
 
