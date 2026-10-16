@@ -11,7 +11,7 @@ export const seriesLists = {
   "ithome-2026-ironman": {
     title: "iThome 2026 鐵人賽：跟著 Claude Academy，重新認識 Claude",
     description:
-      "每天都在用 AI，不代表真的了解手上的工具。iThome 2026 鐵人賽跟著官方 Claude Academy，30 天重新學習 Claude：從 101、Cowork、Claude Code 到 Skills、MCP、Agent 與 API，收集學習徽章，也記錄實際踩坑與應用經驗。",
+      "每天都在用 AI，不代表真的了解手上的工具。iThome 2026 鐵人賽跟著官方 Claude Academy，30 天重新學習 Claude，收集學習徽章，也記錄實際踩坑與應用經驗。",
     type: "series",
     cover: "/images/series/ithome-2026-ironman.webp",
   },
@@ -20,6 +20,12 @@ export const seriesLists = {
     description: "以 Agent 為核心，整合 IDE、Git、worktree 與 remote control 的開發環境實測。",
     type: "series",
     cover: "/images/series/orca-ade.jpg",
+  },
+  "bing-webmaster-tools": {
+    title: "Bing Webmaster Tools",
+    description: "把部落格交給 Bing：從收錄、IndexNow、Cloudflare Crawler Hints 到 Site Scan 全站健檢的實測紀錄。",
+    type: "collection",
+    cover: "/images/series/bing-webmaster-tools.jpg",
   },
   "macos-fix": {
     title: "macOS 修復筆記",
