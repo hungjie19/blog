@@ -75,6 +75,12 @@ export const seriesLists = {
     type: "series",
     cover: "/images/series/summon-agent.jpg",
   },
+  "astro-blog": {
+    title: "Astro Blog 建站筆記",
+    description: "從買 domain、選 Astro 到 OG image、dark mode、燈箱與效能優化：這個部落格一路蓋起來的實作紀錄。",
+    type: "collection",
+    cover: "/images/series/astro-blog.jpg",
+  },
 } satisfies Record<string, SeriesList>;
 
 export type SeriesId = keyof typeof seriesLists;
