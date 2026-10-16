@@ -27,9 +27,13 @@ Read the `tags:` field of each post's frontmatter. Do **not** use `mcp__obsidian
 
 ## Write-time procedure
 
-1. Read `tag-rules.md` for normalization rules and forbidden patterns.
-2. Read `canonical-tags.md` and `aliases.md` for existing preferred terms — prefer reusing an existing tag over inventing a near-synonym.
-3. Scan the corpus source above for live full-inventory semantic match (no count thresholds, no pick-N quotas).
+**Derive first, reconcile second** (`tag-audit.md` decision #13):
+
+1. **Derive blind.** From the post content alone, write down the most fitting candidate tags. Do **not** look at the corpus inventory, `canonical-tags.md`, or `aliases.md` during this step — reading a list first anchors the writer onto existing generic tags and kills tag diversity.
+2. Read `tag-rules.md` for normalization rules and forbidden patterns.
+3. **Reconcile.** Scan the corpus source above for the live full inventory (no count thresholds, no pick-N quotas), and check `aliases.md` / `canonical-tags.md`. For each candidate:
+   - **Same concept, different spelling** (casing, singular/plural, hyphenation, an obvious synonym, a confirmed alias) → use the existing tag.
+   - **Related but different concept, or a more specific sub-concept** → keep the candidate as a new tag. Do not fall back to a merely nearby existing tag.
 4. Apply 3–5 tags per post, following `tag-rules.md` normalization.
 
 ## Governance

@@ -144,3 +144,10 @@ tags: [tag-system, blog, changelog]
 **未處理（待裁決）**：`claude-academy-30-day-roadmap` 移除 `AI` 後只剩 `Claude`、`LLM` 兩個描述性 tag，低於 3 個下限；未自行補 tag。
 
 **原因**：系列識別原本只靠 `series:` frontmatter，那是版面用的機器欄位、不出現在 tag 瀏覽路徑上，所以讀者端等於沒有系列入口。必帶 tag 不計入 3–5 是為了讓「系列識別」與「內容描述」兩種用途分開計算——否則每加一個治理用 tag 就要犧牲一個描述性 tag，治理會持續侵蝕 tag 的描述力。
+
+### 13. 寫入流程改為「先推導、後比對」，與 vault 同步
+
+**日期**：2026-10-17
+**內容**：writer 選 tag 的順序從「先讀 `canonical-tags.md`／`aliases.md`、掃全量語料 → 語意比對挑選 → 沒有才新增」改成「先只看文章內容盲寫候選 tag → 再掃語料、查 aliases 比對去重」。比對只在**同一概念的不同寫法**時改用既有 tag；相關但不同的概念、或更具體的子概念，保留為新 tag。改動檔案：`index.md` Write-time procedure、`tag-rules.md` Selection procedure 步驟 1–2，以及消費端 `to-blog` skill 的「寫 tags 前」段落。§ Selection procedure 步驟 0（不把既有的兩個正交 tag 合成複合 tag）、Title Case normalization、3–5 數量、必帶系列 tag 皆不變。
+**原因**：與 vault `~/ai_session_summary/tag-system/tag-audit.md` 決策 #11 同步（使用者要求兩邊邏輯一致）。先看清單會錨定 writer，只挑得出已存在、勉強相關的泛詞，誤殺 tag 多樣性；同義重複仍由比對階段擋住。
+**Blog 特有的取捨**：blog tag 是讀者端的瀏覽入口，新 tag 若長期只掛一篇，tag 頁價值低。這個收斂交給 `/tag-taxonomy` 低頻 audit 處理（合併或淘汰單篇 tag），不在寫入端用「先看清單」預防。

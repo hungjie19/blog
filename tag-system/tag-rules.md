@@ -14,8 +14,8 @@ Write-time procedure and normalization rules for blog frontmatter tags. Read `in
 ## Selection procedure
 
 0. Do not merge two orthogonal concepts into one hyphenated tag (e.g. `AI-Workflow`) when the corpus already carries them as separate tags (`AI`, `Workflow`) — reuse the two existing tags instead of inventing a compound (`tag-audit.md` decision #11).
-1. Read the full existing tag inventory via `index.md`'s corpus source (live scan, not a cached list).
-2. Semantic match against existing tags first — reuse before inventing.
+1. **Derive blind first**: write candidate tags from the post content alone, before reading any inventory or list (`tag-audit.md` decision #13).
+2. **Then reconcile** against the full existing tag inventory via `index.md`'s corpus source (live scan, not a cached list). Reuse an existing tag only when it is the **same concept** written differently (casing, plural, hyphenation, obvious synonym, confirmed alias). A related-but-different concept or a more specific sub-concept stays as a new tag.
 3. Apply 3–5 tags per post: mix of topic (e.g. `Astro`, `Image-Generation`), format/series (e.g. `Site-Building`), and technology/proper-noun (e.g. `AI`, `Claude`) as relevant. Mandatory series tags are **not** part of this count — see § Mandatory series tags.
 4. No count thresholds, no pick-N quotas — pick what's actually descriptive.
 5. New tag → Title Case per the Normalization rules above (capitalize every hyphen segment; acronyms fully uppercase; proper nouns keep canonical internal casing). Never write a new lowercase tag.
