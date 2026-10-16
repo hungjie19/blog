@@ -75,6 +75,7 @@ tags:
   - tag2
 series: openmemory
 seriesOrder: 1
+draft: true
 ---
 ```
 
@@ -82,7 +83,8 @@ seriesOrder: 1
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
 - `ogTitle`：選填，只給 OG image 排版用；用 `|` 指定手動換行，不影響文章 H1 / SEO title / RSS
 - `series` + `seriesOrder`：選填。系列文章填相同的 `series` ID（英文 kebab-case）與顯示排序用的 `seriesOrder`；它可用於有序系列，也可用於 collection 的穩定排序。**開新系列或變更系列型別，要在 `src/lib/series.ts` 的 `seriesLists` 註冊 ID、顯示名稱與 `type`**。文章底部自動列出全系列，按 `seriesOrder` 排序；collection 仍顯示無編號的圓點清單。
-- 文章底部另有全站「上一篇/下一篇」導航：純按 `date` 時間排序、跨所有文章（上一篇 = 較舊），與系列正交、互不干擾；`markdown-style-test` 排除在外（`[slug].astro` 的 `NAV_EXCLUDE`）
+- `draft`：選填，預設 `false`。設 `true` 時文章只在 `pnpm dev` 看得到，production build 完全不產生（文章頁、`.md`、OG、首頁、RSS、sitemap、tag／series 頁、sidebar 都沒有），可當草稿或隨時下架用。過濾做在 `src/content.config.ts` 的 loader 層，所有 `getCollection('blog')` 自動生效，不要在各頁另寫 filter。`markdown-style-test` 即以此排除。
+- 文章底部另有全站「上一篇/下一篇」導航：純按 `date` 時間排序、跨所有文章（上一篇 = 較舊），與系列正交、互不干擾
 
 ## SEO / AEO
 

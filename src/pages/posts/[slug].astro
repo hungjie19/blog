@@ -7,19 +7,16 @@ import KeyTakeaways from "../../components/KeyTakeaways.astro";
 import { getSeries, seriesLabel, sortSeriesEntries } from "../../lib/series";
 
 export async function getStaticPaths() {
-  const NAV_EXCLUDE = ["markdown-style-test"];
   const posts = await getCollection("blog");
-  const byDate = posts
-    .filter((p) => !NAV_EXCLUDE.includes(p.id))
-    .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+  const byDate = [...posts].sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
 
   return posts.map((post) => {
     const toNav = (p: (typeof posts)[number] | undefined) =>
       p ? { slug: p.id, title: p.data.title } : null;
 
     const dateIndex = byDate.findIndex((p) => p.id === post.id);
-    const prevPost = dateIndex === -1 ? null : toNav(byDate[dateIndex - 1]);
-    const nextPost = dateIndex === -1 ? null : toNav(byDate[dateIndex + 1]);
+    const prevPost = toNav(byDate[dateIndex - 1]);
+    const nextPost = toNav(byDate[dateIndex + 1]);
 
     let seriesId = null;
     let seriesName = null;
