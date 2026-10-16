@@ -1,0 +1,26 @@
+---
+// Inline copy of public/favicon.svg. Decorative next to the visible "Jasper Hung" text,
+// so it is aria-hidden instead of an <img alt="">, which Bing Site Scan flags as missing alt.
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" class={className} aria-hidden="true" focusable="false">
+  <circle cx="627" cy="627" r="595" fill="#0a0a0a"/>
+  <g fill="#60a5fa" transform="translate(-12 0) translate(627 627) scale(1.1) translate(-627 -627)">
+    <rect x="265" y="285" width="435" height="150" rx="16"/>
+    <rect x="560" y="285" width="140" height="470"/>
+    <path d="M 264.5 748
+             A 217.5 217.5 0 0 0 482 965.5
+             A 217.5 217.5 0 0 0 699.5 748
+             L 559.5 748
+             A 77.5 77.5 0 0 1 482 825.5
+             A 77.5 77.5 0 0 1 404.5 748 Z"/>
+    <rect x="265" y="685" width="140" height="70"/>
+    <rect x="830" y="285" width="140" height="690" rx="16"/>
+    <rect x="690" y="525" width="150" height="165"/>
+  </g>
+</svg>

@@ -32,7 +32,7 @@ const series = Object.entries(seriesLists).map(([id, item]) => ({
           {item.cover && (
             <img
               src={`${base}${item.cover.slice(1)}`}
-              alt=""
+              alt={`${item.title} 系列封面`}
               class="aspect-[16/9] w-full border-b border-border object-cover"
               loading="lazy"
             />

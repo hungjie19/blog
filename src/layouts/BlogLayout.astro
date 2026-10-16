@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, UserRound } from '@lucide/astro';
+import BrandMark from '../components/BrandMark.astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -16,7 +17,13 @@ interface Props {
 const { title, activeSlug, description, date, canonicalPath, ogImageUrl: customOgImageUrl } = Astro.props;
 
 const siteUrl = 'https://jasperhung.dev';
-const pageTitle = title ? `${title} — Jasper Hung` : 'Jasper Hung';
+const SITE_NAME = 'Jasper Hung';
+const TITLE_SUFFIX = ` — ${SITE_NAME}`;
+// Bing Site Scan flags long titles; only append the site name when the result still fits.
+const MAX_TITLE_LENGTH = 60;
+const pageTitle = !title
+  ? SITE_NAME
+  : (title + TITLE_SUFFIX).length <= MAX_TITLE_LENGTH ? title + TITLE_SUFFIX : title;
 const pageDescription = description ?? 'Jasper 與 AI 協作的實戰紀錄：工程、產品、個人品牌。';
 const canonicalUrl = activeSlug ? `${siteUrl}/posts/${activeSlug}/` : `${siteUrl}${canonicalPath ?? '/'}`;
 const mdUrl = `${siteUrl}/posts/${activeSlug}.md`;
@@ -152,7 +159,7 @@ const iconButtonClass =
       class="flex shrink-0 items-center gap-2 text-[15px] font-bold leading-none tracking-[-0.02em] text-text no-underline"
       data-umami-event="click-brand-topbar"
     >
-      <img src={`${base}favicon.svg`} alt="" class="h-6 w-6 shrink-0" />
+      <BrandMark class="h-6 w-6 shrink-0" />
       <span>Jasper Hung</span>
     </a>
 
