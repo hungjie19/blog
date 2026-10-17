@@ -27,6 +27,12 @@ export const seriesLists = {
     type: "collection",
     cover: "/images/series/bing-webmaster-tools.jpg",
   },
+  cloudflare: {
+    title: "Cloudflare",
+    description: "把 Cloudflare 當成部落格的前門：DNS、Proxy、快取規則、robots.txt 與各種診斷建議的實際設定紀錄。",
+    type: "collection",
+    cover: "/images/series/cloudflare.jpg",
+  },
   "macos-fix": {
     title: "macOS 修復筆記",
     description: "升級後發燙、CPU 無故飆高、Intel app 跳警告：Mac 出狀況時的實際排查過程與解法。",
