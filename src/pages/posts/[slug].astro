@@ -21,6 +21,7 @@ export async function getStaticPaths() {
     let seriesId = null;
     let seriesName = null;
     let seriesList = null;
+    let seriesTotal = 0;
     let seriesType = null;
     if (post.data.series) {
       const series = getSeries(post.data.series);
@@ -28,25 +29,35 @@ export async function getStaticPaths() {
       seriesName = series?.title ?? seriesLabel(post.data.series);
       seriesType = series?.type ?? "series";
       // 跟系列頁一致：最新的放最上面
-      seriesList = sortSeriesEntries(
+      const all = sortSeriesEntries(
         posts.filter((p) => p.data.series === post.data.series),
-      )
-        .reverse()
-        .map((p) => ({
-          slug: p.id,
-          title: p.data.title,
-          current: p.id === post.id,
-        }));
+      ).reverse();
+      seriesTotal = all.length;
+      // 超過 SHOW_ALL_MAX 篇只顯示以目前這篇為中心的 WINDOW 篇，碰到頭尾就往另一側補滿
+      const WINDOW = 5;
+      const SHOW_ALL_MAX = 7;
+      const index = all.findIndex((p) => p.id === post.id);
+      const start = all.length <= SHOW_ALL_MAX
+        ? 0
+        : Math.min(Math.max(index - Math.floor(WINDOW / 2), 0), all.length - WINDOW);
+      const end = all.length <= SHOW_ALL_MAX ? all.length : start + WINDOW;
+      seriesList = all.slice(start, end).map((p, i) => ({
+        slug: p.id,
+        title: p.data.title,
+        current: p.id === post.id,
+        // 截斷後 <ol reversed> 會從窗口長度倒數，編號要自己帶
+        number: all.length - (start + i),
+      }));
     }
 
     return {
       params: { slug: post.id },
-      props: { post, seriesId, seriesName, seriesList, seriesType, prevPost, nextPost },
+      props: { post, seriesId, seriesName, seriesList, seriesTotal, seriesType, prevPost, nextPost },
     };
   });
 }
 
-const { post, seriesId, seriesName, seriesList, seriesType, prevPost, nextPost } = Astro.props;
+const { post, seriesId, seriesName, seriesList, seriesTotal, seriesType, prevPost, nextPost } = Astro.props;
 const { Content, headings } = await render(post);
 const isSeriesCollection = seriesType === "collection";
 
@@ -98,7 +109,7 @@ const readingTime = `約 ${minutes} 分鐘`;
       seriesList && (
         <aside class="series-box" aria-label="系列文章">
           <a href={`/series/${seriesId}/`} class="series-box-title" data-umami-event="click-series-overview-post">
-            {isSeriesCollection ? `${seriesName}（共 ${seriesList.length} 篇）` : `${seriesName} 系列（共 ${seriesList.length} 篇）`}
+            {isSeriesCollection ? `${seriesName}（共 ${seriesTotal} 篇）` : `${seriesName} 系列（共 ${seriesTotal} 篇）`}
             <span aria-hidden="true"> →</span>
           </a>
           {
@@ -118,20 +129,27 @@ const readingTime = `約 ${minutes} 分鐘`;
                 )}
               </ul>
             ) : (
-              <ol class:list={["series-box-list", seriesList.length >= 10 && "series-box-list-wide"]} reversed>
+              <ol class:list={["series-box-list", seriesList[0].number >= 10 && "series-box-list-wide"]} reversed>
                 {seriesList.map((item) =>
                   item.current ? (
-                    <li class="series-box-current">
+                    <li class="series-box-current" value={item.number}>
                       {item.title}
                       <span class="series-box-badge">目前這篇</span>
                     </li>
                   ) : (
-                    <li>
+                    <li value={item.number}>
                       <a href={`/posts/${item.slug}/`} data-umami-event="click-series-nav">{item.title}</a>
                     </li>
                   ),
                 )}
               </ol>
+            )
+          }
+          {
+            seriesList.length < seriesTotal && (
+              <a href={`/series/${seriesId}/`} class="series-box-more" data-umami-event="click-series-more">
+                查看全部 {seriesTotal} 篇 →
+              </a>
             )
           }
         </aside>
@@ -668,6 +686,16 @@ const readingTime = `約 ${minutes} 分鐘`;
     font-size: 12px;
     color: var(--accent);
   }
+
+  .series-box-more {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  .series-box-more:hover { color: var(--text); }
 
   .post-nav {
     display: grid;
