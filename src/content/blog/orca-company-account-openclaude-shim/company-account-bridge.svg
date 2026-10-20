@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="820" viewBox="0 0 1440 820" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">Orca 透過 OpenClaude slot 啟動第二個 Claude 帳號</title>
+  <desc id="diagram-desc">Orca 選單呼叫 openclaude shim，shim 設定 company 帳號目錄後啟動 Claude Code。Claude 設定中的 Orca hooks 再回報 session 與 transcript 路徑，讓 Orca Chat UI 顯示對話。</desc>
+  <defs>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#3976d2" />
+    </marker>
+    <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#718096" />
+    </marker>
+    <style>
+      text { font-family: Inter, "Noto Sans TC", "PingFang TC", sans-serif; }
+      .eyebrow { font-size: 15px; font-weight: 700; letter-spacing: 1.8px; }
+      .heading { font-size: 31px; font-weight: 700; fill: #172033; }
+      .subheading { font-size: 17px; fill: #526176; }
+      .card-title { font-size: 20px; font-weight: 700; fill: #172033; }
+      .body { font-size: 17px; fill: #526176; }
+      .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 15px; fill: #243247; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="820" fill="#f5f7fb" />
+  <text x="64" y="64" class="eyebrow" fill="#3976d2">ORCA × CLAUDE CODE</text>
+  <text x="64" y="112" class="heading">從 OpenClaude 選項啟動第二個 Claude 帳號</text>
+  <text x="64" y="145" class="subheading">shim 把 Orca 的啟動請求轉交給 Claude Code，並載入 company 設定目錄</text>
+
+  <!-- Orca menu, based on the supplied screenshot -->
+  <rect x="64" y="184" width="340" height="294" rx="22" fill="#17191d" />
+  <text x="88" y="218" class="eyebrow" fill="#aab4c3">ORCA AGENT MENU</text>
+  <rect x="82" y="237" width="304" height="59" rx="13" fill="#22252b" />
+  <circle cx="111" cy="266" r="14" fill="#f08b68" />
+  <path d="M111 255 L114 264 L123 261 L116 268 L121 276 L112 271 L105 279 L107 269 L98 266 L108 264 Z" fill="#fff5ef" />
+  <text x="141" y="274" font-size="22" fill="#f4f6f9">Claude</text>
+
+  <rect x="82" y="307" width="304" height="66" rx="14" fill="#3b3e45" stroke="#5a8fdf" stroke-width="2" />
+  <rect x="96" y="323" width="31" height="31" rx="8" fill="#25282e" stroke="#f09965" stroke-width="2" />
+  <path d="M104 333 L109 337 L104 341 M114 341 H119" fill="none" stroke="#f09965" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="141" y="350" font-size="22" font-weight="600" fill="#ffffff">OpenClaude</text>
+  <text x="304" y="350" font-size="13" font-weight="700" fill="#cfe0ff">SELECTED</text>
+
+  <rect x="82" y="384" width="304" height="59" rx="13" fill="#22252b" />
+  <circle cx="111" cy="413" r="14" fill="#9aa8bc" />
+  <path d="M103 413 C107 405 115 405 119 413 C115 421 107 421 103 413 Z M107 413 H115" fill="none" stroke="#20242b" stroke-width="2" />
+  <text x="141" y="421" font-size="22" fill="#f4f6f9">Codex</text>
+
+  <!-- Main launch flow -->
+  <path d="M414 330 H490" fill="none" stroke="#3976d2" stroke-width="4" marker-end="url(#arrow-blue)" />
+  <text x="452" y="301" text-anchor="middle" font-size="14" font-weight="600" fill="#3976d2">Command</text>
+  <text x="452" y="321" text-anchor="middle" font-size="14" font-weight="600" fill="#3976d2">openclaude</text>
+
+  <rect x="506" y="207" width="356" height="246" rx="22" fill="#ffffff" stroke="#d7deea" stroke-width="2" />
+  <rect x="530" y="229" width="96" height="28" rx="14" fill="#e7effc" />
+  <text x="578" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#3268b8">SHIM</text>
+  <text x="530" y="291" class="card-title">PATH 上的啟動入口</text>
+  <text x="530" y="323" class="mono">~/.local/bin/openclaude</text>
+  <line x1="530" y1="343" x2="838" y2="343" stroke="#e8ecf2" />
+  <text x="530" y="374" class="mono">CLAUDE_CONFIG_DIR=</text>
+  <text x="530" y="398" class="mono">  ~/.claude-company</text>
+  <text x="530" y="427" class="body">接著執行 Claude，保留 Orca 傳入的參數</text>
+
+  <path d="M872 330 H954" fill="none" stroke="#3976d2" stroke-width="4" marker-end="url(#arrow-blue)" />
+  <text x="913" y="301" text-anchor="middle" font-size="14" font-weight="600" fill="#3976d2">exec Claude</text>
+
+  <rect x="970" y="207" width="405" height="246" rx="22" fill="#ffffff" stroke="#d7deea" stroke-width="2" />
+  <circle cx="1013" cy="257" r="20" fill="#fff0e9" />
+  <path d="M1013 242 L1017 253 L1029 249 L1020 258 L1027 270 L1015 263 L1006 273 L1008 260 L997 256 L1009 254 Z" fill="#dc7b58" />
+  <text x="1045" y="265" class="card-title">Claude Code</text>
+  <text x="1000" y="315" class="body">使用另一份設定與登入狀態</text>
+  <rect x="1000" y="337" width="345" height="82" rx="14" fill="#f3f6fb" />
+  <text x="1020" y="365" font-size="13" font-weight="700" fill="#718096">設定目錄</text>
+  <text x="1020" y="394" class="mono">~/.claude-company</text>
+  <rect x="1238" y="354" width="88" height="28" rx="14" fill="#e3f2e9" />
+  <text x="1282" y="373" text-anchor="middle" font-size="13" font-weight="700" fill="#328253">company</text>
+
+  <!-- Hook return path to Orca's mobile Chat UI -->
+  <path d="M1172 455 V516 H1080 V548" fill="none" stroke="#718096" stroke-width="3" marker-end="url(#arrow-gray)" />
+  <rect x="970" y="564" width="405" height="147" rx="20" fill="#ffffff" stroke="#d7deea" stroke-width="2" />
+  <text x="1000" y="601" class="eyebrow" fill="#718096">COMPANY SETTINGS</text>
+  <text x="1000" y="635" class="card-title">Orca hooks</text>
+  <text x="1000" y="670" class="mono">~/.claude-company/settings.json</text>
+  <text x="1000" y="694" font-size="14" fill="#526176">回報 SessionStart 與 transcript 路徑</text>
+
+  <path d="M958 643 H424" fill="none" stroke="#718096" stroke-width="3" marker-end="url(#arrow-gray)" />
+  <rect x="532" y="615" width="318" height="32" rx="16" fill="#f5f7fb" />
+  <text x="691" y="637" text-anchor="middle" font-size="14" font-weight="600" fill="#526176">SessionStart + transcriptPath</text>
+
+  <rect x="64" y="564" width="340" height="147" rx="20" fill="#e8f0fc" stroke="#c9d9f2" stroke-width="2" />
+  <circle cx="102" cy="607" r="18" fill="#3976d2" />
+  <path d="M94 601 H110 V611 H101 L96 616 V611 H94 Z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" />
+  <text x="134" y="614" class="card-title">Orca Chat UI</text>
+  <text x="88" y="655" class="body">手機畫面能找到 company 對話</text>
+  <text x="88" y="683" font-size="14" fill="#718096">第一則訊息送出後才會有 transcript 檔</text>
+
+  <text x="64" y="770" font-size="14" fill="#718096">主流程：選單啟動 Claude　　回報流程：hooks 告訴 Orca 對話紀錄在哪裡</text>
+</svg>
