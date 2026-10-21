@@ -1,0 +1,107 @@
+---
+title: 'Cloudflare 發布 tsrs 快 2.5 倍是指什麼？看懂 tsc、tsgo、tsc-rs 與 tsrs'
+date: 2026-10-22T00:03:07+08:00
+description: 'Cloudflare 發布 tsrs 時提到的「快 2.5 倍」，指 TypeScript 7.1 Beta 相較 7.0；tsrs benchmark 則在相同 worker 數下比 TS 7.0 最多快 8 倍。本文整理 compiler 關係與 Vite 的型別檢查分工。'
+tags:
+  - TypeScript
+  - Type-Checking
+  - Vite
+  - Rust
+  - Cloudflare
+draft: true
+---
+
+<KeyTakeaways>
+  <p>Cloudflare 發布 tsrs 時提到的「快 2.5 倍」，指 TypeScript 7.1 Beta 相較 7.0；tsrs 初期 benchmark 則在相同 type-check worker 數下相較 TypeScript 7.0 最多快 8 倍。TS 7 的 `tsc` 是 Go 核心（預覽時叫 `tsgo`）；`tsc-rs` 和 `tsrs` 是 Rust ports。Vite 會轉譯 TypeScript，但不負責型別檢查。</p>
+</KeyTakeaways>
+
+我最近在網路上看到 Cloudflare 推出 Rust 版 TypeScript tsrs，也看到「快 2.5 倍」的數字被一起提起。我第一個反應是：這是 tsrs 的速度嗎？如果換上去，開發和 CI 應該都會變快吧？
+
+## tsrs「快 2.5 倍」是指什麼？
+
+在 Cloudflare 原文 [Introducing tsrs: A port of TypeScript to Rust](https://blog.cloudflare.com/typescript-rust-port) 裡，「最多快 2.5 倍」指的是 TypeScript 7.1 Beta 相較 TypeScript 7.0 的效能提升，其中有些改善來自 tsrs 回饋給官方 TypeScript 的優化。tsrs 自己的初期 benchmark 則是相較 TypeScript 7.0 最多快 8 倍、記憶體少約 70%。
+
+「最多」也不等於每個專案都會快這麼多。TypeScript 團隊公布的 7.1 Beta 五個專案樣本，提升幅度是 1.2 到 1.9 倍，測試條件是四個 type-checker workers 和 `--noEmit`。[官方 benchmark 表](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/)列出的差異，提醒我看到效能數字時要先確認它比較的是誰、跑在哪些專案上。
+
+## tsc、tsgo、tsc-rs、tsrs 有什麼關係？
+
+如果從 compiler 實作來看，可以先簡化成兩條線：官方的 Go compiler，以及社群的 Rust ports。官方編譯器在 TS 5.x／6.0 還是 JavaScript-based；到了 TS 7.0，核心改成 Go。預覽期命令叫 `tsgo`，正式版命令回到 `tsc`。Rust 這條線目前有 `tsc-rs` 和 `tsrs` 兩個分開的專案。
+
+### `tsc`：命令名稱會沿用，核心會隨版本改變
+
+`tsc` 是 TypeScript 官方編譯器的命令。TS 5.x 和 6.0 的 `tsc` 使用 JavaScript 實作；TS 7.0 的 `tsc` 使用 Go 實作。看見 `tsc` 時，要連同版本一起看它背後是哪一套核心。[TypeScript 6.0 公告](https://devblogs.microsoft.com/typescript/announcing-typescript-6-0/)和[7.0 正式版公告](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/)說明了這次轉換。
+
+### `tsgo`：TS 7.0 Go 核心的預覽命令
+
+官方 Go 核心在預覽階段透過 `@typescript/native-preview` 套件提供，命令叫 `tsgo`。TypeScript 7.0 正式版使用同一條 Go 核心，命令改回 `tsc`。所以簡單記：`tsc` 7.0 就是正式版的 `tsgo`。[TypeScript 7.0 Beta 公告](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0-beta/)說明預覽命令；[7.0 正式版公告](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/)說明正式版使用 `tsc`。
+
+### `tsc-rs`：另一個 Rust port
+
+`tsc-rs` 是 Theo Browne 開發的另一個 Rust port。Cloudflare 原文說，tsc-rs 和 tsrs 是分開的專案，雙方正合作把它們整合成一個功能更完整的套件。**tsrs 不是基於 tsc-rs 製作**；是兩個 Rust port 計畫整合。整合是原文提到的計畫，不能當作已經完成。
+
+### `tsrs`：Cloudflare 合作開發的 Rust port
+
+`tsrs` 是 Cloudflare、VoidZero 和 Oxc 團隊與 Max Schwenk 合作開發的 Rust port，也和 TypeScript 團隊密切合作。Cloudflare 公布的初期 benchmark 是在相同 type-check worker 數量下，相較 TS 7.0 最多快 8 倍、記憶體少約 70%；其中一些效能優化已回饋到官方 TypeScript Go compiler。
+
+把舊版官方核心、TS 7 的 Go 核心和 Rust ports 放在一起看：
+
+| 編譯器線 | 版本／套件命令 | 核心 | 關係 |
+|---|---|---|---|
+| 官方舊核心 | TS 5.x／6.0：`tsc` | JavaScript-based | TS 6.0 是最後一個 JavaScript-based release |
+| 官方 Go 核心 | 預覽 `tsgo` → TS 7.0 正式 `tsc` | Go | 同一代官方 compiler，換了命令名稱與套件入口 |
+| 社群 Rust 核心 | `tsc-rs` | Rust | Theo Browne 的獨立 port；有自己的套件和命令 |
+| 社群 Rust 核心 | `tsrs` | Rust | Cloudflare、VoidZero、Oxc 等合作開發；有自己的套件和命令 |
+
+切換型別檢查器時，要改用對應的套件或命令；但這不表示 Vite、bundler、loader 等整套工具都得一起替換。哪些整合需要調整，要看它們是單純呼叫 checker，還是直接依賴 TypeScript 的 API。
+
+## 那 tsrs 做出來到底用在哪？
+
+Rust 的特性讓 tsrs 可以編成 WebAssembly（Wasm），放進瀏覽器、Cloudflare Workers、沙盒或嵌入式環境。Cloudflare 的原文把目標說成讓開發工具更快、更省記憶體，也更容易跑在不同環境；低記憶體需求有機會降低執行成本，這是合理推論，原文明確提到的重點則是 Workers、瀏覽器和 agent 沙盒等新場景。Cloudflare 也想探索 tsrs 和 Oxlint 的更深整合，例如 type-aware lint。這是未來方向，不代表已經接好：截至目前，[Oxlint 官方文件](https://oxc.rs/docs/guide/usage/linter/type-aware.html)說明，type-aware lint 由 Go 寫的 `tsgolint` 提供，Oxlint 的 Rust 核心負責其他 lint 工作。一般開發者未必會直接把 checker 換成 tsrs，但這些工具整合成熟後，可能會間接受益。
+
+如果把 tsrs 放回整個 TypeScript 工具鏈，可以先用工作類型來對照。這裡的「TS 版」指既有的 TypeScript／JavaScript 生態做法，不代表每個工具都用 TypeScript 撰寫；「Rust 版」則是相同工作領域裡的 Rust 工具，不表示它們可以一對一直接替換。
+
+| 工作 | TS 版 | Rust 版 |
+|---|---|---|
+| 打包 | Rollup／esbuild | Rolldown |
+| 轉譯、剝型別 | esbuild／Babel | Oxc Transformer |
+| Lint | ESLint | Oxlint（Rust 核心；type-aware 另由 Go 的 `tsgolint` 處理） |
+| 格式化 | Prettier | Oxfmt |
+| 型別檢查 | `tsc`（TS 5.x／6.0 為 JavaScript；TS 7 為 Go） | `tsc-rs`／`tsrs` |
+
+這次查到的 GitHub 專案整理如下。星星數是 2026-10-21 的頁面數字，只表示社群關注度，不代表效能或正確性排名。
+
+| 專案 | 在這篇裡負責的工作 | GitHub Stars |
+|---|---|---:|
+| [TypeScript](https://github.com/microsoft/TypeScript) | 官方語言與型別檢查器 | 111.5k ⭐ |
+| [tsrs](https://github.com/oxc-project/tsrs) | Rust 版 TypeScript type checker | 1.6k ⭐ |
+| [ts-rust](https://github.com/pingdotgg/ts-rust) | Cloudflare 提到的另一個 Rust port，正討論整合 | 1.4k ⭐ |
+| [Oxc](https://github.com/oxc-project/oxc) | 包含 Oxc Transformer 與 Oxlint 的 JavaScript 工具鏈 | 23.2k ⭐ |
+| [Vite](https://github.com/vitejs/vite) | 開發伺服器與 build 流程 | 83.4k ⭐ |
+| [webpack](https://github.com/webpack/webpack) | bundler，可透過 loader 接 TypeScript | 66.1k ⭐ |
+| [ts-loader](https://github.com/TypeStrong/ts-loader) | webpack 的 TypeScript loader | 3.5k ⭐ |
+| [Next.js](https://github.com/vercel/next.js) | build 時會跑 TypeScript checker | 143k ⭐ |
+| [Angular CLI](https://github.com/angular/angular-cli) | build 流程也會檢查 Angular template 型別 | 11.8k ⭐ |
+
+## Vite 跟 tsc 的關係是什麼？
+
+Vite 和 `tsc` 處理的是兩件事。Vite 把程式轉譯、打包，讓它能在瀏覽器或目標 runtime 執行；`tsc` 負責檢查 TypeScript 型別。Vite 8 的 bundler 是 Rolldown，TypeScript 轉譯由 Oxc Transformer 處理；Vite 不會自動呼叫 `tsc` 做型別檢查。[Vite 8 的公告](https://vite.dev/blog/announcing-vite8)和[功能文件](https://vite.dev/guide/features.html#typescript)把這些分工寫得很清楚。
+
+## 為什麼 Vite 跑 TypeScript 這麼快？
+
+因為它把轉譯和型別檢查拆開了。Vite 對 `.ts` 檔做 transpile：把型別標註去掉，輸出可以執行的 JavaScript；它不負責判斷型別用法是否正確。Vite 官方文件說，轉譯可以逐檔進行，符合按需處理模組的方式；type check 則需要知道整個 module graph，塞進同一條轉譯流程會拖慢開發更新。
+
+因此程式即使有型別錯誤，Vite build 仍可能成功；有沒有在 CI 擋住，取決於專案是否另外安排 checker。Vite 建議 production build 另外跑 `tsc --noEmit`，開發時則可用 `tsc --noEmit --watch` 或 checker 外掛。這也是它跑得快的原因之一：Vite 專心快速讓程式跑起來，完整型別檢查交給編輯器或另一個程序。
+
+## webpack、Next.js 和 Angular CLI 也把工作拆開嗎？
+
+要看工具怎麼接。`ts-loader` 預設會在 webpack 編譯時檢查型別；專案變大後，可以設 `transpileOnly: true`，再用 `fork-ts-checker-webpack-plugin` 讓檢查在另一個程序執行。[ts-loader 文件](https://github.com/TypeStrong/ts-loader)直接把這當成加快編譯的做法。Next.js 的 `next build` 會呼叫自己的 type checker；Angular 的 AOT compilation 會用 TypeScript compiler 檢查 template 裡的 binding expression。[Next.js 文件](https://nextjs.org/docs/app/api-reference/config/typescript)和[Angular template type-checking 文件](https://angular.dev/tools/cli/aot-compiler)都有說明。
+
+所以「切開」不代表所有框架都把檢查搬到 CI。它們只是可以把轉譯、打包和型別檢查視為不同工作，再決定讓同一個 build 指令依序執行，或分給獨立程序。以前我用 `ts-loader`，HMR 慢到風扇都在努力，後來偷懶把型別檢查移到 CI。現在回頭看，這正是 Vite 預設採用的取捨。這次研究最讓我意外的，倒不是 Rust checker 有多快，而是我當年嫌麻煩的那條路，原來很合理。
+
+## 結論
+
+從 compiler 實作來看，可以把現在的選項分成 Go 和 Rust 兩條線：官方 TS 7.0 的 Go 核心預覽時叫 `tsgo`，正式版叫 `tsc`；Rust 線則有 `tsc-rs` 和 `tsrs` 兩個分開的 port，Cloudflare 原文說正討論整合。TS 5.x／6.0 的 JavaScript-based compiler 是轉換前的舊核心。
+
+Cloudflare 公開說明的目標，是讓開發者少等、型別檢查更快更省記憶體，並把完整開發工具鏈帶到 Workers、瀏覽器和 agent 沙盒。這和 Cloudflare 自己的平台也有直接關係：原文提到，build 和 deployment 工作可以在 Workers 上反覆執行，低記憶體需求讓更多完整開發環境跑得起來。
+
+我認為這是一種互利的投入：效能改善回饋 TypeScript 社群，同時可能讓在 Cloudflare 上執行編譯或 CI 的流程少用 CPU 和記憶體，也讓 Workers 對開發者更有吸引力。
