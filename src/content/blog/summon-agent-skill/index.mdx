@@ -33,7 +33,7 @@ sub-agent 很適合把一段明確工作交出去：主對話交代任務，讓�
 
 ## 召喚不是另開 terminal，而是替 LLM 穿上角色
 
-這裡說的 Agent 不是替 AI 取一個名字，而是一份先定義好的工作角色：它負責什麼、怎麼做事，以及需要時該讀哪些能力。Claude 與 Codex 載入這份角色設定的方式不同，我在前一篇〈[Agent 設計：Claude 與 Codex，同一個角色，兩種載入方式](/posts/agent-settings-single-source-of-truth)〉整理過；summon-agent 要做的，則是把那份設定確實帶進一個新開的工作現場。
+這裡說的 Agent 不是替 AI 取一個名字，而是一份先定義好的工作角色：它負責什麼、怎麼做事，以及需要時該讀哪些能力。Claude 與 Codex 載入這份角色設定的方式不同，我在前一篇〈[Agent 設計：Claude 與 Codex，同一個角色，兩種載入方式](/posts/agent-settings-single-source-of-truth/)〉整理過；summon-agent 要做的，則是把那份設定確實帶進一個新開的工作現場。
 
 手動做這件事，步驟其實不少：開一個 terminal、從正確的工作目錄啟動 Claude Code 或 Codex、套用指定職責的 Agent 設定、再替 cmux workspace 標上名字和顏色。
 

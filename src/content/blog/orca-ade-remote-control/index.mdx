@@ -23,11 +23,11 @@ seriesOrder: 2
 
 把工作交給 Agent 後，買午餐或等事情的空檔，我會用手機連回工作電腦確認進度。最常做的是接回正在等我回覆的對話；需要自己測 CLI 或啟動 dev server 時，就另外開 Terminal。這篇聚焦 Orca Mobile 的配對、接續既有 session，以及開 Terminal 的操作。
 
-桌面版 Orca 如何管理 workspace 和 Agent，我在[前一篇 Orca ADE 操作介紹](/posts/orca-ade-remote-agent-workflow)寫過；這篇直接從手機配對開始。
+桌面版 Orca 如何管理 workspace 和 Agent，我在[前一篇 Orca ADE 操作介紹](/posts/orca-ade-remote-agent-workflow/)寫過；這篇直接從手機配對開始。
 
 ## 先把 Orca Mobile 配對到工作電腦
 
-電腦與 iPhone 或 iPad 都先連上[同一個 Tailscale 網路](/posts/tailscale-dev-server-access)，確認兩端可以互相連線。我這次用 TestFlight 安裝 Orca Mobile；現在也可以從 [App Store 下載 Orca IDE（Orca Mobile）](https://apps.apple.com/tw/app/orca-ide/id6766130217)。如果走 TestFlight，先安裝 [TestFlight](https://apps.apple.com/tw/app/testflight/id899247664)，並使用 Orca 提供的測試邀請。
+電腦與 iPhone 或 iPad 都先連上[同一個 Tailscale 網路](/posts/tailscale-dev-server-access/)，確認兩端可以互相連線。我這次用 TestFlight 安裝 Orca Mobile；現在也可以從 [App Store 下載 Orca IDE（Orca Mobile）](https://apps.apple.com/tw/app/orca-ide/id6766130217)。如果走 TestFlight，先安裝 [TestFlight](https://apps.apple.com/tw/app/testflight/id899247664)，並使用 Orca 提供的測試邀請。
 
 桌面 Orca 開啟 **Set up Mobile**，進入 **Pair this Mac**，選 **LAN** 和目前連線的 Tailscale 網路。手機打開 Orca Mobile，點 **Pair Desktop**，掃描桌面上的 QR code。
 

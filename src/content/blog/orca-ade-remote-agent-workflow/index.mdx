@@ -114,7 +114,7 @@ Orca 也會把每個 Agent 的狀態、工作中的分頁與 terminal 輸出留�
 
 ## 我最常用的功能：遠端接管整台開發環境
 
-我之前寫過一篇[透過 Tailscale 遠端連線到 Mac 開發環境](/posts/tailscale-dev-server-access)，當時的核心是先讓設備之間建立一條安全、穩定的私人網路。Orca 把這個概念再往前推了一步：遠端連線的不只是 SSH 或某一個 terminal，而是整個 Orca runtime。
+我之前寫過一篇[透過 Tailscale 遠端連線到 Mac 開發環境](/posts/tailscale-dev-server-access/)，當時的核心是先讓設備之間建立一條安全、穩定的私人網路。Orca 把這個概念再往前推了一步：遠端連線的不只是 SSH 或某一個 terminal，而是整個 Orca runtime。
 
 官方文件把 Remote Orca Server 說得很清楚：Server 電腦負責保存專案、worktree、terminal、provider account 和 Agent session，Client 電腦則提供操作介面。只要 Server 保持開機，Agent 就可以繼續工作；筆電睡眠或暫時斷線後，重新連線仍會回到原本的 workspace 和分頁狀態。對我來說，這就是 Orca 最值得換過來的地方。
 

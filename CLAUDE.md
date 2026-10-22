@@ -48,6 +48,7 @@ src/content/blog/
 - Slug 命名：英文 kebab-case，不加日期前綴（e.g. `cloudflare-dns-setup`）
 - 圖片在 markdown 裡用相對路徑引用：`![說明](./image.jpg)`
 - Slug 發布後不要改（= URL 不能變）
+- 站內文章連結一律帶結尾斜線：`[標題](/posts/slug/)`。少了斜線，GitHub Pages 會先 301 導到 `/posts/slug/`，多一次往返，也會讓 GSC 多出「頁面會重新導向」。
 - **圖片壓縮**：放入文章前先壓縮，目標 200KB 以下。用 `sips` 轉成 JPEG 75%：
   ```bash
   sips -s format jpeg -s formatOptions 75 原檔.png --out 輸出.jpg
