@@ -7,6 +7,7 @@
 - 網址：`https://jasperhung.dev`
 - DNS：Cloudflare Registrar + Proxy，SSL/TLS Full
 - Package manager：pnpm
+- Analytics：Umami Cloud（只在 production 載入，script 在 `BlogLayout.astro`）。新增可點擊元素時加 `data-umami-event`，非點擊行為用 `window.umami?.track()`；事件名 kebab-case `<動作>-<目標>[-<位置>]`，例如 `click-about-sidebar`、`copy-heading-link`
 
 ## CSS / Tailwind 樣式架構
 
@@ -83,7 +84,8 @@ seriesOrder: 1
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
 - `ogTitle`：選填，只給 OG image 排版用；用 `|` 指定手動換行，不影響文章 H1 / SEO title / RSS
 - `series` + `seriesOrder`：選填。系列文章填相同的 `series` ID（英文 kebab-case）與顯示排序用的 `seriesOrder`；它可用於有序系列，也可用於 collection 的穩定排序。**開新系列或變更系列型別，要在 `src/lib/series.ts` 的 `seriesLists` 註冊 ID、顯示名稱與 `type`**。文章底部自動列出全系列，按 `seriesOrder` 排序；collection 仍顯示無編號的圓點清單。`seriesOrder` 按 `date` 由舊到新編 1–N，但 series 與 collection 在系列頁與文章底部都**倒序顯示**（最新、編號最大的在上）。系列頁每篇都顯示日期。
-- `draft`：選填，預設 `false`。設 `true` 時文章只在 `pnpm dev` 看得到，production build 完全不產生（文章頁、`.md`、OG、首頁、RSS、sitemap、tag／series 頁、sidebar 都沒有），可當草稿或隨時下架用。過濾做在 `src/content.config.ts` 的 loader 層，所有 `getCollection('blog')` 自動生效，不要在各頁另寫 filter。`markdown-style-test` 即以此排除。
+- `draft`：選填，預設 `false`。設 `true` 時文章只在 `pnpm dev` 看得到，production build 完全不產生（文章頁、`.md`、OG、首頁、RSS、sitemap、tag／series 頁、sidebar 都沒有），只用於下架已發布文章或測試頁。過濾做在 `src/content.config.ts` 的 loader 層，所有 `getCollection('blog')` 自動生效，不要在各頁另寫 filter。`markdown-style-test` 即以此排除。
+  - 新文章 frontmatter 只寫上方範本列出的欄位，commit 後即上線；使用者明說「先不要發」或「下架」時才加 `draft`。（曾有 10 篇起草時被標成 draft，上線後 404 好幾天才發現。）
 - 文章底部另有全站「上一篇/下一篇」導航：純按 `date` 時間排序、跨所有文章（上一篇 = 較舊），與系列正交、互不干擾
 
 ## SEO / AEO
@@ -96,12 +98,6 @@ seriesOrder: 1
 - `robots.txt`：已設定，指向 sitemap
 
 Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
-
-## 已完成基礎建設
-
-- Cloudflare domain + DNS：`jasperhung.dev` 上線（2026-06-20）
-- Google Search Console：sitemap 已送出（2026-06-20）
-- Sidebar About 連結：sidebar nav 最上方（2026-06-21）
 
 ## OG Image
 
@@ -135,11 +131,10 @@ Metadata：
 **內容 SEO**
 - [ ] Title：關鍵字在前半段 + 故事鉤（技術 SEO 由 Astro layout 自動處理）
 - [ ] 開頭 100 字：關鍵字自然出現
-- [ ] Slug：英文 kebab-case，發布後不能改
 - [ ] `description` frontmatter：120–155 字元，寫給點擊率
 - [ ] H2/H3：放關鍵字變體，用完整陳述或問句
 - [ ] 內部連結：連到同系列其他篇
-- [ ] 圖片 alt text（放同層資料夾，相對路徑引用）
+- [ ] 圖片 alt text：描述圖片內容
 
 **AEO（AI 搜尋引擎優化）**
 - [ ] 開頭有明確定義（「X 是什麼」）
@@ -148,12 +143,12 @@ Metadata：
 **敘事結構**
 - [ ] 情境 → 問題 → 解法 → 為什麼這個解法好
 - [ ] 結語只談這篇，不做系列總結
-- [ ] 篇幅：400–600 字
+- [ ] 篇幅：依主題需要寫完整；現有文章正文中位數約 3,000 字，不為符合字數壓短或灌水
 
 ## Blog Writing Workflow
 
-When creating a new blog post from notes, summaries, session context, or rough ideas, use the `create-my-blog` skill.
+When creating a new blog post from notes, summaries, session context, or rough ideas, use the `to-blog` skill.
 
-When substantially rewriting an existing post, consider `create-my-blog` if the task involves restructuring narrative, extracting a thesis, generating frontmatter, or turning raw notes into publishable prose.
+When substantially rewriting an existing post, consider `to-blog` if the task involves restructuring narrative, extracting a thesis, generating frontmatter, or turning raw notes into publishable prose.
 
 For light proofreading, typo fixes, title/description tuning, or targeted edits, do not force the skill; edit directly.
