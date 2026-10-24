@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { ArrowLeftToLine, ArrowRightFromLine, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, UserRound } from '@lucide/astro';
+import { ArrowLeftToLine, ArrowRightFromLine, ArrowUpRight, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, Map as MapIcon, UserRound } from '@lucide/astro';
 import BrandMark from '../components/BrandMark.astro';
 import { getTags } from '../lib/tags';
 import '../styles/global.css';
@@ -262,14 +262,28 @@ const iconButtonClass =
         <UserRound class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
         <span>About</span>
       </a>
-      <a
-        href={`${base}series/`}
-        class={`${exploreNavLinkClass} ${isSeriesPage ? 'border-accent bg-surface text-text' : 'bg-transparent text-muted'}`}
-        data-umami-event="click-series-sidebar"
-      >
-        <Layers class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
-        <span>Series</span>
-      </a>
+      <!-- Series and Island are two entrances to the same series map: list view vs 3D view -->
+      <div class="flex gap-1">
+        <a
+          href={`${base}series/`}
+          class={`${exploreNavLinkClass} flex-1 ${isSeriesPage ? 'border-accent bg-surface text-text' : 'bg-transparent text-muted'}`}
+          data-umami-event="click-series-sidebar"
+        >
+          <Layers class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+          <span>Series</span>
+        </a>
+        <a
+          href="https://island.jasperhung.dev/"
+          target="_blank"
+          rel="noopener"
+          class={`${exploreNavLinkClass} flex-1 bg-transparent text-muted`}
+          data-umami-event="click-island-sidebar"
+        >
+          <MapIcon class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
+          <span>Island</span>
+          <ArrowUpRight class="h-3.5 w-3.5 shrink-0" stroke-width={2} aria-hidden="true" />
+        </a>
+      </div>
       <div class="sidebar-posts-row">
         <a href={base} class={`${exploreNavLinkClass} flex-1 bg-transparent text-muted`} data-umami-event="click-posts-sidebar">
           <FileText class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
