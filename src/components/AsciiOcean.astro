@@ -1,0 +1,58 @@
+---
+// ASCII shark ocean: full-page canvas background for the homepage. Engine lives in src/lib/ascii-ocean (vendored, MIT).
+// The canvas sits behind <main>; foreground content brings its own background for readability
+// and is marked data-ocean-solid so clicks on it don't splash.
+---
+
+<canvas
+  id="ascii-ocean"
+  aria-hidden="true"
+  class="pointer-events-none fixed -z-10 hidden bg-black min-[769px]:block font-[ui-monospace,'SF_Mono',Menlo,Consolas,monospace]"
+></canvas>
+
+<style is:global>
+  /* body's background paints over a negative z-index canvas; html has the same colour, so clearing it changes nothing visually */
+  body:has(#ascii-ocean) { background-color: transparent; }
+  /* The black sea is hard-coded in the renderer; light mode inverts it to white, and hue-rotate turns the tints back */
+  html:not(.dark) #ascii-ocean { filter: invert(1) hue-rotate(180deg); }
+</style>
+
+<script>
+  const canvas = document.getElementById('ascii-ocean') as HTMLCanvasElement | null;
+  const main = document.querySelector('main');
+  // Phones (≤768px) skip it: the engine is a dynamic-import chunk, so they never download it. Checked once on load
+  if (canvas && main && window.matchMedia('(min-width: 769px)').matches) {
+    import('../lib/ascii-ocean').then(({ OceanEngine }) => startOcean(canvas, main, OceanEngine));
+  }
+
+  function startOcean(canvas: HTMLCanvasElement, main: HTMLElement, OceanEngine: typeof import('../lib/ascii-ocean').OceanEngine) {
+    // Match <main>'s visible box: don't scroll with content, don't extend under the topbar / in-flow sidebar
+    const fit = () => {
+      const r = main.getBoundingClientRect();
+      canvas.style.left = `${r.left}px`;
+      canvas.style.top = `${r.top}px`;
+      canvas.style.width = `${r.width}px`;
+      canvas.style.height = `${r.height}px`;
+    };
+    fit();
+    new ResizeObserver(fit).observe(main);
+    window.addEventListener('resize', fit);
+
+    // Shark size: `size` multiplies the base length (short side × 0.44, clamped to 170–430px); SHARK_SCALE scales the whole group
+    const SHARK_SCALE = 0.8;
+    // Left out: thresher (pink-violet), zebra / nurse (sandy gold), hammerhead (duplicates greathammer)
+    const kinds = ['classic', 'greathammer', 'tiger', 'mako'] as const;
+    // First is biggest, each next one 0.045 smaller (1 → 0.865), then × SHARK_SCALE
+    const sharks = kinds.map((kind, i) => ({ kind, size: (1 - i * 0.045) * SHARK_SCALE }));
+    // shimmer: false → shark glyphs don't flash accent / white; grid: false → no cell grid
+    new OceanEngine(canvas, sharks, { shimmer: false, grid: false });
+
+    // Track only the first splash per page load so repeated clicks don't flood events
+    const trackSplash = (e: PointerEvent) => {
+      if ((e.target as Element).closest('a, button, [data-ocean-solid]')) return;
+      (window as any).umami?.track('splash-ocean-homepage');
+      main.removeEventListener('pointerdown', trackSplash);
+    };
+    main.addEventListener('pointerdown', trackSplash);
+  }
+</script>

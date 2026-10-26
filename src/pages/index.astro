@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../layouts/BlogLayout.astro';
+import AsciiOcean from '../components/AsciiOcean.astro';
 
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 const posts = (await getCollection('blog')).sort(
@@ -10,51 +11,55 @@ const posts = (await getCollection('blog')).sort(
 
 <BlogLayout metaTitle="Jasper Hung — Coworking with AI">
   <h1 class="sr-only">Jasper Hung</h1>
-  <a
-    href="https://island.jasperhung.dev/"
-    target="_blank"
-    rel="noopener"
-    class="group relative mt-6 mb-2 block overflow-hidden rounded-[10px] border border-border no-underline transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-accent active:translate-y-0"
-    data-umami-event="click-island-homepage"
-  >
-    <img
-      src={`${base}images/home/island-banner.jpg`}
-      alt="Island Blog：把部落格各系列做成漂浮在宇宙中的 3D 六角島群"
-      class="block aspect-[3/1] w-full object-cover"
-      width="1600"
-      height="533"
-    />
-    <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/75 to-transparent px-4 pb-3 pt-10 text-white">
-      <span class="text-sm font-semibold sm:text-base">Island Blog：用 3D 浮島逛所有系列 <span aria-hidden="true" class="inline-block transition-transform duration-150 group-hover:translate-x-0.5">↗</span></span>
-    </span>
-  </a>
-  <div class="feed">
-    {posts.map((post, i) => (
-      <article class="feed-item" data-index={i}>
-        <a href={`${base}posts/${post.id}/`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
-          <span class="feed-title">{post.data.title}</span>
+  <AsciiOcean />
+  <!-- Phones (≤768px) don't load the ocean; panel styles only apply when it's there -->
+  <div class="min-[769px]:rounded-[10px] min-[769px]:bg-bg/60 min-[769px]:px-6 min-[769px]:backdrop-blur-sm" data-ocean-solid>
+    <a
+      href="https://island.jasperhung.dev/"
+      target="_blank"
+      rel="noopener"
+      class="group relative mt-6 mb-2 block overflow-hidden rounded-[10px] border border-border no-underline transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-accent active:translate-y-0"
+      data-umami-event="click-island-homepage"
+    >
+      <img
+        src={`${base}images/home/island-banner.jpg`}
+        alt="Island Blog：把部落格各系列做成漂浮在宇宙中的 3D 六角島群"
+        class="block aspect-[3/1] w-full object-cover"
+        width="1600"
+        height="533"
+      />
+      <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/75 to-transparent px-4 pb-3 pt-10 text-white">
+        <span class="text-sm font-semibold sm:text-base">Island Blog：用 3D 浮島逛所有系列 <span aria-hidden="true" class="inline-block transition-transform duration-150 group-hover:translate-x-0.5">↗</span></span>
+      </span>
+    </a>
+    <div class="feed">
+      {posts.map((post, i) => (
+        <article class="feed-item" data-index={i}>
+          <a href={`${base}posts/${post.id}/`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
+            <span class="feed-title">{post.data.title}</span>
 
-          {post.data.description && (
-            <p class="feed-desc">{post.data.description}</p>
-          )}
+            {post.data.description && (
+              <p class="feed-desc">{post.data.description}</p>
+            )}
 
-          {post.data.image && (
-            <img class="feed-image" src={post.data.image} alt={post.data.title} loading="lazy" />
-          )}
-        </a>
+            {post.data.image && (
+              <img class="feed-image" src={post.data.image} alt={post.data.title} loading="lazy" />
+            )}
+          </a>
 
-        <div class="feed-meta">
-          <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
-          {post.data.tags.length > 0 && (
-            <div class="feed-tags">
-              {post.data.tags.map(tag => (
-                <a href={`${base}tags/${tag}/`} class="feed-tag">#{tag}</a>
-              ))}
-            </div>
-          )}
-        </div>
-      </article>
-    ))}
+          <div class="feed-meta">
+            <time>{post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')}</time>
+            {post.data.tags.length > 0 && (
+              <div class="feed-tags">
+                {post.data.tags.map(tag => (
+                  <a href={`${base}tags/${tag}/`} class="feed-tag">#{tag}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
   </div>
 </BlogLayout>
 
