@@ -1,0 +1,128 @@
+---
+title: 'Azure DevOps Pipelines 跨 repo template alias'
+date: 2026-10-29T10:41:17+08:00
+description: 'Azure DevOps Pipelines 跨 repo template alias：本文說明 template YAML 如何展開、checkout 如何取得 repo 檔案，並比較 GitLab、GitHub Actions、Jenkins 與 Bitbucket 的設定重用方式。'
+tags:
+  - Azure-DevOps
+  - Azure-Pipelines
+  - CI-CD
+  - Pipeline-Templates
+  - Git
+---
+
+<KeyTakeaways>
+  <p>Azure Pipelines 的 Agent 是負責接收並執行 pipeline job 的 worker，運作在 VM 或自管主機上。`template: ...@alias` 讀取並展開的是 YAML pipeline 設定，不會因此 checkout 整個 repo；其他需要在 job 中使用的檔案，要另外 checkout repo 或透過 API 取得。</p>
+</KeyTakeaways>
+
+Azure Pipelines 的 template alias 是我平常會用的寫法，但我一直沒有完整拆過它背後怎麼運作，也不太確定它實際能共用到什麼範圍。這次我想沿著一份實際 pipeline 走一遍，釐清哪些內容可以由 template 引用，哪些檔案需要另外 checkout 到 Agent。
+
+## pipeline 裡的 Agent 到底是什麼？
+
+Azure Pipelines 文件把 Agent 定義為負責跑一個 job 的計算資源，裡面有 Azure Pipelines agent 軟體。可以把它理解成 pipeline 的 worker：服務把 job 派給它，它執行 steps，再回報結果。Agent 不是 VM 本身；Microsoft-hosted Agent 會跑在 Microsoft 提供的 VM 上，self-hosted Agent 則跑在團隊自行管理的主機上。這裡的 Agent 也不是 AI agent，只是兩個領域用了同一個詞。[Microsoft 對 Agent 的說明](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/agents?tabs=yaml%2Cbrowser&view=azure-devops) 和 [pipeline run 流程](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/runs?view=azure-devops) 都把處理 pipeline 與執行 job 分成不同階段。
+
+所以這裡的 Agent 指的是 CI job 的執行端，也就是跑 script、執行 task、放置 checkout 檔案的 worker。理解這個角色後，問題就清楚了：跨 repo 的 `template` 引用會不會把來源 repo 的檔案送到這個執行環境？
+
+## 跨 repo 引用有哪幾種方式？
+
+在 Azure Pipelines 裡，常見的是兩種不同操作：引用遠端 YAML template，或把外部 repo checkout 到 Agent 的工作目錄。YAML 註解使用 `#`，下面分開看：
+
+```yaml
+# 前置設定：repository 是 alias，name 才是 repo 的實際位置
+resources:
+  repositories:
+    - repository: templates # alias
+      type: git
+      name: Proj/repo # 實際位置：Project/Repo
+      ref: refs/tags/v1.1.0
+
+steps:
+  # 方式 1：用 alias 引用 YAML template
+  - template: release/steps.yml@templates
+```
+
+`resources.repositories` 是宣告 repository resource 的前置設定，`templates` 是這份 pipeline 自己取的 alias；它不是另一種取檔方式。第一種使用方式是 `template: release/steps.yml@templates`，指定要讀取該 repo、該 ref 裡的 YAML 檔。Alias 不決定 repo 在哪個組織；實際位置由 `type`、`name` 和必要時的 `endpoint` 決定。
+
+### 跨組織怎麼做？
+
+如果是 Azure Repos Git，同一個 Project 的 repo 可以只寫 repo 名稱；同一個組織的另一個 Project，要寫成 `Project/Repo`。如果 repo 在另一個 Azure DevOps 組織，仍然可以用同一種 alias 引用，但要設定有讀取權限的 service connection，並將它填在 `endpoint`：
+
+```yaml
+# 跨 Azure DevOps 組織：endpoint 指向有權讀取外部 repo 的 service connection
+resources:
+  repositories:
+    - repository: templates # pipeline 內的 alias
+      type: git
+      name: SharedProject/SharedTemplates
+      endpoint: shared-org-connection
+      ref: refs/tags/v1.1.0
+
+steps:
+  - template: release/steps.yml@templates
+```
+
+[Microsoft 的 repository resource 文件](https://learn.microsoft.com/en-us/azure/devops/pipelines/yaml-schema/resources-repositories-repository) 說明同組織跨 Project 時的 `Project/Repo` 格式；[跨 repo checkout 文件](https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops) 和[跨組織 service connection 範例](https://learn.microsoft.com/azure/devops/pipelines/library/add-devops-entra-service-connection?view=azure-devops) 則列出跨組織所需的 `endpoint`。這個 service connection 用於讓 Azure Pipelines 連到外部 repo；`templates` 仍只是 YAML 裡的 alias。
+
+第二種使用方式是 checkout，讓 Agent 工作目錄裡真的有另一個 repo 的檔案：
+
+```yaml
+# 方式 2：checkout 外部 repo，把檔案放到 Agent 的工作目錄
+steps:
+  - checkout: self
+  - checkout: templates
+```
+
+這兩種操作可以分開使用，也可以出現在同一個 pipeline：template 提供 YAML 步驟，checkout 提供那些步驟可能需要讀取的檔案。
+
+### 需要其他檔案怎麼辦？
+
+`template` 只把符合 Azure Pipelines 結構的 YAML 設定展開成 pipeline；其他檔案，例如 shell script、JSON、Markdown 或設定檔，不會因為引用 template 就出現在 Agent 工作目錄。
+
+如果 job 需要這些檔案，最直接的方式是 checkout 存放它們的 repo。若只需要單一檔案，也可以呼叫 Azure DevOps Git 的 [Items - Get REST API](https://learn.microsoft.com/en-us/rest/api/azure/devops/git/items/get?tabs=HTTP&view=azure-devops-rest-7.2)，依 `path` 讀取 repository item 並用 `includeContent` 取得內容；這需要具備 repo 讀取權限的認證。API 或 checkout 把檔案交給 job 後，pipeline 才能再用它。
+
+Azure Pipelines 把 checkout 設定交給 Agent 執行；可以進一步限制要抓取的 Git 歷史深度，或使用 partial-clone filter。這份調查記錄的 checkout 流程是 `git init`、`git remote add`、`git fetch`、`git checkout`；拆成幾個動作，也能在 fetch 階段設定 depth 和 filter。換句話說，`template: ...@alias` 與 `checkout: alias` 解決的是兩個不同問題：前者讓 pipeline 使用遠端 YAML，後者讓 Agent 取得 repository 檔案。[Microsoft 的 template 文件](https://learn.microsoft.com/azure/devops/pipelines/process/templates) 說明前者只使用 template files；[checkout 文件](https://learn.microsoft.com/en-us/azure/devops/pipelines/yaml-schema/steps-checkout?view=azure-pipelines) 則列出 `fetchDepth` 與 `fetchFilter` 等 checkout 選項。
+
+## template 怎麼進入 pipeline？
+
+Azure Pipelines 會在執行 steps 前解析 repository resource，讀取指定 ref 的 template YAML，並把它展開到 pipeline 定義裡。到了 Agent 開始工作時，Agent 收到的是展開後的步驟；如果那些步驟沒有 checkout 或自行下載另一個 repo，模板來源 repo 的其他檔案就不會因此出現在工作目錄。
+
+這有點像 C 的 `#include`：讀進來的是文字內容，解析後成為目前要執行的設定。template 裡的 `script`、`bash` 或 `pwsh` step 可以直接帶著指令執行；但如果它寫 `bash: ./scripts/release.sh`，那個腳本檔不會因為 YAML 被展開就自動存在。需要檔案時，模板可以加入 `checkout: templates`，或由 pipeline 另外取得檔案。
+
+所以「template 引用本身有沒有把整個 repo 抓下來？」答案是沒有；「這次 pipeline 執行時有沒有透過其他步驟抓下來？」則要看完整的展開結果。Azure DevOps run 頁面提供的 Download full YAML 可以用來檢查展開後有沒有 `checkout: alias`。這份 summary 保存了消費端的引用，沒有保存被引用 review template 的展開內容，因此我能回答 template alias 本身做了什麼，不能替那次 job 宣稱「完全沒有 checkout」。**單看消費端的 `template: ...@alias` 那一行，還不能判定完整 pipeline 沒有 checkout**，因為遠端模板本身也可能定義 checkout。
+
+至於內部是不是呼叫某一支特定的 REST API，Microsoft 公開文件描述的是 repository resource 的解析與 template 展開行為，沒有把內部 API endpoint 列為契約。可以確定的是：這不是 Agent 對模板 repo 做一次一般的 Git checkout；把它理解成 Azure Pipelines 服務端讀取指定版本的 YAML，再編譯成完整 pipeline，是目前有文件支持的說法。
+
+## 各家 CI 平台怎麼重用另一個 repo 的設定？
+
+「跨 repo 重用」不是 Git protocol 定義的共通功能，而是 CI 平台各自提供的能力。它們的語法看起來相似，實際重用的東西卻不完全相同：
+
+| 平台 | 常見寫法 | 被重用的內容 | Runner／Agent 會拿到什麼 |
+|---|---|---|---|
+| [Azure Pipelines](https://learn.microsoft.com/azure/devops/pipelines/process/templates) | `template: file.yml@alias` | 選定的 YAML template，在 pipeline 啟動時展開 | Template 本身不 checkout repo；需要檔案時另加 `checkout: alias` |
+| [GitLab CI](https://docs.gitlab.com/ci/yaml/) | `include:project`、CI/CD Components | 外部 YAML 與主設定合併成 pipeline configuration | Include 是設定重用；它本身不等於把來源專案 checkout 到 job 工作目錄 |
+| [GitHub Actions reusable workflows](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations) | `uses: owner/repo/.github/workflows/build.yml@ref` | 一整份 reusable workflow，像 caller workflow 的一部分執行 | Workflow repo 不會因此變成工作目錄；`actions/checkout` 預設 checkout 的是 caller repo |
+| [GitHub Actions](https://docs.github.com/en/actions/tutorials/create-actions/create-a-javascript-action) | `uses: owner/repo@ref` | 可執行的 Action package | GitHub 會在執行期間下載 Action package，再交給 runner 執行 |
+| [Jenkins Shared Libraries](https://www.jenkins.io/doc/book/pipeline/shared-libraries/) | `@Library('shared-lib@v1') _` | 從 SCM 載入的 Pipeline library 程式碼 | Jenkins 載入的是 library；它不等同於 YAML merge，也不代表 library repo 會成為 job workspace |
+| [Bitbucket Pipelines](https://support.atlassian.com/bitbucket-cloud/docs/share-pipelines-configurations/) | shared pipeline `import:` | 從另一個 repo 匯入的 pipeline definition，可指定 branch 或 tag | Import 的是共享 pipeline 設定，不等於 checkout 整個來源 repo |
+
+GitLab 會把 include 的設定與主設定合併；Bitbucket 的 import 也重用 pipeline definition。GitHub Actions 則要分清楚 reusable workflow 和 Action：前者重用整個 workflow YAML，後者會把可執行的 Action package 下載到 runner。Jenkins Shared Libraries 又是另一種模型，載入的是 Pipeline library 程式碼。
+
+這幾種作法都把共用流程放在另一個 repo，但「下載了哪一份內容、由哪個元件讀取、執行時工作目錄裡有什麼」都要分開看。把它們統稱為「CI 去另一個 repo 抓程式碼」，會把 YAML 設定和可執行程式碼混成同一件事。
+
+## 把 template alias 當 library，價值在哪裡？
+
+回到 Azure Pipelines，alias 的主要價值是讓多個 repo 共用同一套 pipeline 邏輯。發版或 review 流程集中維護一次，各消費端可以選擇要跟到哪個版本；這比少傳一個小型 template repo 更有實際意義。
+
+`refs/tags/v1.1.0` 讓引用版本一眼可讀，但 Git tag 可以被有權限的人移動。如果 pipeline 必須固定在某個確切 commit，Azure Pipelines 也支援用 commit SHA 指定 repository resource。這和套件管理有點像：tag 好讀、SHA 精確，升級時再明確改引用。
+
+代價是 template 只帶進 YAML，不會順便提供 template repo 裡的腳本；執行時才產生的變數也不能回頭決定已經展開的 template 路徑。除錯時可以先看完整 YAML，再看 Agent logs，確認模板最後展開成哪些 steps、哪些 repo 被 checkout。
+
+還有權限邊界。展開後的 step 會在消費端 pipeline 的執行環境裡跑，因此 template repo 的維護權限與 pipeline 能使用的 secrets 都要一起考慮。checkout 的 `persistCredentials: true` 會把 OAuth token 留在 Git config；若 Agent 後續會執行其他程式碼，這個設定就不只是 Git checkout 的選項。[Microsoft 的 checkout 文件](https://learn.microsoft.com/en-us/azure/devops/pipelines/yaml-schema/steps-checkout?view=azure-pipelines) 有列出這項行為。
+
+最後，`template` 和 `extends` 的方向也不同：`template` 是消費端選擇共用哪些區塊；`extends` 可以讓 pipeline 套用中央定義的骨架，並搭配 Required template check 執行治理。前者主要解決重用，後者可以把規範變成部署條件。[Microsoft 的 template 文件](https://learn.microsoft.com/azure/devops/pipelines/process/templates) 也說明了這兩種使用方式。
+
+## 心得
+
+CI template alias 我平常就會用，這次才把背後的流程完整走一遍，也順便看清楚它能共用到哪裡：哪些內容可以寫成 YAML template，哪些檔案要另外 checkout 或讀取。實際走過一次後，我比較能判斷一段邏輯適合留在 pipeline 設定裡，還是應該抽成獨立檔案。
+
+像 release note、BOM 建立、Node.js 或 pnpm 環境設定，都是團隊可能反覆使用的流程。把這些做法整理成有版本的共用 templates，各 repo 就不必每次都翻別人的 pipeline 找範例，也能逐步累積一套真正符合團隊工作方式的工具。我覺得這比單純少抓一個 repo 更有價值。
+
