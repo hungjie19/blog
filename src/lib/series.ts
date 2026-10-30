@@ -87,6 +87,11 @@ export const seriesLists = {
     type: "collection",
     cover: "/images/series/astro-blog.jpg",
   },
+  "azure-devops-pipelines": {
+    title: "Azure DevOps Pipelines",
+    description: "Azure DevOps Pipelines 的自動化與權限筆記，涵蓋 System.AccessToken、PR 與 Wiki API、repository 存取、排程及 pipeline 觸發。",
+    type: "series",
+  },
 } satisfies Record<string, SeriesList>;
 
 export type SeriesId = keyof typeof seriesLists;
