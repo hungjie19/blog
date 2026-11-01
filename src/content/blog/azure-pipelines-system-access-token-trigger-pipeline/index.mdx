@@ -57,7 +57,7 @@ job access token 對應哪個身分，取決於 job authorization scope。[Micro
 
 ![Repo A 與 Repo B 的 Build Service identity pipeline queue 權限](./queue-build-permissions.jpg)
 
-<p class="image-caption">圖：Repo A 與 Repo B 的 pipeline 都要確認 <code>Edit queue build configuration</code> 和 <code>Queue builds</code> 權限有效（Allow）。Repo A 是繼承的 Allow，Repo B 則是明確設定為 Allow。</p>
+<p class="image-caption">圖：Repo A 與 Repo B 的 pipeline 都要確認 Edit queue build configuration 和 Queue builds 權限有效（Allow）。Repo A 是繼承的 Allow，Repo B 則是明確設定為 Allow。</p>
 
 原案例的兩個 pipeline 都確認有可用權限，不代表所有拓樸都必須一律在兩邊明確設定相同權限。實作時先確認錯誤發生在哪個 pipeline definition 的 security check；只授予該流程真正需要的 identity 和 permission。
 

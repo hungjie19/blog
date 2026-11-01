@@ -20,7 +20,7 @@ Blog Island 專案在本機完成後，我想先讓它獨立上線。這次我�
 
 ![GitHub private repo 經 Workers Builds 部署至 Cloudflare Worker，並由 workers.dev 與自訂網域提供存取](./deployment-flow.jpg)
 
-<p class="image-caption">圖：GitHub push 觸發 Workers Builds；部署完成後，`workers.dev` 和自訂網域都連到同一個 Worker。</p>
+<p class="image-caption">圖：GitHub push 觸發 Workers Builds；部署完成後，workers.dev 和自訂網域都連到同一個 Worker。</p>
 
 ## 先把專案推到空的 private GitHub repo
 
@@ -113,7 +113,7 @@ Project name 和 `wrangler.jsonc` 的 `name` 要一致。Preview builds 我保�
 
 ![Cloudflare Deployments 顯示後續 push 產生的 main 分支部署已就緒](./workers-build-history.jpg)
 
-<p class="image-caption">圖：後續 push 的 commit `582ce6b7` 在 `main` 顯示 Ready，38 秒完成 build 和部署。</p>
+<p class="image-caption">圖：後續 push 的 commit 582ce6b7 在 main 顯示 Ready，38 秒完成 build 和部署。</p>
 
 Worker 也會有一個 `workers.dev` 網址。它會包含 Project name 和帳號子網域；帳號子網域依帳號而異，這裡用通用格式表示：
 
@@ -133,7 +133,7 @@ Worker 也會有一個 `workers.dev` 網址。它會包含 Project name 和帳�
 
 ![自訂網域設定視窗中 Subdomain 填入 island，Enable for 選 Production](./configure-custom-domain.jpg)
 
-<p class="image-caption">圖：輸入 `island` 作為子網域，讓 Worker 接收 Production 流量。</p>
+<p class="image-caption">圖：輸入「island」作為子網域，讓 Worker 接收 Production 流量。</p>
 
 因此這次部署完成後有兩個可用網址：
 

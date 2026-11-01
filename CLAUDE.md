@@ -63,6 +63,8 @@ src/content/blog/
   <p class="image-caption">圖：說明文字。</p>
   ```
   build time 由 `src/plugins/rehype-figure-caption.ts`（rehype plugin，註冊在 `astro.config.mjs`）自動把「圖片段落 + 緊接的 `.image-caption` 段落」合併成 `<figure><img>...<figcaption></figure>`，不用改寫作習慣。文章頁的 lightbox（PhotoSwipe + dynamic-caption-plugin，邏輯在 `src/pages/posts/[slug].astro`）會從 `figcaption` 讀取說明文字顯示在放大圖片下方；沒寫這行則 fallback 用 alt text。
+  - **alt 與 caption 分工**：alt 寫「畫面上有什麼」（給螢幕閱讀器、圖片搜尋、AI），caption 寫「這張圖代表什麼」（給讀者）。兩者不要寫成同一句，有 figcaption 時螢幕閱讀器會兩段都念。
+  - **caption 只能是純文字**：不放反引號、`<code>`、連結、粗體，也不寫裸網址（`http://…` 會被 GFM 自動轉成連結）。需要標示指令或名稱時用「」。違反時 build 會失敗並指出是哪段 caption。
 
 ## Frontmatter 格式
 

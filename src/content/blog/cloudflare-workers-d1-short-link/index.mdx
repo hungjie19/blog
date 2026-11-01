@@ -80,7 +80,7 @@ Worker 接到請求後，先檢查 HTTP method、正規化路徑，再用 `slug`
 
 ![短網址請求經過 Worker、D1 查詢、302 回應和背景點擊寫入的流程圖](./request-flow.svg)
 
-<p class="image-caption">圖：藍線是查詢與轉址的主流程；橘色虛線表示 Worker 透過 `waitUntil` 在背景新增點擊紀錄。</p>
+<p class="image-caption">圖：藍線是查詢與轉址的主流程；橘色虛線表示 Worker 透過 waitUntil 在背景新增點擊紀錄。</p>
 
 bot 判斷只會影響紀錄上的分類，不會把請求導向另一個目的地。這樣同一條短網址維持相同的轉址行為，點擊紀錄則可以另外區分一般請求和 bot 請求。
 
