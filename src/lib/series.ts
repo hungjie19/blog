@@ -33,6 +33,12 @@ export const seriesLists = {
     type: "collection",
     cover: "/images/series/cloudflare.jpg",
   },
+  "azure-devops-pipelines": {
+    title: "Azure DevOps Pipelines",
+    description: "Azure DevOps Pipelines 的自動化與權限筆記，涵蓋 System.AccessToken、PR 與 Wiki API、repository 存取、排程及 pipeline 觸發。",
+    type: "series",
+    cover: "/images/series/azure-devops-pipelines.jpg",
+  },
   "macos-fix": {
     title: "macOS 修復筆記",
     description: "升級後發燙、CPU 無故飆高、Intel app 跳警告：Mac 出狀況時的實際排查過程與解法。",
@@ -86,11 +92,6 @@ export const seriesLists = {
     description: "從買 domain、選 Astro 到 OG image、dark mode、燈箱與效能優化：這個部落格一路蓋起來的實作紀錄。",
     type: "collection",
     cover: "/images/series/astro-blog.jpg",
-  },
-  "azure-devops-pipelines": {
-    title: "Azure DevOps Pipelines",
-    description: "Azure DevOps Pipelines 的自動化與權限筆記，涵蓋 System.AccessToken、PR 與 Wiki API、repository 存取、排程及 pipeline 觸發。",
-    type: "series",
   },
 } satisfies Record<string, SeriesList>;
 
