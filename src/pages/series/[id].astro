@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import PostRow from '../../components/PostRow.astro';
 import { getSeries, seriesLists, sortSeriesEntries } from '../../lib/series';
 
 export function getStaticPaths() {
@@ -44,21 +45,20 @@ const ListTag = isCollection ? 'ul' : 'ol';
       <ListTag class:list={['m-0 list-none border-t border-border p-0', !isCollection && 'series-article-list']}>
         {posts.map((post, index) => (
           <li class="border-b border-border">
-            <a
+            <PostRow
+              post={post}
               href={`${base}posts/${post.id}/`}
-              class="group block py-5 no-underline"
+              number={isCollection ? undefined : String(posts.length - index).padStart(2, '0')}
+              class="py-5"
               data-umami-event="click-series-post"
               data-umami-event-destination={post.id}
             >
-              <div class="flex items-baseline gap-3">
-                {!isCollection && <span class="shrink-0 text-sm tabular-nums text-muted">{String(posts.length - index).padStart(2, '0')}</span>}
-                <h3 class="m-0 text-base font-semibold leading-snug tracking-[-0.01em] text-text group-hover:text-accent">{post.data.title}</h3>
-              </div>
-              <p class:list={['mb-0 mt-1 text-sm text-muted', !isCollection && 'pl-8']}>
+              <h3 class="m-0 text-base font-semibold leading-snug tracking-[-0.01em] text-text group-hover:text-accent">{post.data.title}</h3>
+              <p class="mb-0 mt-1 text-sm text-muted">
                 {post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
-              {post.data.description && <p class:list={['mb-0 mt-2 text-sm leading-relaxed text-muted', !isCollection && 'pl-8']}>{post.data.description}</p>}
-            </a>
+              {post.data.description && <p class="mb-0 mt-2 text-sm leading-relaxed text-muted max-sm:line-clamp-2">{post.data.description}</p>}
+            </PostRow>
           </li>
         ))}
       </ListTag>

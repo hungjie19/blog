@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
+import PostRow from '../../components/PostRow.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -31,18 +32,15 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
     <div class="flex flex-col gap-px">
       {posts.map(post => (
-        <a
-          href={`${base}posts/${post.id}/`}
-          class="block border-b border-border py-4 text-text no-underline"
-        >
-          <div class="mb-1 text-[15px] font-medium">{post.data.title}</div>
+        <PostRow post={post} href={`${base}posts/${post.id}/`} class="border-b border-border py-4 text-text">
+          <div class="mb-1 text-[15px] font-medium text-text">{post.data.title}</div>
           <div class="text-xs text-muted">
             {post.data.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
           {post.data.description && (
-            <div class="mt-1 text-[13px] text-muted opacity-80">{post.data.description}</div>
+            <div class="mt-1 text-[13px] text-muted opacity-80 max-sm:line-clamp-2">{post.data.description}</div>
           )}
-        </a>
+        </PostRow>
       ))}
     </div>
   </div>
