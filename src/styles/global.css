@@ -18,6 +18,8 @@
   --color-accent:       #60a5fa;
   --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
   --color-link:         #0284c7;
+  /* success feedback (toast check icon) */
+  --color-success:      #16a34a;
 }
 
 @layer base {
@@ -38,6 +40,7 @@
     --accent:       var(--color-accent);
     --accent-muted: var(--color-accent-muted);
     --link:         var(--color-link);
+    --success:      var(--color-success);
   }
 
   html.dark {
@@ -57,6 +60,7 @@
     --color-accent:       #60a5fa;
     --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
     --color-link:         #00a0e9;
+    --color-success:      #4ade80;
   }
 
   html, body {
@@ -143,4 +147,33 @@
   background-color: #ff5f57 !important;
   box-shadow: 1.25rem 0 0 #febc2e, 2.5rem 0 0 #28c840;
   opacity: 0.3 !important;
+}
+
+@layer components {
+  /* Status toast (src/lib/toast.ts): right under the 48px topbar, where the eye is after clicking a topbar icon or heading */
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    top: 52px;
+    right: 4px;
+    z-index: 60;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--heading);
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .toast-icon { display: flex; flex-shrink: 0; }
+  .toast-icon--success { color: var(--success); }
 }

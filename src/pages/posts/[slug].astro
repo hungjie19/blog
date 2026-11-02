@@ -203,6 +203,7 @@ const readingTime = `約 ${minutes} 分鐘`;
 
 <script>
   import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import { copyWithToast } from '../../lib/toast';
   import PhotoSwipeDynamicCaption from 'photoswipe-dynamic-caption-plugin';
   import 'photoswipe/style.css';
   import 'photoswipe-dynamic-caption-plugin/photoswipe-dynamic-caption-plugin.css';
@@ -255,23 +256,6 @@ const readingTime = `約 ${minutes} 分鐘`;
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
     '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
     '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-  let toastTimer: number | undefined;
-
-  function showCopiedToast() {
-    const toast =
-      document.querySelector<HTMLDivElement>('.heading-anchor-toast') ??
-      document.body.appendChild(
-        Object.assign(document.createElement('div'), {
-          className: 'heading-anchor-toast',
-          role: 'status',
-          textContent: '已複製段落連結',
-        }),
-      );
-    toast.classList.add('is-visible');
-    clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 1600);
-  }
-
   for (const heading of anchorHeadings) {
     const anchor = document.createElement('a');
     anchor.className = 'heading-anchor';
@@ -293,7 +277,7 @@ const readingTime = `約 ${minutes} 分鐘`;
       shareUrl.searchParams.set('utm_source', 'copy_link');
       shareUrl.searchParams.set('utm_medium', 'heading_anchor');
       shareUrl.hash = heading.id;
-      navigator.clipboard?.writeText(shareUrl.toString()).then(showCopiedToast, () => {});
+      void copyWithToast(shareUrl.toString(), '已複製段落連結');
 
       history.replaceState(null, '', `#${heading.id}`);
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -435,28 +419,6 @@ const readingTime = `約 ${minutes} 分鐘`;
       color: var(--heading);
       text-decoration: none;
     }
-  }
-
-  :global(.heading-anchor-toast) {
-    /* topbar（48px）正下方右側，點標題後視線在上方 */
-    position: fixed;
-    top: 52px;
-    right: 4px;
-    z-index: 60;
-    padding: 8px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--heading);
-    font-size: 14px;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-8px);
-    transition: opacity 0.2s, transform 0.2s;
-  }
-  :global(.heading-anchor-toast.is-visible) {
-    opacity: 1;
-    transform: translateY(0);
   }
 
   .article-body :global(p) {

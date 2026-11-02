@@ -202,6 +202,7 @@ const iconButtonClass =
             id="share-btn"
             class={`${iconButtonClass} border-0 bg-transparent`}
             title="複製連結"
+            aria-label="複製連結"
             data-umami-event="click-share"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -212,8 +213,9 @@ const iconButtonClass =
           <a
             href={activeSlug ? `${base}posts/${activeSlug}.md` : '#'}
             class={iconButtonClass}
-            title="Raw Markdown"
-            data-umami-event="click-raw-markdown"
+            title="複製 Raw Markdown 連結"
+            aria-label="複製 Raw Markdown 連結"
+            data-copy-link="markdown"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
@@ -224,8 +226,9 @@ const iconButtonClass =
       <a
         href={`${base}rss.xml`}
         class={iconButtonClass}
-        title="RSS Feed"
-        data-umami-event="click-rss"
+        title="複製 RSS 連結"
+        aria-label="複製 RSS 連結"
+        data-copy-link="rss"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 11a9 9 0 0 1 9 9"/>
@@ -469,6 +472,8 @@ const iconButtonClass =
 </style>
 
 <script>
+  import { copyWithToast, showToast } from '../lib/toast';
+
   // theme toggle
   function isDark() {
     return document.documentElement.classList.contains('dark') ||
@@ -492,6 +497,7 @@ const iconButtonClass =
     }
     localStorage.setItem('theme', next);
     updateThemeIcon();
+    showToast(next === 'dark' ? '已切換為深色模式' : '已切換為淺色模式', next === 'dark' ? 'moon' : 'sun');
   });
   updateThemeIcon();
 
@@ -499,7 +505,28 @@ const iconButtonClass =
     const url = new URL(window.location.href);
     url.searchParams.set('utm_source', 'copy_link');
     url.searchParams.set('utm_medium', 'share_button');
-    navigator.clipboard.writeText(url.toString());
+    void copyWithToast(url.toString(), '已複製連結');
+  });
+
+  // Raw Markdown / RSS icons copy their URL instead of opening raw text.
+  // Modified clicks (new tab, etc.) still follow the href. No data-umami-event on these links:
+  // Umami would navigate to the href itself, so tracking goes through umami.track().
+  const copyLinkMessages: Record<string, string> = {
+    markdown: '已複製 Raw Markdown 連結',
+    rss: '已複製 RSS 連結',
+  };
+  document.querySelectorAll<HTMLAnchorElement>('[data-copy-link]').forEach((link) => {
+    link.addEventListener('click', async (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+      const kind = link.dataset.copyLink ?? '';
+      event.preventDefault();
+      const copied = await copyWithToast(link.href, copyLinkMessages[kind] ?? '已複製連結');
+      if (!copied) {
+        window.location.assign(link.href);
+        return;
+      }
+      window.umami?.track(`copy-${kind}-link`);
+    });
   });
 
   const sidebar = document.getElementById('sidebar');
