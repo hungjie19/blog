@@ -3,6 +3,8 @@
 @theme {
   --color-bg:           #ffffff;
   --color-surface:      #f5f5f5;
+  /* raised controls sitting on surface (e.g. selected segment): lighter than surface in both themes */
+  --color-raised:       #ffffff;
   --color-border:       #e5e5e5;
   --color-heading:      #0a0a0a;
   --color-article-text: #262626;
@@ -22,6 +24,7 @@
   :root {
     --bg:           var(--color-bg);
     --surface:      var(--color-surface);
+    --raised:       var(--color-raised);
     --border:       var(--color-border);
     --heading:      var(--color-heading);
     --article-text: var(--color-article-text);
@@ -40,6 +43,7 @@
   html.dark {
     --color-bg:           #0f0f0f;
     --color-surface:      #171717;
+    --color-raised:       #2a2a2a;
     --color-border:       #333333;
     --color-heading:      #f4f4f5;
     --color-article-text: #d4d4d8;
