@@ -11,7 +11,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "watermark": "node scripts/watermark-image.mjs"
+    "watermark": "node scripts/watermark-image.mjs",
+    "cover": "node scripts/cover.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^6.0.3",

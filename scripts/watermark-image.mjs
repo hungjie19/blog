@@ -2,9 +2,10 @@
 
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
-const DEFAULT_TEXT = "jasperhung.dev";
+export const DEFAULT_TEXT = "jasperhung.dev";
 const TONES = new Set(["auto", "light", "dark"]);
 const POSITIONS = new Set(["bottom-right", "top-right"]);
 
@@ -97,25 +98,39 @@ async function main() {
 		throw new Error("Refusing to overwrite input without --overwrite.");
 	}
 
+	const { buffer, tone, sampledLuminance } = await burnWatermark(input, options);
+	await sharp(buffer).toFile(output);
+
+	console.log(`Watermarked image: ${output}`);
+	console.log(`Tone: ${tone}${sampledLuminance === undefined ? "" : ` (sampled luminance ${sampledLuminance.toFixed(0)})`}`);
+}
+
+/**
+ * Burn the watermark into an image (path or Buffer). Returns a lossless PNG buffer so the caller
+ * picks the final encoding. Shared with scripts/cover.mjs.
+ */
+export async function burnWatermark(input, { text = DEFAULT_TEXT, tone = "auto", position = "bottom-right", scale = 1 } = {}) {
 	const metadata = await sharp(input).metadata();
 	if (!metadata.width || !metadata.height) throw new Error("Could not determine image dimensions.");
 
-	const sampledLuminance = options.tone === "auto"
+	const sampledLuminance = tone === "auto"
 		? await luminanceAtBottomRight(input, metadata.width, metadata.height)
 		: undefined;
-	const resolvedTone = options.tone === "auto"
+	const resolvedTone = tone === "auto"
 		? (sampledLuminance > 150 ? "dark" : "light")
-		: options.tone;
+		: tone;
 
-	await sharp(input)
-		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text: options.text, tone: resolvedTone, position: options.position, scale: options.scale }) }])
-		.toFile(output);
-
-	console.log(`Watermarked image: ${output}`);
-	console.log(`Tone: ${resolvedTone}${sampledLuminance === undefined ? "" : ` (sampled luminance ${sampledLuminance.toFixed(0)})`}`);
+	const buffer = await sharp(input)
+		.composite([{ input: watermarkSvg({ width: metadata.width, height: metadata.height, text, tone: resolvedTone, position, scale }) }])
+		.png()
+		.toBuffer();
+	return { buffer, tone: resolvedTone, sampledLuminance };
 }
 
-main().catch((error) => {
-	console.error(`watermark failed: ${error.message}`);
-	process.exitCode = 1;
-});
+// Run as a CLI only when executed directly (not when imported by cover.mjs)
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+	main().catch((error) => {
+		console.error(`watermark failed: ${error.message}`);
+		process.exitCode = 1;
+	});
+}
