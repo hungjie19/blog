@@ -38,12 +38,21 @@ const posts = (await getCollection('blog')).sort(
           <a href={`${base}posts/${post.id}/`} class="feed-link" data-umami-event="click-post-homepage" data-umami-event-destination={post.id}>
             <span class="feed-title">{post.data.title}</span>
 
-            {post.data.description && (
+            {post.data.cover ? (
+              <div class="feed-body">
+                <p class="feed-desc feed-desc--clamp">{post.data.description}</p>
+                <img
+                  class="feed-thumb"
+                  src={`${base}images/posts/${post.id}/thumb.jpg`}
+                  alt=""
+                  width="480"
+                  height="360"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            ) : post.data.description && (
               <p class="feed-desc">{post.data.description}</p>
-            )}
-
-            {post.data.image && (
-              <img class="feed-image" src={post.data.image} alt={post.data.title} loading="lazy" />
             )}
           </a>
 
@@ -95,11 +104,33 @@ const posts = (await getCollection('blog')).sort(
     margin: 0 0 8px;
   }
 
-  .feed-image {
-    width: 100%;
-    border-radius: 10px;
+  /* 有封面：desc 左、4:3 縮圖右，縮圖高度 = desc 行數 × 行高（桌面 3 行、手機 2 行） */
+  .feed-body {
+    --desc-lines: 3;
+    --desc-line: calc(16px * 1.65);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin: 0 0 8px;
+  }
+
+  .feed-body .feed-desc { flex: 1; min-width: 0; margin: 0; }
+
+  .feed-desc--clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: var(--desc-lines);
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .feed-thumb {
+    flex-shrink: 0;
+    height: calc(var(--desc-line) * var(--desc-lines));
+    width: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 6px;
     border: 1px solid var(--border);
-    margin: 0 0 12px;
     display: block;
   }
 
@@ -133,6 +164,8 @@ const posts = (await getCollection('blog')).sort(
   .feed-tag:hover { color: var(--accent); }
 
   @media (max-width: 640px) {
+    .feed-body { --desc-lines: 2; gap: 12px; }
+
     .feed-desc {
       display: -webkit-box;
       -webkit-line-clamp: 2;

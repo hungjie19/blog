@@ -21,7 +21,8 @@ const blog = defineCollection({
     date: z.date(),
     tags: z.array(z.string()).default([]),
     description: z.string().optional(),
-    image: z.string().optional(),
+    // 封面：public/images/posts/<slug>/og.jpg（1200×630）與 thumb.jpg（480×360）
+    cover: z.boolean().default(false),
     ogTitle: z.string().optional(),
     series: z.string().optional(),
     seriesOrder: z.number().optional(),

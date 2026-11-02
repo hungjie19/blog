@@ -72,11 +72,26 @@ const readingTime = `約 ${minutes} 分鐘`;
   title={post.data.title}
   activeSlug={post.id}
   description={post.data.description}
+  ogImageUrl={post.data.cover ? new URL(`/images/posts/${post.id}/og.jpg`, Astro.site).href : undefined}
   date={post.data.date instanceof Date
     ? post.data.date.toISOString()
     : String(post.data.date ?? "")}
 >
   <article>
+    {post.data.cover && (
+      <div class="article-hero mb-6">
+        <img
+          class="block h-auto w-full rounded-lg border border-border"
+          src={`/images/posts/${post.id}/og.jpg`}
+          alt=""
+          width="1200"
+          height="630"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </div>
+    )}
     <div class="article-header">
       <h1 class="article-title">
         {post.data.title}
@@ -192,32 +207,39 @@ const readingTime = `約 ${minutes} 分鐘`;
   import 'photoswipe/style.css';
   import 'photoswipe-dynamic-caption-plugin/photoswipe-dynamic-caption-plugin.css';
 
-  const gallery = document.querySelector('.article-body');
-  if (gallery) {
-    const images = gallery.querySelectorAll<HTMLImageElement>('img:not(a img)');
+  // 封面 hero 在 title 上方、不在 .article-body 內；兩區的圖都包成 trigger，
+  // 燈箱範圍用整個 <article>，封面與內文圖片合成同一組，可以連續翻頁
+  const galleries = document.querySelectorAll('.article-hero, .article-body');
+  if (galleries.length > 0) {
+    for (const gallery of galleries) {
+      const isHero = gallery.classList.contains('article-hero');
+      const images = gallery.querySelectorAll<HTMLImageElement>('img:not(a img)');
 
-    for (const img of images) {
-      const link = document.createElement('a');
-      link.href = img.currentSrc || img.src;
-      link.className = 'lightbox-trigger';
-      link.dataset.pswpWidth = img.getAttribute('width') ?? '';
-      link.dataset.pswpHeight = img.getAttribute('height') ?? '';
+      for (const img of images) {
+        const link = document.createElement('a');
+        link.href = img.currentSrc || img.src;
+        link.className = isHero ? 'lightbox-trigger block' : 'lightbox-trigger';
+        // 不能用 data-umami-event：Umami 會攔截帶該屬性的連結並直接跳轉 href，燈箱打不開
+        if (isHero) link.addEventListener('click', () => window.umami?.track('open-lightbox-cover'));
+        link.dataset.pswpWidth = img.getAttribute('width') ?? '';
+        link.dataset.pswpHeight = img.getAttribute('height') ?? '';
 
-      const captionEl = img.closest('figure')?.querySelector('figcaption');
-      if (captionEl) {
-        const captionContent = document.createElement('div');
-        captionContent.className = 'pswp-caption-content';
-        captionContent.hidden = true;
-        captionContent.textContent = captionEl.textContent ?? '';
-        link.appendChild(captionContent);
+        const captionEl = img.closest('figure')?.querySelector('figcaption');
+        if (captionEl) {
+          const captionContent = document.createElement('div');
+          captionContent.className = 'pswp-caption-content';
+          captionContent.hidden = true;
+          captionContent.textContent = captionEl.textContent ?? '';
+          link.appendChild(captionContent);
+        }
+
+        img.replaceWith(link);
+        link.appendChild(img);
       }
-
-      img.replaceWith(link);
-      link.appendChild(img);
     }
 
     const lightbox = new PhotoSwipeLightbox({
-      gallery: '.article-body',
+      gallery: 'article',
       children: 'a.lightbox-trigger',
       pswpModule: () => import('photoswipe'),
     });
