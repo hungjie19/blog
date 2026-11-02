@@ -32,7 +32,7 @@ const viewButtonClass =
       href="https://island.jasperhung.dev/"
       target="_blank"
       rel="noopener"
-      class="group relative mb-2 block overflow-hidden rounded-[10px] border border-border no-underline transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-accent active:translate-y-0"
+      class="island-banner group relative mb-2 block overflow-hidden rounded-[10px] border border-border no-underline transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-accent active:translate-y-0"
       data-umami-event="click-island-homepage"
     >
       <img
@@ -195,6 +195,10 @@ const viewButtonClass =
     display: flex;
     flex-wrap: wrap;
     gap: 6px 8px;
+    min-width: 0;
+    line-height: 1.5;
+    /* When a view caps max-height to one line, tags that wrap to line 2 are hidden whole, never cut mid-word */
+    overflow: hidden;
   }
 
   .feed-tag {
@@ -243,8 +247,8 @@ const viewButtonClass =
       overflow: hidden;
     }
 
-    :global(html:not([data-feed-view="card"])) .feed-meta { flex-wrap: nowrap; overflow: hidden; }
-    :global(html:not([data-feed-view="card"])) .feed-tags { flex-wrap: nowrap; overflow: hidden; }
+    :global(html:not([data-feed-view="card"])) .feed-meta { flex-wrap: nowrap; }
+    :global(html:not([data-feed-view="card"])) .feed-tags { max-height: 1.5em; }
   }
 
   /* ───────── Card view：照 Series 頁的卡片 ───────── */
@@ -318,7 +322,13 @@ const viewButtonClass =
     overflow: hidden;
   }
 
-  :global(html[data-feed-view="card"]) .feed-tags { flex-wrap: nowrap; overflow: hidden; }
+  :global(html[data-feed-view="card"]) .feed-tags { max-height: 1.5em; }
+
+  /* Card view widens the column to 1280px; keep the Island banner at the list-view size (740px column minus padding) */
+  :global(html[data-feed-view="card"]) .island-banner {
+    max-width: calc(740px - 64px);
+    margin-inline: auto;
+  }
 </style>
 
 <script>
