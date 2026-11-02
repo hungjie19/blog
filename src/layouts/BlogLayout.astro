@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import { ArrowLeftToLine, ArrowRightFromLine, ArrowUpRight, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, Map as MapIcon, UserRound } from '@lucide/astro';
 import BrandMark from '../components/BrandMark.astro';
-import { getTags } from '../lib/tags';
+import { getRecentTags } from '../lib/tags';
 import '../styles/global.css';
 
 interface Props {
@@ -60,7 +60,8 @@ const sorted = allPosts.sort((a, b) =>
   new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf()
 );
 
-const allTags = getTags(sorted);
+// Sidebar shows what I've been writing about lately; /tags/ keeps the all-time index
+const recentTags = getRecentTags(sorted);
 const isAboutPage = canonicalPath === '/about/';
 const isSeriesPage = canonicalPath?.startsWith('/series/') ?? false;
 
@@ -321,16 +322,16 @@ const iconButtonClass =
     </nav>
 
     <!-- Tags -->
-    {allTags.length > 0 && (
+    {recentTags.length > 0 && (
       <div class="shrink-0 border-t border-border px-1 pb-4 pt-2">
         <a href={`${base}tags/`} class={`${exploreNavLinkClass} bg-transparent text-muted`} data-umami-event="click-tags-sidebar">
           <Hash class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
           <span>Tags</span>
         </a>
         <div class="sidebar-tags px-3 pt-2">
-          {allTags.map(t => (
-            <a href={`${base}tags/${t.label}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
-              #{t.label}
+          {recentTags.map(tag => (
+            <a href={`${base}tags/${tag}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
+              #{tag}
             </a>
           ))}
         </div>

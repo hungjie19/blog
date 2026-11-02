@@ -16,3 +16,16 @@ export function getTags(posts: CollectionEntry<'blog'>[]): Tag[] {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
+
+/** How many of the newest posts feed the sidebar's "what I'm writing about lately" tags. */
+export const RECENT_TAG_POSTS = 5;
+
+/**
+ * Tags from the newest `RECENT_TAG_POSTS` posts, de-duplicated: newest post first, each post's tags
+ * in frontmatter order. Recomputed on every build, so the sidebar follows what was published lately
+ * instead of the all-time counts (where a 31-post series pins the same tags forever).
+ * `posts` must already be sorted newest first.
+ */
+export function getRecentTags(posts: CollectionEntry<'blog'>[], postCount = RECENT_TAG_POSTS): string[] {
+  return [...new Set(posts.slice(0, postCount).flatMap(p => p.data.tags))];
+}
