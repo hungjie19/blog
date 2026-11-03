@@ -1,4 +1,6 @@
 ---
+import BrandIcon from './BrandIcon.astro';
+
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 
@@ -14,7 +16,8 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     <div class="author-bio">軟體工程師。記錄工程、產品與個人品牌的思考與實踐。</div>
     <div class="author-links">
       <a href={`${base}about/`} data-umami-event="click-about-authorcard">About</a>
-      <a href="https://github.com/hungjie19" target="_blank" rel="noopener" data-umami-event="click-github">GitHub</a>
+      <a href="https://github.com/hungjie19" target="_blank" rel="noopener" data-umami-event="click-github"><BrandIcon name="github" size={14} />GitHub</a>
+      <a href="https://www.threads.com/@jasper.hung.one" target="_blank" rel="noopener" data-umami-event="click-threads-authorcard"><BrandIcon name="threads" size={14} />Threads</a>
     </div>
   </div>
 </div>
@@ -82,6 +85,9 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
   }
 
   .author-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 14px;
     color: var(--accent);
     text-decoration: none;
