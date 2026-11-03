@@ -336,7 +336,7 @@ const iconButtonClass =
         </a>
         <div class="sidebar-tags px-3 pt-2">
           {recentTags.map(tag => (
-            <a href={`${base}tags/${tag}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill">
+            <a href={`${base}tags/${tag}/`} class="meta-link sidebar-tag text-sm" data-umami-event="click-tag-pill" data-umami-event-location="sidebar">
               #{tag}
             </a>
           ))}

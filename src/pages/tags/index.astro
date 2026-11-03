@@ -27,7 +27,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 
     <div class="tags-cloud">
       {tags.map(t => (
-        <a href={`${base}tags/${t.label}/`} class="tag-pill">
+        <a href={`${base}tags/${t.label}/`} class="tag-pill" data-umami-event="click-tag-pill" data-umami-event-location="tags-index">
           <span class="tag-name">#{t.label}</span>
           {t.count > 1 && <span class="tag-count">{t.count}</span>}
         </a>
