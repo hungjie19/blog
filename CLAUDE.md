@@ -76,8 +76,10 @@ ogTitle: 'OG Image|手動換行標題'
 date: 2026-06-22T13:00:00+08:00
 description: '一句話摘要，給 SEO meta description 用'
 tags:
-  - tag1
-  - tag2
+  - Astro
+  - Site-Building
+  - Dark-Mode
+cover: true
 series: openmemory
 seriesOrder: 1
 ---
@@ -85,6 +87,8 @@ seriesOrder: 1
 
 - `date`：ISO 8601，寫完文章 commit 前跑 `date +"%Y-%m-%dT%H:%M:%S+08:00"` 取當下時間填入；同一天多篇靠時間排序；排序與 JSON-LD `datePublished` 都靠這個
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
+- `tags`：必填，描述性 tag 3–7 個（系列必帶 tag 另計），Title Case kebab-case 英文。選法、大小寫例外、黑名單都在 `tag-system/index.md`（writer 入口），不要憑範本或記憶選。`pnpm build` 前會先跑 `pnpm tags:check`，違規就 build 失敗。
+- `cover`：有封面圖時為 `true`，由 `pnpm cover` 自動補上（見「封面圖」），每篇新文章都應該有
 - `ogTitle`：選填，只給 OG image 排版用；用 `|` 指定手動換行，不影響文章 H1 / SEO title / RSS
 - `series` + `seriesOrder`：選填。系列文章填相同的 `series` ID（英文 kebab-case）與顯示排序用的 `seriesOrder`；它可用於有序系列，也可用於 collection 的穩定排序。**開新系列或變更系列型別，要在 `src/lib/series.ts` 的 `seriesLists` 註冊 ID、顯示名稱與 `type`**。文章底部自動列出全系列，按 `seriesOrder` 排序；collection 仍顯示無編號的圓點清單。`seriesOrder` 按 `date` 由舊到新編 1–N，但 series 與 collection 在系列頁與文章底部都**倒序顯示**（最新、編號最大的在上）。系列頁每篇都顯示日期。
 - `draft`：選填，預設 `false`。設 `true` 時文章只在 `pnpm dev` 看得到，production build 完全不產生（文章頁、`.md`、OG、首頁、RSS、sitemap、tag／series 頁、sidebar 都沒有），只用於下架已發布文章或測試頁。過濾做在 `src/content.config.ts` 的 loader 層，所有 `getCollection('blog')` 自動生效，不要在各頁另寫 filter。`markdown-style-test` 即以此排除。
@@ -138,6 +142,7 @@ Metadata：
 - [ ] H2/H3：放關鍵字變體，用完整陳述或問句
 - [ ] 內部連結：連到同系列其他篇
 - [ ] 圖片 alt text：描述圖片內容
+- [ ] Tags：照 `tag-system/index.md` 先盲寫再比對；文章主角是具名產品／工具時一定要掛；跑過 `pnpm tags:check`
 
 **AEO（AI 搜尋引擎優化）**
 - [ ] 開頭有明確定義（「X 是什麼」）
