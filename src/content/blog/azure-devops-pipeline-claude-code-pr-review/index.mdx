@@ -1,0 +1,215 @@
+---
+title: 'Azure DevOps pipeline CI 啟動 Claude Code 做 PR Code Review'
+date: 2026-11-03T22:28:24+08:00
+description: 'Azure DevOps Pipeline 如何用 Claude Code 自動審查 PR？本文整理 OAuth Token 與 Team／Enterprise 條款、System.AccessToken 的分步隔離，以及防範 Prompt Injection 的 YAML 實作。'
+tags:
+  - Azure-DevOps
+  - Azure-Pipelines
+  - Claude-Code
+  - Security
+  - CI-CD
+series: azure-devops-pipelines
+seriesOrder: 5
+cover: true
+---
+
+<KeyTakeaways>
+  <p>這篇示範如何在 Azure DevOps Pipeline 中用 Claude Code 審查 PR：準備 git diff 與 prompt、在範例中把 OAuth Token 映射給 Claude Code 步驟、停用寫入與命令執行工具，再以 System.AccessToken 把結果貼回 PR。</p>
+</KeyTakeaways>
+
+主管發了一個 PR 成功把 Claude Code 串上 CI 做 Code Review 了！
+
+> 好酷喔！我一直以為這件事只能用 API 方案做沒想到可以用 token 處理耶
+> Claude 帳號的 Token 丟進公司 CI 跑這官方合法嗎？會不會封鎖？
+> 開始一連串研究
+
+這是兩道很實際的門檻：**第一，官方到底有沒有合規依據；第二，如何在不洩漏憑證、不被惡意 PR 搞壞環境的前提下，用最少步驟把水管接通。**
+
+---
+
+## 1. 官方依據：Token 怎麼放？合不合規？
+
+很多人以為把 Claude 丟進 CI 只能走 API Key，或者需要透過未公開的逆向手法。其實 Anthropic 官方在文件裡有明文給出解法。
+
+### 技術依據：`claude setup-token`
+在官方文件 [*Authentication › Generate a long-lived token*](https://code.claude.com/docs/en/authentication#generate-a-long-lived-token) 中明確指出：
+
+> For CI pipelines, scripts, or other environments where interactive browser login isn’t available, generate a one-year OAuth token with `claude setup-token`:
+
+做法非常單純：
+1. 在本機終端機輸入：
+   ```bash
+   claude setup-token
+   ```
+2. 瀏覽器會跳出授權視窗，登入後終端機會印出一組 `sk-ant-oat01-...` 的長期 Token（效期一年）。
+3. 到 Azure DevOps 的 **Pipelines > Library** 建立一個 Variable Group（例如 `claude-review`），把這組字串存成 Secret 變數：`CLAUDE_CODE_OAUTH_TOKEN`。
+
+在技術上，官方明確承認在 CI 環境使用這個環境變數來驅動 CLI。
+
+### 條款邊界：商業 vs 個人
+依據官方 [*Legal and compliance*](https://code.claude.com/docs/en/legal-and-compliance) 文件，有一條清楚的邊界：
+- **Team / Enterprise 方案**：適用 Commercial Terms（商業條款）。
+- **Free / Pro / Max 方案**：適用 Consumer Terms（個人條款），官方明文限制額度是基於「個人日常使用（individual usage）」。
+
+**具體判斷**：如果要放在公司 CI 上跑，請務必綁定 **Team 或 Enterprise 帳號** 的席位。若團隊對「多個 PR 共用一個席位」有嚴格的合規風控考量，最乾淨無爭議的做法則是改去 Anthropic Console 申請 API Key（按用量計費，官方明文允許存於 Secrets Manager）。
+
+---
+
+## 2. 核心防線：四個步驟的最小憑證隔離
+
+在 CI 上審查 PR，最危險的是 **Prompt Injection**：任何開 PR 的人，都可能在程式碼、Commit 訊息或 PR 描述中藏有惡意指令，試圖騙 AI 印出環境變數或執行破壞性腳本。
+
+因此，最小可行架構的底線就是**「四步隔離，每一步只拿它需要的最小憑證」**：
+
+```
+① 拉取資料 (git diff) ── 憑證：System.AccessToken (只讀 ADO 資訊，組裝 prompt.md)
+   │
+② 安裝 CLI ───────────── 憑證：無 (npm install，不給任何 Token，防止惡意依賴偷抓環境變數)
+   │
+③ 跑 Claude Code ────── 憑證：只有 CLAUDE_CODE_OAUTH_TOKEN (只給 AI Token，不給 ADO Token)
+   │                      - 拔除 Bash / Write，鎖定純唯讀工具
+   │                      - 只輸出 JSON 檔案
+   ▼
+④ 貼回 PR 留言 ───────── 憑證：System.AccessToken (讀取 JSON，由腳本呼叫 ADO API 貼文)
+```
+
+### 關鍵參數與踩坑細節
+在第 ③ 步呼叫 `claude -p`（非互動模式）時，有三個重要參數：
+
+1. **`--disallowedTools Bash WebFetch WebSearch Write Edit NotebookEdit`**  
+   把執行的 Bash、聯網的 Fetch、寫入檔案的 Edit 工具全關閉。  
+   *註：Linux 上的 Claude Code 預設不開 Glob 和 Grep（改用系統 Bash 工具）；但只要你禁用了 Bash，CLI 就會自動把唯讀的 Glob 和 Grep 補回來，讓 AI 依然能在 repo 裡跳轉查找程式碼，但完全喪失寫入與執行指令的能力。*
+2. **`--setting-sources user`**  
+   只載入執行跑者的環境設定，忽略 PR 分支裡可能被動過手腳的 `.claude/settings.json`。
+3. **Prompt 必須從標準輸入餵進去（`< prompt.md`）**  
+   `--disallowedTools` 會吞掉它後面的所有字串參數。如果把 Prompt 直接當參數接在後面，所有字都會被判定成「要禁用的工具名稱」，導致執行錯誤。
+
+---
+
+## 3. 最小實現：完整 Pipeline YAML
+
+這是一個單一 Repo 內即可直接驗證的最小 Pipeline。
+
+在 Repo 的 `.azure-pipelines/claude-review.yml` 放入以下內容，並在 Azure DevOps 將這支 Pipeline 設為 PR 的 **Build Validation**：
+
+```yaml
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: claude-review   # 內含 Secret 變數：CLAUDE_CODE_OAUTH_TOKEN
+
+jobs:
+  - job: aiReview
+    displayName: 'Claude Code PR Review'
+    steps:
+      - checkout: self
+        fetchDepth: 2      # 確保能拿到 HEAD^1 做比對
+        persistCredentials: false
+
+      # ── ① 準備 Diff 與 Prompt ──
+      - bash: |
+          set -euo pipefail
+
+          # 取得 git diff（排除 lock 檔）
+          git diff HEAD^1 HEAD -- . ':!package-lock.json' ':!pnpm-lock.yaml' > diff.patch
+
+          if [ ! -s diff.patch ]; then
+            echo "沒有需要審查的變更。"
+            echo "##vso[task.setvariable variable=SKIP_REVIEW]true"
+            exit 0
+          fi
+
+          # 組裝內嵌 Prompt（先用最簡單的結構，不外掛 Skill）
+          cat << 'EOF' > prompt.md
+          你是一位資深工程師，請針對以下 git diff 進行 Code Review。
+          
+          審查重點：
+          1. 邊界條件與潛在邏輯錯誤
+          2. 安全漏洞（注入、憑證洩漏）
+          3. 是否有未處理的例外或資源洩漏
+
+          請直接指出具體有問題的程式碼行數、錯誤情境與修改建議。若無重大問題請簡要總結。
+          輸出請使用清晰的 Markdown 格式。
+
+          === 以下為變更內容 ===
+          EOF
+
+          cat diff.patch >> prompt.md
+        displayName: '1. Prepare diff and prompt'
+
+      # ── ② 安裝 CLI（完全不給憑證）──
+      - bash: |
+          npm install -g @anthropic-ai/claude-code
+        displayName: '2. Install Claude Code CLI'
+        condition: ne(variables['SKIP_REVIEW'], 'true')
+
+      # ── ③ 執行唯讀審查（只帶 Claude Token）──
+      - bash: |
+          set -euo pipefail
+
+          # 執行非互動審查，輸出結果至 review.md
+          claude -p \
+            --model "sonnet" \
+            --setting-sources user \
+            --strict-mcp-config \
+            --no-session-persistence \
+            --disallowedTools Bash WebFetch WebSearch Write Edit NotebookEdit \
+            < prompt.md > review.md
+        displayName: '3. Run Claude Review'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: $(CLAUDE_CODE_OAUTH_TOKEN)
+        condition: ne(variables['SKIP_REVIEW'], 'true')
+
+      # ── ④ 將審查結果貼回 PR 留言（只帶 ADO Token）──
+      - bash: |
+          set -euo pipefail
+
+          COMMENT_CONTENT=$(cat review.md)
+
+          # 組裝 ADO PR Thread 請求 Payload
+          PAYLOAD=$(jq -n --arg content "### 🤖 Claude Code Review 報告\n\n$COMMENT_CONTENT" '{
+            comments: [{
+              parentCommentId: 0,
+              content: $content,
+              commentType: 1
+            }],
+            status: 1
+          }')
+
+          # 呼叫 ADO REST API 新增 PR Thread
+          curl -sSf -X POST \
+            -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "${SYSTEM_COLLECTIONURI}${SYSTEM_TEAMPROJECT}/_apis/git/repositories/${BUILD_REPOSITORY_ID}/pullRequests/${SYSTEM_PULLREQUEST_PULLREQUESTID}/threads?api-version=7.1"
+        displayName: '4. Post PR Comment'
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+        condition: and(succeeded(), ne(variables['SKIP_REVIEW'], 'true'))
+```
+
+*註：若要讓步驟 ④ 能正常貼文，請確保專案的 **Project Collection Build Service** 帳號在該 Repo 擁有 **Contribute to pull requests** 權限。*
+
+---
+
+## 4. 具體判斷與這套做法的適用邊界
+
+這是我們目前驗證過、門檻最低的最小可行實作（MVP），30 分鐘內即可跑通。
+
+### 它的適用範圍：
+- **單一 Repo 或小團隊**：不需要建立集中管理管線，貼上 YAML 就能立刻跑起來。
+- **安全底線清楚**：嚴格落實四步隔離，PR 裡的不可信輸入無法讀取 ADO 的 `System.AccessToken`，也無法透過 Bash 或 Write 修改環境。
+
+## 心得
+
+查完文件才發現，`claude setup-token` 本來就是 Anthropic 提供給 CI 等非互動環境使用的方式。用 `-p` 在 Azure DevOps Pipeline 跑 PR review，串接方式比我原本想像的簡單。不過，Token 的方案條款與 pipeline 權限仍要各自確認，不能只靠四步隔離就說完全合規。
+
+接下來我想研究怎麼把這段流程抽成可重用的 Skill，套用到多個專案，也讓各專案保有自己的審查標準。共用流程和專案規則要怎麼搭配，應該會很好玩。
