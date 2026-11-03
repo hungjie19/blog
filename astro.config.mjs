@@ -9,6 +9,16 @@ import expressiveCode from 'astro-expressive-code';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 
 import tailwindcss from '@tailwindcss/vite';
+import { readPosts, countTags } from './scripts/lib/post-tags.mjs';
+import { MIN_INDEXED_TAG_POSTS } from './src/lib/tags.ts';
+
+// Tag pages below the threshold are `noindex` (src/pages/tags/[tag].astro); keep them out of the
+// sitemap too, so the sitemap never lists a URL the page itself asks not to index.
+const thinTagPaths = new Set(
+  [...countTags(readPosts())]
+    .filter(([, n]) => n < MIN_INDEXED_TAG_POSTS)
+    .map(([tag]) => `/tags/${tag}/`),
+);
 
 // https://astro.build/config
 export default defineConfig({
@@ -36,7 +46,9 @@ export default defineConfig({
       },
     }),
     mdx(),
-    sitemap(),
+    sitemap({
+      filter: (page) => !thinTagPaths.has(decodeURIComponent(new URL(page).pathname)),
+    }),
   ],
   markdown: {
     remarkPlugins: [remarkAdmonitions],

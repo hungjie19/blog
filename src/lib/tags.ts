@@ -3,6 +3,12 @@ import type { CollectionEntry } from 'astro:content';
 export type Tag = { label: string; count: number };
 
 /**
+ * Tag pages with fewer posts than this get `noindex, follow` (src/pages/tags/[tag].astro) and are
+ * left out of the sitemap (astro.config.mjs): a single-post tag page only duplicates that post.
+ */
+export const MIN_INDEXED_TAG_POSTS = 2;
+
+/**
  * 掃一遍文章算每個 tag 的次數，回傳依次數大→小
  * （同次數用名稱字典序）排好的 tag 陣列，每個 tag 自帶 count。
  */

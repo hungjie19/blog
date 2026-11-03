@@ -72,6 +72,7 @@ const readingTime = `約 ${minutes} 分鐘`;
   title={post.data.title}
   activeSlug={post.id}
   description={post.data.description}
+  keywords={post.data.tags}
   ogImageUrl={post.data.cover ? new URL(`/images/posts/${post.id}/og.jpg`, Astro.site).href : undefined}
   date={post.data.date instanceof Date
     ? post.data.date.toISOString()

@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
 import PostRow from '../../components/PostRow.astro';
+import { MIN_INDEXED_TAG_POSTS } from '../../lib/tags';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -16,9 +17,16 @@ export async function getStaticPaths() {
 
 const { tag, posts } = Astro.props;
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+
+// Each tag page gets its own title/description instead of the site-wide default, and a tag with a
+// single post stays browsable but out of the index (its page would only duplicate that post).
+// The same threshold drops these pages from the sitemap in astro.config.mjs.
+const metaTitle = `${tag} 相關文章 — Jasper Hung`;
+const description = `Jasper Hung 部落格中標記 ${tag} 的 ${posts.length} 篇文章，最新一篇：${posts[0].data.title}`;
+const noindex = posts.length < MIN_INDEXED_TAG_POSTS;
 ---
 
-<BlogLayout title={`#${tag}`} canonicalPath={`/tags/${tag}/`}>
+<BlogLayout title={`#${tag}`} {metaTitle} {description} {noindex} canonicalPath={`/tags/${tag}/`}>
   <div>
     <div class="mb-8">
       <div class="mb-2 text-[13px] text-muted">

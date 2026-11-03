@@ -103,6 +103,7 @@ seriesOrder: 1
 - `<link rel="alternate" type="text/markdown">` — raw markdown endpoint for AI crawlers
 - sitemap：`@astrojs/sitemap`，build 後產生 `sitemap-index.xml`
 - `robots.txt`：已設定，指向 sitemap
+- Tag 頁：各自的 title／description；文章數少於 `MIN_INDEXED_TAG_POSTS`（`src/lib/tags.ts`，目前 2）的 tag 頁加 `noindex, follow`，並由 `astro.config.mjs` 的 sitemap filter 排除。文章 JSON-LD 的 `keywords` 帶該篇 tags
 
 Raw markdown endpoint：`/posts/[slug].md`（`src/pages/posts/[slug].md.ts`）
 

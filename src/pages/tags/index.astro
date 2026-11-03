@@ -9,7 +9,11 @@ const tags = getTags(posts);
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 ---
 
-<BlogLayout title="Tags" canonicalPath="/tags/">
+<BlogLayout
+  title="Tags"
+  canonicalPath="/tags/"
+  description={`Jasper Hung 部落格的 ${tags.length} 個標籤，依文章數排序：${tags.slice(0, 6).map(t => t.label).join('、')} 等 AI 協作、Agent 工作流程與建站實作主題。`}
+>
   <div>
     <div class="mb-8">
       <div class="mb-2 text-[13px] text-muted">
