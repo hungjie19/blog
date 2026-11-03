@@ -15,9 +15,13 @@ All tags in this repo are Title Case (see `tag-rules.md` § Normalization) — t
 Multi-word proper nouns keep internal casing rather than per-segment Title Case; acronyms are fully uppercase.
 
 - `AI` — broad category, the umbrella tag for any AI-topic post. Always kept as its own tag — never merge into a compound like `AI-Workflow` (`tag-audit.md` decision #11). **Not used on `ithome-2026-ironman` posts** (decision #12): in a series where every post is a Claude course, `AI` carries no browse value next to `Claude` and `Claude-Academy`. It stays the umbrella tag everywhere else in the corpus.
-- `LLM`, `GPT`, `Claude`, `OpenAI`, `ChatGPT` — specific models/vendors, used alongside `AI` when the post centers on a specific model.
+- `LLM`, `Claude`, `OpenAI`, `ChatGPT`, `Gemini` — specific models/vendors, used alongside `AI` when the post centers on a specific model. `GPT` was merged into `ChatGPT` (decision #14): the image-generation posts used the ChatGPT product, not the GPT model as a topic.
+- `Claude-API`, `Claude-Cowork`, `Claude-Code` — separate Claude products, each its own tag. They do not imply `Claude` (decision #18); the tag page's family row links them together.
+- `Subagent`, `Hooks`, `System-Prompt`, `Context-Engineering`, `Evals`, `Tool-Use`, `Prompt-Caching` — agent-building concepts that cross the ironman series and the agent-workflow posts.
+- `AI-Fluency` — Anthropic's AI Fluency framework/course family (5 course posts + roadmap/learning-path).
+- `Obsidian`, `Cmux`, `Orca`, `ADE`, `Oysterun` — named tools in the knowledge/agent-workflow posts.
 - `OpenMemory`, `MCP` — specific tools/products, used alongside `AI` and often `Memory` for OpenMemory posts.
-- `Memory` — broader browsable concept, kept distinct from `OpenMemory` (product) even when co-occurring on the same post.
+- `Memory` — broader browsable concept, kept distinct from `OpenMemory` (product) even when co-occurring on the same post. Absorbed `Cross-Memory` (decision #14).
 - `SOP` — process/methodology tag, appears alongside `AI`/`Workflow` for skill-creation posts.
 - `Skill`, `Agent` — Claude Code's named Skill feature and the general "AI agent" concept (summon-agent-*, three-accounts-one-agent-environment). Name specific product/actor concepts, not generic ability — kept in the proper-noun-adjacent list rather than being just "another Title Case word."
 - `Codex` — OpenAI's coding agent/CLI, used alongside `AI`/`Claude` in agent-comparison posts.
@@ -34,6 +38,13 @@ Multi-word proper nouns keep internal casing rather than per-segment Title Case;
 - `Cloudflare` — DNS/registrar provider.
 - `MacOS` — deliberate exception to Apple's own `macOS` branding casing; this repo's tags must start with a capital letter, so `MacOS` is the corpus-wide compromise (`tag-audit.md` decision #11). Do not "correct" it back to `macOS`.
 - `PhotoSwipe` — the lightbox library (astro-blog-image-lightbox).
+- `GitHub-Pages`, `Google-Search-Console`, `IndexNow`, `Wrangler`, `BetterDisplay` — hosting / search-console / tooling proper nouns added in decision #14.
+- `iOS` — registered lowercase-initial exception (decision #14), same reasoning as `iThome`.
+
+### Azure DevOps
+
+- `Permissions` — aggregates the `System.AccessToken` permission-troubleshooting posts (and Claude Enterprise access control). `System-AccessToken` was rejected as a tag because it is an env-var style name (`tag-rules.md` § Forbidden patterns).
+- `Pull-Request`, `Code-Review` — PR automation vs. reviewing code; related but distinct.
 
 ### Remote control vs. remote access (confirmed distinct, not a merge candidate)
 
@@ -43,4 +54,6 @@ Multi-word proper nouns keep internal casing rather than per-segment Title Case;
 
 ### Everything else
 
-All remaining tags (`Workflow`, `Blog`, `Image-Generation`, `Prompt-Engineering`, `Markdown`, `SEO`, `Self-Hosted`, `Component`, `Design`, `Dark-Mode`, `Expressive-Code`, `Image-Compression`, `Test`, `Style`, `OG-Image`, `RSS`, `AEO`, `Knowledge-Management`, `Dictation`, `Spokenly`, `Typeless`, `Whisper`, `BYOK`, `Vibe-Coding`, `Tailscale`, `SSH`, `Troubleshooting`, `Dashboard`, `Luma`, `Design`, `Product-Design`, `Event-Management`, `Growth-Strategy`, `Reverse-Engineering`, `Canvas`, `Semantic-Search`, `Cross-Memory`, `Lightbox`, `Rehype`) are generic topic/format tags with no drift or ambiguity found in the 2026-07-03 or 2026-08-02 audits — Title Case per `tag-rules.md`, no further grouping needed yet.
+Single-post tags are legitimate (decision #14) — audits merge same-concept spellings but do not retire a tag for being single-post.
+
+All other tags are generic topic/format tags with no grouping decision yet. This file does not enumerate them — the live list is `pnpm tags:check --inventory`; a hand-kept list here went stale within one audit (it still listed `Cross-Memory` and `Design` twice after decision #14).

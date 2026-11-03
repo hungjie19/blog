@@ -151,3 +151,68 @@ tags: [tag-system, blog, changelog]
 **內容**：writer 選 tag 的順序從「先讀 `canonical-tags.md`／`aliases.md`、掃全量語料 → 語意比對挑選 → 沒有才新增」改成「先只看文章內容盲寫候選 tag → 再掃語料、查 aliases 比對去重」。比對只在**同一概念的不同寫法**時改用既有 tag；相關但不同的概念、或更具體的子概念，保留為新 tag。改動檔案：`index.md` Write-time procedure、`tag-rules.md` Selection procedure 步驟 1–2，以及消費端 `to-blog` skill 的「寫 tags 前」段落。§ Selection procedure 步驟 0（不把既有的兩個正交 tag 合成複合 tag）、Title Case normalization、3–5 數量、必帶系列 tag 皆不變。
 **原因**：與 vault `~/ai_session_summary/tag-system/tag-audit.md` 決策 #11 同步（使用者要求兩邊邏輯一致）。先看清單會錨定 writer，只挑得出已存在、勉強相關的泛詞，誤殺 tag 多樣性；同義重複仍由比對階段擋住。
 **Blog 特有的取捨**：blog tag 是讀者端的瀏覽入口，新 tag 若長期只掛一篇，tag 頁價值低。這個收斂交給 `/tag-taxonomy` 低頻 audit 處理（合併或淘汰單篇 tag），不在寫入端用「先看清單」預防。
+
+### 14. 第三次完整 audit：放寬 tag 數量、具名主角必帶 tag，全站 88 篇補 tag
+
+**日期**：2026-11-03
+**觸發**：使用者發現 `obsidian-mcp-knowledge-search` 沒有 `Obsidian` tag，判斷先前規則太僵化（3–5 上限 + 偏好重用既有泛用 tag），文章應該有更多不同 tag；但「相似 tag 合成同一個」的原則維持不變，先前修的問題就是同概念出現中文／英文／近似拼法多個版本。
+**規模**：115 篇（含 1 篇 draft），105 → 150 個 tag，88 篇 frontmatter 變更（只動 `tags:`）。
+
+**規則變更（使用者確認）**：
+
+1. 描述性 tag 數量 3–5 → **3–7**；必帶系列 tag 仍不計入。
+2. **具名主角必帶 tag**：文章主題或專屬段落是某個具名產品／工具／平台時必須掛該 tag，即使全站只有這一篇；用子產品 tag 時同時帶 umbrella（`Cloudflare-Workers` + `Cloudflare`、`Claude-API` + `Claude`）。
+3. **單篇 tag 合法**：audit 只合併同概念的不同寫法，不因只有一篇就淘汰。修正決策 #13「新 tag 長期只掛一篇交給 audit 收斂」的說法。
+4. **`iOS` 登記為第二個小寫開頭例外**，理由同 `iThome`（`IOS` 讀不出產品）。
+
+**合併（同概念不同寫法）**：`macOS` → `MacOS`、`AI-Agent` → `Agent`、`Cross-Memory` → `Memory`、`GPT` → `ChatGPT`（兩篇生圖文用的是 ChatGPT 產品）。
+
+**漏掛的主角 tag**：`obsidian-mcp-knowledge-search` 等 4 篇補 `Obsidian`；`orca-ade-remote-agent-workflow` 補 `Orca`；`cloudflare-workers-d1-short-link` 補 `Cloudflare`；`typeless-reverse-engineering-dictation` 補 `Spokenly`；`building-with-the-claude-api-part4` 補 `Claude`；`agent-settings-single-source-of-truth` 等 3 篇補 `Agent`。
+
+**新增的跨篇 tag**：`Claude-API`(9)、`AI-Fluency`(7)、`Permissions`(5)、`Obsidian`/`Cmux`/`Claude-Cowork`/`Subagent`/`Hooks`/`Context-Engineering`/`Google-Search-Console`(4)、`Evals`/`GitHub-Pages`/`System-Prompt`/`Single-Source-Of-Truth`/`Dev-Server`(3)，以及其他 2 篇共用與單篇主角 tag，完整清單見 `generated/tag-candidates.md`。
+
+**移除（使用者確認）**：`betterdisplay-hidpi-2k-display` 刪 `Design`、`Workflow`（換成 `BetterDisplay`、`HiDPI`、`External-Display`）；`tailscale-dev-server-access` 刪 `Blog`；`three-accounts-one-agent-environment` 刪 `Workflow`，騰出位置給 `Multi-Account`。
+
+**刻意不做**：`System.AccessToken` 4 篇共用但屬 env-var 式名稱，改用 `Permissions` 聚合；`Blog` vs `Site-Building` 維持分家；`Test`（3）語意不一，本輪不動。
+
+**消費端**：`index.md` Write-time procedure 步驟 4、`tag-rules.md` § Selection procedure／§ Normalization／§ Mandatory series tags 已同步。`to-blog` skill 與 `~/ai_session_summary/ironman/blog-prompt.md` 若寫死 3–5，需另行同步（本次未動 `~/.claude` 與 vault）。
+
+**原因**：tag 是讀者瀏覽入口。主角產品沒有 tag，讀者從 tag 頁就找不到這篇。上限 5 加上「先重用既有 tag」的習慣，讓 writer 傾向保留 `AI`/`Workflow` 這類泛詞，具體 tag 反而被擠掉。同概念合併仍由 aliases 黑名單把關，所以放寬數量不會讓同義 tag 重新長出來。
+
+### 15. 規則類檢查改由 `pnpm tags:check` 執行，`generated/` 只留待裁決項目
+
+**日期**：2026-11-03
+**內容**：新增 `scripts/tags-check.mjs`，掛在 `pnpm build` 前面。它從 `aliases.md`、`tag-rules.md` 解析規則，不另外抄一份，檢查黑名單、Title Case 與小寫例外、描述性 tag 數量、系列必帶 tag，以及跨篇拼法漂移。`generated/tag-inventory.md` 刪除，改用 `pnpm tags:check --inventory` 即時列出；`generated/tag-candidates.md` 只放待裁決項目，不再放逐篇對照表。
+**原因**：文章破百後，逐篇對照表沒人會看，而且跟 git diff、本檔重複。黑名單、大小寫、數量這類有明確對錯的規則，script 每次跑結果都一樣，在寫錯當下就擋得住；LLM audit 只留給需要讀內文的語意判斷。決策 #14 抓到的 `macOS`、`AI-Agent` 就屬於這一類，前幾次 audit 都沒抓到。
+
+### 16. Umbrella tag 改成對照表並由 `tags:check` 強制
+
+**日期**：2026-11-03
+**內容**：決策 #14 寫了「用子產品 tag 時要連帶 umbrella」，但只寫在文字裡，結果仍有 4 篇 `Claude-Code` 文章沒掛 `Claude`。改在 `tag-rules.md` 新增 § Umbrella tags 對照表（`Claude-API`／`Claude-Code`／`Claude-Cowork`／`Claude-Academy` → `Claude`，`Cloudflare-Workers`／`Cloudflare-D1` → `Cloudflare`），由 `pnpm tags:check` 解析並擋 build。不採「凡是 `X-Y` 都要帶 `X`」的通則：`AI-Fluency` 不是 `AI` 的子產品（鐵人賽系列還刻意不掛 `AI`，決策 #12），`GitHub-Pages` 文章講的是 hosting，不是 GitHub。
+**修正的 4 篇**：`agent-project-instructions`、`codex-remote-connections-vs-claude-code` 直接補 `Claude`。`azure-devops-pipeline-claude-code-pr-review`、`orca-company-account-openclaude-shim` 原本已有 7 個描述性 tag，補上後會超過上限，所以各拿掉一個在決策 #14 新加、相對次要的 tag：前者拿掉 `Prompt-Injection`（全站只有這篇在用），後者拿掉 `Hooks`（這篇的主題是多帳號；`Hooks` 還有 3 篇）。作者原本的 tag 沒動。
+**原因**：只寫在文字裡的規則抓不到違規，這 4 篇就是證明。改成表格交給 script 檢查，umbrella tag 頁才能完整列出整個產品家族的文章。
+
+### 17. 第一次用 `--suggest` 檢查：標題點名但沒掛的 tag
+
+**日期**：2026-11-03
+**內容**：`pnpm tags:check --suggest` 列出 21 篇，逐筆判斷後只改 5 篇：`claude-dispatch-cowork-code`、`oysterun-tailscale-remote-ai` 補 `Claude-Code`（文章講的就是派工或遠端控制 Claude Code；Cowork／Codex 已有掛，補上才對稱）；`aeo-answer-first-summary` 補 `Agent`（主題是內容怎麼給 Agent 讀）；`summon-agent-skill`、`summon-agent-script` 補 `Skill`，標題的主題就是 Skill，但兩篇都已滿 7 個，所以拿掉決策 #14 新加的 `Orchestration`（現在只剩 `orca-cli-agent-launch` 在用）。
+**刻意不改**：標題裡的 `Blog` 多半是泛稱，`Blog` tag 指的是寫作與經營部落格；`Wiki` 指 Azure DevOps Wiki，LLM Wiki 文章已有 `LLM-Wiki`，不混用；「問題不在 DNS」是否定句；其他只是順帶提到。
+**原因**：`--suggest` 只負責找候選，要不要掛仍看文章主題（`tag-rules.md` § Selection procedure 步驟 4）。
+
+### 18. 撤銷 umbrella tag（推翻決策 #16 與 #14 的 umbrella 附註），改用 tag 頁的家族列
+
+**日期**：2026-11-04
+**內容**：使用者指出 `Claude-Code`、`Claude-API`、`Claude-Cowork`、`Claude-Academy`、`Cloudflare-Workers`、`Cloudflare-D1` 本來就是不同的產品，硬加 `Claude`／`Cloudflare` 是把「同品牌」當成「同概念」，違反「同概念合併、不同概念分開」的原則。`Claude-Academy` 是學習平台，連 Claude 的子產品都不算。已執行：
+
+- 刪除 `tag-rules.md` § Umbrella tags 與 `tags:check` 的 umbrella 檢查。步驟 4 改寫為：子產品 tag 各自獨立，只有文章在講 Claude 本身時才掛 `Claude`。
+- #16 改過的 4 篇還原：拿掉 `Claude`，加回 `azure-devops-pipeline-claude-code-pr-review` 的 `Prompt-Injection` 與 `orca-company-account-openclaude-shim` 的 `Hooks`。
+- #14 當時補 umbrella 的兩篇維持不動：`building-with-the-claude-api-part4` 的 `Claude`（同系列其他 7 篇都是作者自己掛的）、`cloudflare-workers-d1-short-link` 的 `Cloudflare`（另一篇 Workers 文章也是作者自己同時掛了 `Cloudflare` 和 `Cloudflare-Workers`）。
+
+**取代方案**：umbrella 想解決的是「從品牌找到所有子產品」，這件事改由 tag 頁處理。名稱第一段相同的 tag 視為同一家族（`Claude`、`Claude-Code`、`Claude-API`…），在 tag 頁標題下方列成一排 tab，直接切換。不需要對照表，每篇文章也不用多掛 tag。
+**原因**：umbrella 讓每篇的 tag 數量膨脹，還會吃掉 3–7 的名額（#16 為此拿掉了兩個真正描述內容的 tag），而且 `#Claude` 頁會被灌進講別的產品的文章，失去區辨力。這跟決策 #12 在鐵人賽系列拿掉 `AI` 是同一個問題。
+
+### 19. 退役 `Test`，無替代
+
+**日期**：2026-11-04
+**內容**：`Test` 由測試頁 `markdown-style-test` 的小寫 `test` 演變而來，後來被三篇文章各自拿去指不同的事：`aeo-seo-performance-audit` 是效能檢測（已有 `Web-Performance`），`ai-fluency-for-builders` 是課程裡的驗收與使用者測試，`bing-site-scan-draft-feature` 是為了排除測試文章做出 draft 機制。三篇都不是在講軟體測試。使用者確認三篇都移除，登記到 `aliases.md` 的 Retired without replacement。
+**原因**：讀者點 `#Test` 預期看到軟體測試的文章，實際得到三篇毫無共通點的文章。將來真的寫軟體測試主題時，再開一個語意明確的 tag（例如 `Testing`）。

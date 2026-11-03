@@ -1,6 +1,6 @@
 # Blog Tag System — Writer Entrypoint
 
-This file is the single source of routing for blog tag governance. Writers (`create-my-blog`, manual edits) enter here before writing frontmatter tags. Do not read `tag-audit.md` or `generated/` for write-time tag selection — those are audit history and disposable artifacts, not writer inputs.
+This file is the single source of routing for blog tag governance. Writers (the `to-blog` skill, manual edits) enter here before writing frontmatter tags. Do not read `tag-audit.md` or `generated/` for write-time tag selection — those are audit history and disposable artifacts, not writer inputs.
 
 ## File roles
 
@@ -11,7 +11,7 @@ This file is the single source of routing for blog tag governance. Writers (`cre
 | `canonical-tags.md` | Writers + auditors | Taxonomy direction groups (grows from audits) |
 | `aliases.md` | Writers + auditors | Preferred/alias mappings, retired categories, pending-decision pairs |
 | `tag-audit.md` | Auditors only (`tag-taxonomy` skill) | Append-only decision log |
-| `generated/` | Auditors only (`tag-taxonomy` skill) | Disposable audit artifacts (inventory, candidates), regenerated each audit |
+| `generated/` | Auditors only (`tag-taxonomy` skill) | `tag-candidates.md` exists only while items await a decision (absent = nothing pending); inventory comes from `pnpm tags:check --inventory` |
 
 ## Corpus source
 
@@ -21,9 +21,15 @@ Full existing tag inventory for this repo comes from scanning frontmatter direct
 src/content/blog/**/index.{md,mdx}
 ```
 
-Both extensions are real content — `src/content.config.ts` loads the collection with glob pattern `**/*.{md,mdx}`, and at least one published post (`local-whisper-dictation-cost`) is `.mdx`. A scan that only matches `index.md` silently misses `.mdx` posts and their tags (`tag-audit.md` decision #11).
+`src/content.config.ts` loads the collection with glob pattern `**/*.{md,mdx}`. Every post is `.mdx` today (`CLAUDE.md` § 文章結構), but scans keep matching both extensions — a scan that matched only one silently missed posts once (`tag-audit.md` decision #11).
 
-Read the `tags:` field of each post's frontmatter. Do **not** use `mcp__obsidian__list_all_tags` — that only sees the Obsidian vault, not this Astro repo (see `tag-audit.md` decision #2).
+Read the `tags:` field of each post's frontmatter — or run `pnpm tags:check --inventory` for the live list with counts. Do **not** use `mcp__obsidian__list_all_tags` — that only sees the Obsidian vault, not this Astro repo (see `tag-audit.md` decision #2).
+
+## Mechanical check
+
+`pnpm tags:check` (`scripts/tags-check.mjs`) runs before every `pnpm build`, so a violation fails the deploy. It parses the rules from this folder rather than duplicating them: the `aliases.md` blacklist, the descriptive-tag range and lowercase-initial exceptions in `tag-rules.md`, the mandatory series tags table, plus spelling drift across the corpus (`macOS` vs `MacOS`, `Agent` vs `Agents`). Keep the wording it parses intact: "Apply N–M descriptive tags", "**Registered lowercase-initial exceptions: …**", and the section headings it reads.
+
+For audits, `pnpm tags:check --suggest` lists posts whose title names an existing tag they do not carry. It never fails and is noisy on purpose (`Blog` in a title rarely means the `Blog` tag); the auditor decides which hits are real missing-subject tags.
 
 ## Write-time procedure
 
@@ -34,7 +40,7 @@ Read the `tags:` field of each post's frontmatter. Do **not** use `mcp__obsidian
 3. **Reconcile.** Scan the corpus source above for the live full inventory (no count thresholds, no pick-N quotas), and check `aliases.md` / `canonical-tags.md`. For each candidate:
    - **Same concept, different spelling** (casing, singular/plural, hyphenation, an obvious synonym, a confirmed alias) → use the existing tag.
    - **Related but different concept, or a more specific sub-concept** → keep the candidate as a new tag. Do not fall back to a merely nearby existing tag.
-4. Apply 3–5 tags per post, following `tag-rules.md` normalization.
+4. Apply 3–7 descriptive tags per post (mandatory series tags not counted), following `tag-rules.md` normalization. A named product/tool that is the post's subject must be tagged even if it is new to the corpus (`tag-rules.md` § Selection procedure step 4).
 
 ## Governance
 
