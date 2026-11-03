@@ -7,7 +7,7 @@
 - 網址：`https://jasperhung.dev`
 - DNS：Cloudflare Registrar + Proxy，SSL/TLS Full
 - Package manager：pnpm
-- Analytics：Umami Cloud（只在 production 載入，script 在 `BlogLayout.astro`）。新增可點擊元素時加 `data-umami-event`，非點擊行為用 `window.umami?.track()`；JS 會攔截點擊的連結（燈箱、複製連結）也改用 `window.umami?.track()`，因為帶 `data-umami-event` 的 `<a>` 會被 Umami 直接導向 href；事件名 kebab-case `<動作>-<目標>[-<位置>]`，例如 `click-about-sidebar`、`copy-heading-link`；同一種元素出現在多個位置時沿用同一個事件名，位置用 `data-umami-event-location` 區分（例如 tag pill 一律 `click-tag-pill`，location 為 `post`／`sidebar`／`home`／`tags-index`），舊事件的統計才不會斷掉
+- Analytics：Umami Cloud（只在 production 載入，script 在 `BlogLayout.astro`）。新增可點擊元素時加 `data-umami-event`，非點擊行為用 `window.umami?.track()`；JS 會攔截點擊的連結（燈箱、複製連結）也改用 `window.umami?.track()`，因為帶 `data-umami-event` 的 `<a>` 會被 Umami 直接導向 href；事件名 kebab-case `<動作>-<目標>[-<位置>]`，例如 `click-about-sidebar`、`copy-heading-link`；同一種元素出現在多個位置時沿用同一個事件名，位置用 `data-umami-event-location` 區分（例如 tag pill 一律 `click-tag-pill`，location 為 `post`／`sidebar`／`home`／`tags-index`／`tag-family`），舊事件的統計才不會斷掉
 
 ## CSS / Tailwind 樣式架構
 

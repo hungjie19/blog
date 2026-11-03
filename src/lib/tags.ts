@@ -23,6 +23,21 @@ export function getTags(posts: CollectionEntry<'blog'>[]): Tag[] {
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
+/**
+ * Tags sharing the first name segment form a family: `Claude`, `Claude-Code`, `Claude-API`, … all
+ * belong to `Claude`. Tag pages show the family as a row of pills so readers can switch between
+ * related tags without going back to the full /tags/ cloud. The family includes `tag` itself and is
+ * ordered the same on every member page (the bare root first, then by post count), so the row does
+ * not reshuffle when switching. Returns [] when the tag has no relatives.
+ */
+export function getTagFamily(tag: string, tags: Tag[]): Tag[] {
+  const root = tag.split('-')[0];
+  const family = tags
+    .filter(t => t.label.split('-')[0] === root)
+    .sort((a, b) => Number(b.label === root) - Number(a.label === root) || b.count - a.count || a.label.localeCompare(b.label));
+  return family.length > 1 ? family : [];
+}
+
 /** How many of the newest posts feed the sidebar's "what I'm writing about lately" tags. */
 export const RECENT_TAG_POSTS = 5;
 

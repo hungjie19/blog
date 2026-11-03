@@ -35,36 +35,3 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
     </div>
   </div>
 </BlogLayout>
-
-<style>
-  /* wrap 的 chips：count 緊貼 tag、無底線、無滿版分隔列 */
-  .tags-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .tag-pill {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 8px;
-    background: var(--surface);
-    text-decoration: none;
-    transition: background 150ms ease;
-  }
-
-  .tag-pill:hover { background: var(--border); }
-
-  .tag-name {
-    font-size: 14px;
-    color: var(--accent-muted);
-  }
-
-  .tag-count {
-    font-size: 12px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-</style>

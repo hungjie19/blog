@@ -176,4 +176,37 @@
   }
   .toast-icon { display: flex; flex-shrink: 0; }
   .toast-icon--success { color: var(--success); }
+
+  /* Tag pills: /tags/ index cloud and the family row on each tag page (src/pages/tags/) */
+  .tags-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    text-decoration: none;
+    transition: background 150ms ease;
+  }
+  .tag-pill:hover { background: var(--border); }
+  .tag-name {
+    font-size: 14px;
+    color: var(--accent-muted);
+  }
+  .tag-count {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  /* The tag page you are on, inside its family row */
+  .tag-pill[aria-current="page"] {
+    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+    pointer-events: none;
+  }
+  .tag-pill[aria-current="page"] .tag-name { color: var(--accent); }
 }
