@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "astro dev",
     "check": "astro check",
-    "build": "astro build",
+    "build": "node scripts/tags-check.mjs && astro build",
+    "tags:check": "node scripts/tags-check.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "watermark": "node scripts/watermark-image.mjs",
