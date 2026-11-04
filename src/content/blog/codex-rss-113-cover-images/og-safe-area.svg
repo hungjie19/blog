@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" role="img" aria-labelledby="title desc">
+  <title id="title">OG 封面圖中央 70% 安全區</title>
+  <desc id="desc">1200 乘 630 的 OG 畫布左右兩側各為 15% 邊緣緩衝；中央 70% 寬、840 乘 630，是 4 比 3 縮圖的安全區。</desc>
+  <rect width="1000" height="560" rx="22" fill="#111827"/>
+  <text x="54" y="61" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="27" font-weight="650">4:3 安全區 = OG 畫布中央 70%</text>
+  <text x="54" y="94" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="17">1200×630 · 比例約 1.91:1</text>
+
+  <rect x="120" y="119" width="760" height="399" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <rect x="120" y="119" width="114" height="399" fill="#334155" fill-opacity="0.72"/>
+  <rect x="766" y="119" width="114" height="399" fill="#334155" fill-opacity="0.72"/>
+  <rect x="234" y="119" width="532" height="399" fill="#2563eb" fill-opacity="0.22" stroke="#60a5fa" stroke-width="3"/>
+
+  <text x="177" y="304" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="17" font-weight="650">15%</text>
+  <text x="177" y="331" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">邊緣緩衝</text>
+  <text x="823" y="304" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="17" font-weight="650">15%</text>
+  <text x="823" y="331" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="14">邊緣緩衝</text>
+  <text x="500" y="295" text-anchor="middle" fill="#eff6ff" font-family="system-ui, sans-serif" font-size="23" font-weight="700">中央 70% 寬度</text>
+  <text x="500" y="329" text-anchor="middle" fill="#bfdbfe" font-family="system-ui, sans-serif" font-size="18">840×630 · 4:3 核心安全區</text>
+  <text x="500" y="493" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="15">重要文字、主角與 Logo 放在藍色範圍內</text>
+</svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" role="img" aria-labelledby="title desc">
+  <title id="title">封面圖裁切與縮圖範圍</title>
+  <desc id="desc">1672 乘 941 的原圖，上方裁掉 63 像素後成為 1200 乘 630 的 Open Graph 畫布；中央 840 乘 630 區域用於 4 比 3 縮圖，右下角浮水印保留在畫布外側。</desc>
+  <rect width="1000" height="470" rx="22" fill="#111827"/>
+  <text x="52" y="58" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="27" font-weight="650">從 16:9 原圖產生 OG 與縮圖</text>
+  <text x="52" y="91" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="17">示意按比例繪製；裁切後輸出為 1200×630</text>
+
+  <text x="80" y="129" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="17" font-weight="600">原圖 1672×941（16:9）</text>
+  <rect x="80" y="145" width="600" height="337.5" fill="#243449" stroke="#64748b" stroke-width="2"/>
+  <rect x="80" y="145" width="600" height="23" fill="#9f4653"/>
+  <text x="94" y="163" fill="#fff1f2" font-family="system-ui, sans-serif" font-size="14" font-weight="650">裁掉上方 63px</text>
+
+  <rect x="170" y="168" width="420" height="314.5" fill="#60a5fa" fill-opacity="0.16" stroke="#60a5fa" stroke-width="3"/>
+  <text x="380" y="302" text-anchor="middle" fill="#eff6ff" font-family="system-ui, sans-serif" font-size="22" font-weight="700">4:3 縮圖範圍</text>
+  <text x="380" y="330" text-anchor="middle" fill="#bfdbfe" font-family="system-ui, sans-serif" font-size="17">中央 70% · 840×630</text>
+  <text x="650" y="465" text-anchor="end" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="13">jasperhung.dev</text>
+  <line x1="648" y1="448" x2="593" y2="431" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <line x1="715" y1="305" x2="795" y2="305" stroke="#60a5fa" stroke-width="4"/>
+  <path d="M795 305l-13-9v18z" fill="#60a5fa"/>
+  <text x="758" y="281" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="14">輸出裁切</text>
+
+  <rect x="815" y="193" width="140" height="105" rx="8" fill="#1e293b" stroke="#60a5fa" stroke-width="2"/>
+  <text x="885" y="238" text-anchor="middle" fill="#eff6ff" font-family="system-ui, sans-serif" font-size="16" font-weight="700">4:3</text>
+  <text x="885" y="263" text-anchor="middle" fill="#bfdbfe" font-family="system-ui, sans-serif" font-size="13">480×360</text>
+</svg>
