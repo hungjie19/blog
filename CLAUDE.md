@@ -85,6 +85,7 @@ seriesOrder: 1
 ---
 ```
 
+- `title`：改既有文章的 title 一律走 `retitle-post` skill，description、ogTitle、KeyTakeaways、tags、slug 會一起對齊
 - `date`：ISO 8601，寫完文章 commit 前跑 `date +"%Y-%m-%dT%H:%M:%S+08:00"` 取當下時間填入；同一天多篇靠時間排序；排序與 JSON-LD `datePublished` 都靠這個
 - `description`：必填，OG / Twitter Card / JSON-LD 都會用到
 - `tags`：必填，描述性 tag 3–7 個（系列必帶 tag 另計），Title Case kebab-case 英文。選法、大小寫例外、黑名單都在 `tag-system/index.md`（writer 入口），不要憑範本或記憶選。`pnpm build` 前會先跑 `pnpm tags:check`，違規就 build 失敗。
