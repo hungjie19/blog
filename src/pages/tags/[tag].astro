@@ -26,7 +26,7 @@ const description = `Jasper Hung 部落格中標記 ${tag} 的 ${posts.length} �
 const noindex = posts.length < MIN_INDEXED_TAG_POSTS;
 ---
 
-<BlogLayout title={`#${tag}`} {metaTitle} {description} {noindex} canonicalPath={`/tags/${tag}/`}>
+<BlogLayout title={`#${tag}`} {metaTitle} {description} {noindex} canonicalPath={`/tags/${tag}/`} ogImageUrl="/images/tags/og.jpg">
   <div>
     <div class="mb-8">
       <div class="mb-2 text-[13px] text-muted">

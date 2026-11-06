@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OG Preview</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f4f5f7; --fg:#1b1d21; --muted:#6b7280; --card:#fff; --line:#e3e5e8; --warn:#b45309; --bad:#b91c1c; --ok:#15803d; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111214; --fg:#e8e9eb; --muted:#9aa0a8; --card:#1a1c1f; --line:#2b2e33; --warn:#fbbf24; --bad:#f87171; --ok:#4ade80; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .bar { display:grid; gap:8px; grid-template-columns: 1fr; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:24px; }
+  .bar label { font-size:12px; color:var(--muted); display:block; margin-bottom:2px; }
+  .bar input[type=text], .bar textarea { width:100%; font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit; }
+  .bar textarea { height: 96px; font-family: ui-monospace,Menlo,monospace; font-size:12px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  button { font:inherit; padding:6px 12px; border-radius:6px; border:1px solid var(--line); background:var(--fg); color:var(--bg); cursor:pointer; }
+  button.ghost { background:transparent; color:var(--fg); }
+  .page { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:20px; }
+  .page h2 { font-size:15px; margin:0 0 4px; word-break:break-all; }
+  .notes { font-size:12px; margin:0 0 12px; display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); }
+  .notes .warn { color:var(--warn); } .notes .bad { color:var(--bad); } .notes .ok { color:var(--ok); }
+  .cards { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; }
+  .slot { flex: 0 0 auto; max-width:100%; }
+  .slot > small { display:block; color:var(--muted); font-size:11px; margin-bottom:6px; letter-spacing:.04em; }
+  .ratio { position:relative; width:100%; overflow:hidden; background:#ddd; }
+  .ratio img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .trunc { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .clamp { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
+
+  /* Facebook */
+  .fb { width:524px; max-width:100%; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .fb .ratio { padding-top:52.5%; }
+  .fb .t { background:#F0F2F5; padding:10px 16px 6px; }
+  .fb .d { color:#65686C; text-transform:uppercase; font-size:13px; line-height:12px; margin-bottom:4px; }
+  .fb .h { color:#080809; font-weight:600; font-size:17px; line-height:21px; }
+  /* X */
+  .x { width:438px; max-width:100%; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .x .box { position:relative; overflow:hidden; border-radius:16px; border:1px solid #e1e8ed; }
+  .x .ratio { padding-top:52.33%; }
+  .x .tag { position:absolute; left:12px; bottom:12px; max-width:calc(100% - 24px); background:rgba(0,0,0,.75); color:#fff; border-radius:2px; padding:0 8px; font-size:13px; }
+  .x .from { margin-top:4px; color:#536471; font-size:13px; }
+  /* LinkedIn */
+  .li { width:526px; max-width:100%; background:#fff; border:1px solid #8c8c8c33; border-radius:8px; padding:12px; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .li .in { display:flex; gap:12px; align-items:stretch; }
+  .li .th { flex:0 0 128px; height:72px; border-radius:8px; overflow:hidden; position:relative; background:#ddd; }
+  .li .th img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .li .tx { min-width:0; flex:1; display:flex; flex-direction:column; justify-content:center; }
+  .li .h { color:#000000e6; font-weight:600; font-size:14px; line-height:20px; margin-bottom:4px; -webkit-line-clamp:2; }
+  .li .d { color:#00000099; font-size:12px; line-height:16px; }
+  /* WhatsApp */
+  .wa { width:340px; max-width:100%; overflow:hidden; border-radius:7.5px; border:1px solid #e9edef; background:#daf0cb; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+  .wa > img { display:block; width:100%; }
+  .wa .b { padding:10px 12px; }
+  .wa .h { color:#111b21; font-weight:600; font-size:13px; line-height:19px; margin-bottom:6px; -webkit-line-clamp:5; }
+  .wa .p { color:#727f6e; font-weight:500; font-size:12px; line-height:17px; margin-bottom:6px; -webkit-line-clamp:5; }
+  .wa .f { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#727f6e; font-weight:500; font-size:11px; line-height:16px; }
+  .wa .f img { width:16px; height:16px; flex:none; }
+  /* Discord */
+  .dc { width:432px; max-width:100%; overflow:hidden; border-radius:3px; border:1px solid #dfdfe1; border-left:4px solid #dfdfe1; background:#fff; font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+  .dc .b { padding:16px 16px 0 12px; display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .dc .s { color:#2c2d32; font-size:12px; }
+  .dc .h { color:#3a68db; font-weight:600; font-size:16px; -webkit-line-clamp:2; }
+  .dc .p { color:#2c2d32; font-size:14px; }
+  .dc .im { margin:0 12px 16px; border-radius:3px; overflow:hidden; }
+  .dc .im img { display:block; width:100%; max-height:300px; object-fit:cover; }
+  .sq { width:252px; height:252px; border-radius:8px; overflow:hidden; border:1px solid var(--line); background:#ddd; }
+  .sq img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
+  .err { color:var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OG Preview</h1>
+  <div class="bar">
+    <div>
+      <label for="base">站台網址（預設為目前網域；圖片與 favicon 會改讀這個網域。想看線上就填 https://jasperhung.dev）</label>
+      <input id="base" type="text" value="https://jasperhung.dev">
+    </div>
+    <div>
+      <label for="paths">要檢查的路徑（一行一個，可含完整網址）</label>
+      <textarea id="paths">/
+/about/
+/tags/
+/series/
+/series/openmemory/</textarea>
+    </div>
+    <div class="row">
+      <button id="go">檢查</button>
+      <button id="sitemap" class="ghost">從 sitemap 載入全部頁面</button>
+      <label style="margin:0"><input type="checkbox" id="rewrite" checked> 圖片改讀上面的網域</label>
+      <span id="status" style="color:var(--muted);font-size:12px"></span>
+    </div>
+  </div>
+  <div id="out"></div>
+</div>
+
+<script>
+const PROD = 'https://jasperhung.dev';
+// Served by the dev server at /og-preview → inspect that same origin. Opened as a file → production.
+if (/^https?:/.test(location.protocol)) document.querySelector('#base').value = location.origin;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const meta = (doc, key) => doc.querySelector(`meta[property="${key}"],meta[name="${key}"]`)?.content?.trim() || '';
+
+function fix(url, base) {
+  if (!url) return '';
+  if (!$('#rewrite').checked) return url;
+  try { const u = new URL(url, base); if (u.origin === PROD) return base + u.pathname + u.search; } catch {}
+  return url;
+}
+
+async function inspect(path, base) {
+  const url = /^https?:/.test(path) ? path : base + (path.startsWith('/') ? path : '/' + path);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  const rawImg = meta(doc, 'og:image') || meta(doc, 'twitter:image');
+  const pageUrl = meta(doc, 'og:url') || url;
+  let host = ''; try { host = new URL(pageUrl).hostname; } catch {}
+  return {
+    url, host, rawImg,
+    img: fix(rawImg, base),
+    title: meta(doc, 'og:title') || doc.title,
+    desc: meta(doc, 'og:description') || meta(doc, 'description'),
+    site: meta(doc, 'og:site_name') || host,
+    card: meta(doc, 'twitter:card'),
+    favicon: fix(doc.querySelector('link[rel~="icon"]')?.getAttribute('href') || '/favicon.ico', base),
+  };
+}
+
+function cards(p) {
+  const t = esc(p.title), d = esc(p.desc), h = esc(p.host), im = esc(p.img);
+  return `
+  <div class="slot"><small>FACEBOOK / THREADS</small><div class="fb"><div class="ratio"><img src="${im}" alt=""></div><div class="t"><div class="d trunc">${h}</div><div class="h trunc">${t}</div></div></div></div>
+  <div class="slot"><small>X</small><div class="x"><div class="box"><div class="ratio"><img src="${im}" alt=""></div><div class="tag trunc">${t}</div></div><div class="from">From ${h}</div></div></div>
+  <div class="slot"><small>DISCORD</small><div class="dc"><div class="b"><div class="s">${esc(p.site)}</div><div class="h clamp">${t}</div><div class="p">${d}</div></div><div class="im"><img src="${im}" alt=""></div></div></div>
+  <div class="slot"><small>WHATSAPP</small><div class="wa"><img src="${im}" alt=""><div class="b"><div class="h clamp">${t}</div><div class="p clamp">${d}</div><div class="f"><div class="trunc">${h}</div><img src="${esc(p.favicon)}" alt=""></div></div></div></div>
+  <div class="slot"><small>LINKEDIN</small><div class="li"><div class="in"><div class="th"><img src="${im}" alt=""></div><div class="tx"><div class="h clamp">${t}</div><div class="d trunc">${h}</div></div></div></div></div>
+  <div class="slot"><small>1:1 中央裁切（Slack／LINE 等小方圖）</small><div class="sq"><img src="${im}" alt=""></div></div>`;
+}
+
+function checks(p, section) {
+  const notes = section.querySelector('.notes');
+  const add = (cls, txt) => notes.insertAdjacentHTML('beforeend', `<span class="${cls}">${txt}</span>`);
+  if (!p.rawImg) return add('bad', '✗ 沒有 og:image');
+  if (!/^https?:\/\//.test(p.rawImg)) add('bad', '✗ og:image 不是絕對網址');
+  if (/\/og\/default\.png/.test(p.rawImg)) add('warn', '⚠ 用的是 default.png fallback');
+  if (p.card !== 'summary_large_image') add('warn', `⚠ twitter:card = ${esc(p.card || '(無)')}`);
+  const i = new Image();
+  i.onload = () => {
+    const ratio = (i.naturalWidth / i.naturalHeight).toFixed(2);
+    const okSize = i.naturalWidth === 1200 && i.naturalHeight === 630;
+    add(okSize ? 'ok' : 'warn', `${okSize ? '✓' : '⚠'} ${i.naturalWidth}×${i.naturalHeight}（${ratio}:1）`);
+  };
+  i.onerror = () => add('bad', '✗ 圖片載入失敗');
+  i.src = p.img;
+}
+
+async function run(paths) {
+  const base = $('#base').value.trim().replace(/\/$/, '');
+  const out = $('#out'); out.innerHTML = '';
+  let n = 0;
+  for (const path of paths) {
+    const sec = document.createElement('section'); sec.className = 'page';
+    sec.innerHTML = `<h2>${esc(path)}</h2><div class="notes"></div><div class="cards"><span style="color:var(--muted)">載入中…</span></div>`;
+    out.appendChild(sec);
+    try {
+      const p = await inspect(path, base);
+      sec.querySelector('h2').innerHTML = `${esc(path)} <span style="font-weight:400;color:var(--muted)">— ${esc(p.title)}</span>`;
+      sec.querySelector('.cards').innerHTML = cards(p);
+      checks(p, sec);
+    } catch (e) {
+      sec.querySelector('.cards').innerHTML = `<span class="err">抓取失敗：${esc(e.message)}（本地 dev 會被 CORS 擋）</span>`;
+    }
+    $('#status').textContent = `${++n} / ${paths.length}`;
+  }
+}
+
+const list = () => $('#paths').value.split('\n').map((s) => s.trim()).filter(Boolean);
+$('#go').onclick = () => run(list());
+$('#sitemap').onclick = async () => {
+  const base = $('#base').value.trim().replace(/\/$/, '');
+  $('#status').textContent = '讀取 sitemap…';
+  try {
+    const idx = new DOMParser().parseFromString(await (await fetch(base + '/sitemap-index.xml')).text(), 'text/xml');
+    let urls = [];
+    for (const loc of idx.querySelectorAll('sitemap > loc')) {
+      const sm = new DOMParser().parseFromString(await (await fetch(loc.textContent.replace(PROD, base))).text(), 'text/xml');
+      urls.push(...[...sm.querySelectorAll('url > loc')].map((l) => new URL(l.textContent).pathname));
+    }
+    $('#paths').value = urls.join('\n');
+    $('#status').textContent = `已載入 ${urls.length} 頁，按「檢查」`;
+  } catch (e) { $('#status').textContent = 'sitemap 讀取失敗：' + e.message; }
+};
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 // @ts-check
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
 import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
@@ -19,6 +20,21 @@ const thinTagPaths = new Set(
     .filter(([, n]) => n < MIN_INDEXED_TAG_POSTS)
     .map(([tag]) => `/tags/${tag}/`),
 );
+
+// Dev-only: serves ./og-preview.html at /og-preview (same origin as the pages it inspects).
+// `configureServer` never runs during `astro build`, so nothing reaches dist/.
+function ogPreviewDevPage() {
+  return {
+    name: 'og-preview-dev-page',
+    configureServer(server) {
+      server.middlewares.use('/og-preview', (req, res, next) => {
+        if (req.url && req.url !== '/' && !req.url.startsWith('/?')) return next();
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(readFileSync(new URL('./og-preview.html', import.meta.url), 'utf8'));
+      });
+    },
+  };
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -55,6 +71,6 @@ export default defineConfig({
     rehypePlugins: [rehypeFigureCaption, rehypeWrapTables],
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss(), ogPreviewDevPage()],
   }
 });
