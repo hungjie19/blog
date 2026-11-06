@@ -4,6 +4,7 @@ import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
 import KeyTakeaways from "../../components/KeyTakeaways.astro";
+import { Sparkles } from "@lucide/astro";
 import { getSeries, seriesLabel, sortSeriesEntries } from "../../lib/series";
 
 export async function getStaticPaths() {
@@ -66,6 +67,18 @@ const chineseChars = (text.match(/[一-鿿]/g) ?? []).length;
 const englishWords = (text.match(/[a-zA-Z]+/g) ?? []).length;
 const minutes = Math.max(1, Math.ceil(chineseChars / 400 + englishWords / 200));
 const readingTime = `約 ${minutes} 分鐘`;
+
+// 「貼給 AI 整理」：.md 給 AI 讀，帶結尾斜線的正式網址給 AI 引用署名（對齊 canonical）
+const aiPromptSlug = post.id;
+const aiPrompt = `請閱讀這篇文章，並用我習慣的語言幫我整理：
+https://jasperhung.dev/posts/${aiPromptSlug}.md
+
+1. 用三句話說明它在解決什麼問題
+2. 列出關鍵做法，以及我可以直接照做的步驟
+3. 指出適用情境與限制
+
+之後如果引用文章內容回答我，請註明出處：
+《${post.data.title}》，Jasper Hung — https://jasperhung.dev/posts/${aiPromptSlug}/`;
 ---
 
 <BlogLayout
@@ -115,6 +128,10 @@ const readingTime = `約 ${minutes} 分鐘`;
             </a>
           ))
         }
+        <button type="button" class="ai-prompt-btn" data-ai-prompt={aiPrompt} data-slug={aiPromptSlug}>
+          <Sparkles size={16} aria-hidden="true" />
+          <span class="ai-prompt-label">貼給 AI 整理</span>
+        </button>
       </div>
     </div>
 
@@ -285,6 +302,21 @@ const readingTime = `約 ${minutes} 分鐘`;
       heading.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
 
       window.umami?.track('copy-heading-link', { heading: heading.id });
+    });
+  }
+
+  const aiBtn = document.querySelector<HTMLButtonElement>('.ai-prompt-btn');
+  if (aiBtn) {
+    const label = aiBtn.querySelector<HTMLElement>('.ai-prompt-label');
+    let resetTimer: number | undefined;
+    aiBtn.addEventListener('click', async () => {
+      const copied = await copyWithToast(aiBtn.dataset.aiPrompt ?? '', '已複製，去貼給 AI');
+      if (!copied) return;
+      window.umami?.track('copy-ai-prompt', { slug: aiBtn.dataset.slug, location: 'post' });
+      if (!label) return;
+      label.textContent = '已複製，去貼給 AI';
+      window.clearTimeout(resetTimer);
+      resetTimer = window.setTimeout(() => { label.textContent = '貼給 AI 整理'; }, 2500);
     });
   }
 </script>

@@ -18,6 +18,10 @@
   --color-accent:       #60a5fa;
   --color-accent-muted: color-mix(in srgb, var(--color-accent) 65%, var(--color-muted));
   --color-link:         #0284c7;
+  /* AI prompt button gradient border (Gemini-style) */
+  --color-ai-from:      #60a5fa;
+  --color-ai-via:       #a78bfa;
+  --color-ai-to:        #f472b6;
   /* success feedback (toast check icon) */
   --color-success:      #16a34a;
 }
@@ -150,6 +154,39 @@
 }
 
 @layer components {
+  /* 「貼給 AI 整理」pill：平常靜止的漸層邊框，hover 流動一圈 */
+  .ai-prompt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 5px 13px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--bg), var(--bg)) padding-box,
+      linear-gradient(110deg, var(--color-ai-from), var(--color-ai-via), var(--color-ai-to), var(--color-ai-from)) border-box;
+    background-size: 100% 100%, 300% 100%;
+    transition: box-shadow 0.25s ease;
+  }
+  .ai-prompt-btn:hover,
+  .ai-prompt-btn:focus-visible {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--color-ai-via) 35%, transparent);
+    animation: ai-flow 1.4s ease-in-out;
+  }
+  @keyframes ai-flow {
+    from { background-position: 0 0, 0% 0; }
+    to   { background-position: 0 0, 100% 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-prompt-btn:hover,
+    .ai-prompt-btn:focus-visible { animation: none; }
+  }
+
   /* Status toast (src/lib/toast.ts): right under the 48px topbar, where the eye is after clicking a topbar icon or heading */
   .toast {
     display: flex;
