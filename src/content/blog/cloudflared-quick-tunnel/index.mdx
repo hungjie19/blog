@@ -1,0 +1,135 @@
+---
+title: "Cloudflared：免登入 Cloudflare Tunnel 快速穿透本機服務"
+date: 2026-11-07T13:38:11+08:00
+description: "Cloudflared 的 Quick Tunnels 免登入、免改路由器，一行指令就能把 localhost 變成公開 HTTPS 網址。整理臨時 Demo、雲端 AI 串接本機 MCP、Webhook 除錯三個實用場景，以及它不適合長期使用的原因。"
+tags:
+  - Cloudflared
+  - Cloudflare
+  - MCP
+  - DevOps
+cover: true
+---
+
+<KeyTakeaways>
+  <p>如何在不設定路由器 port forwarding 或固定 IP 的情況下將本地服務暴露給外網？使用 cloudflared Quick Tunnels 一行指令即可建立臨時 HTTPS 隧道；適用於臨時展示、外部 Webhook 除錯與遠端 AI 連線本機 MCP。</p>
+</KeyTakeaways>
+
+在處理網站的社群分享預覽（OG Image）時，我遇到了一個尷尬的瞬間：本機開發伺服器剛剛修好的畫面，外部的檢測工具和爬蟲根本碰不到。
+
+要讓外部工具連進 `http://localhost:4321`，傳統做法通常要動到路由器的 port forwarding、設定 DDNS，或者去找第三方反向代理工具。但我當下只是想驗證一個功能，不想花半小時去配置網域與網路環境。
+
+這時候最省事的方法，是直接拉一條暫時的穿透隧道。
+
+## Cloudflare Tunnel
+
+Cloudflare Tunnel 是整個產品的總稱，底下有兩種用法：
+
+- **具名 Tunnel（Named Tunnel）**：需要 Cloudflare 帳號，可以設定固定的主機名稱，官方也建議正式環境改用它。
+- **Quick Tunnel**：不用帳號、不用網域，每次執行都會拿到一個隨機的臨時網址，適合除錯與短暫展示。
+
+這篇用的是後者。
+
+## 一行指令：Cloudflare Quick Tunnels
+
+Cloudflare 官方提供了一個開源客戶端工具 `cloudflared`。我原本以為它必須先綁定 Cloudflare 帳號、設定 Zero Trust 儀表板與自己的網域，但它其實內建了免登入的快速隧道功能（Quick Tunnels，底層走 TryCloudflare）。
+
+### 安裝
+
+```bash
+brew install cloudflared
+```
+
+### 啟動指令：
+
+```bash
+cloudflared tunnel --url http://localhost:4321
+```
+
+終端機在幾秒內就會輸出類似這樣的連線資訊：
+
+```text
+INF +--------------------------------------------------------------------------------------------+
+INF |  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
+INF |  https://random-words-subdomain.trycloudflare.com                                          |
+INF +--------------------------------------------------------------------------------------------+
+```
+
+這個產生的 `*.trycloudflare.com` 是由 Cloudflare 邊緣節點動態分配的網址，自帶合法的 SSL 憑證。外部流量打到這個網址後，會直接透過加密通道轉發到你本機的 `localhost:4321`。
+
+| 開源專案 / 官網 | GitHub Stars | 特點 |
+| :--- | :--- | :--- |
+| [cloudflared](https://github.com/cloudflare/cloudflared) | ~16.5k | 免登入、自動 HTTPS、不會先出現中繼確認頁 |
+| [ngrok](https://ngrok.com/download) | 閉源，無 GitHub repo | 老牌穿透工具，免費版近期有較多連線提示頁面與頻寬限制 |
+
+相比於其他常見的穿透工具，Quick Tunnels 的優勢在於乾淨：訪客打開網址時，不會先看到中繼確認頁，能直接還原真實的 HTTP 請求行為。
+
+> [!TIP]
+> 當終端機按下 `Ctrl + C` 中斷指令時，該隧道與暫時網址會立刻失效。這適合當作拋棄式的臨時通道，完全不需要手動到後台刪除設定。
+
+---
+
+## 場景一：Side Project 與臨時 Demo 的零部署對齊
+
+最直觀的用法，是在本機進行敏捷展示。
+
+當你在本機刻好一個功能、做了一個小專案，想要立刻丟給同事看畫面、或是跟朋友通話討論時，常見的流程是：
+1. 發現對方看不到你的螢幕或環境。
+2. 停下手邊工作，把程式碼推上遠端分支。
+3. 等待 CI/CD Pipeline、等待 Vercel 或 Cloudflare Pages 部署完成。
+4. 發現只是一個小按鈕跑版，又得重複上述流程。
+
+用 Quick Tunnel 時，本地前端伺服器繼續跑著 Hot Reload，你只要開著隧道把隨機網址傳給對方。你在本機儲存檔案，對方的瀏覽器重整就能即時看到改變，雙方能直接針對現階段的實作成品交換意見，省下反覆打包部署的零碎時間。
+
+---
+
+## 場景二：讓雲端 Web AI 走進本地——MCP Server 穿透
+
+隨著 Model Context Protocol（MCP）的普及，許多開發者開始在本機跑自己的 MCP Server，讓 AI 代理能夠存取本地檔案系統、資料庫或自訂指令。
+
+然而，像網頁版的 Claude、客製化 GPTs 或是雲端運行的 Agent Connector，這些外部服務運行在雲端，本身無法直接向使用者的 `http://localhost:PORT` 發出請求。
+
+這時 Cloudflare Tunnel 成了極佳的中繼橋樑：
+
+```text
+[雲端 AI / Web Client]
+        │  (HTTPS 請求)
+        ▼
+[Cloudflare Edge (*.trycloudflare.com)]
+        │  (加密隧道)
+        ▼
+[本機 cloudflared 客戶端]
+        │
+        ▼
+[本地執行的 MCP Service / API]
+```
+
+1. 在本機以 HTTP 模式啟動本地的 MCP 服務。
+2. 透過 `cloudflared tunnel --url http://localhost:<MCP_PORT>` 取得公開 HTTPS 網址。
+3. 將該網址填入雲端 AI 平台的 Custom Connector 或外部服務設定中。
+
+這樣做的好處是：你不必為了讓雲端 AI 讀取本地工具，而大費周章地將整個 MCP 服務與機密憑證部署到公有雲 VM 上。服務核心依然留在自己的電腦裡，對外只透過隧道暴露端點，下班關閉終端機後連線隨即中斷。
+
+---
+
+## 場景三：第三方 Webhook 與外部爬蟲即時除錯
+
+另一個在後端與整合開發中常見的痛點，是接收外部 Webhook。
+
+例如串接金流服務（Stripe、綠界、LINE Pay）、第三方通訊軟體機器人（Telegram Bot、Discord Bot、LINE Messaging API），或是社群平台的 OG 爬蟲除錯工具。這些外部伺服器都有一個硬性要求：**通知回呼網址必須是公開且合法的 HTTPS 網址**。
+
+在沒有隧道的年代，很多人除錯 Webhook 的流程是：
+- 在本機改 code。
+- `git commit` 並推到 Staging 伺服器。
+- 觸發事件後，到遠端主機看 Log 排查 payload 哪裡解析錯誤。
+
+只要把隧道掛在本機的後端服務上，把產生的 `https://xxx.trycloudflare.com/webhook` 貼給第三方服務，外部觸發的 Webhook 請求就會毫秒級直通你本機的環境。你可以在 IDE 內直接下中斷點（Breakpoint），攔截傳進來的 raw body 與 header，除錯完成後隨手關閉，省去大量無意義的遠端發布迴圈。
+
+---
+
+## 邊界思考：好用，但別當成正式架構
+
+Quick Tunnels 非常輕巧，但它本質上是為了「除錯與即時測試」設計的。
+
+因為它產生的網域是隨機且公開的，任何人只要猜到或取得該網址，都能無阻礙地連進你的本機服務。如果本機伺服器連接著未加密的本機資料庫、或是具有危險讀寫權限的介面，隨意暴露外網會伴隨安全風險。
+
+如果專案需要長期對外提供服務、固定網址、或需要加入 Google / GitHub 帳號驗證保護，就應該改用正式綁定網域的具名 Tunnel，設定存取控制清單（Access Policies）。但若只是短暫的 Demo、串接測試或 Webhook 排查，一行 `cloudflared tunnel --url` 確實能省下許多繁瑣的網路設定步驟。
