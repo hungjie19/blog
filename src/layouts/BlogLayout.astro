@@ -1,7 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
-import { ArrowLeftToLine, ArrowRightFromLine, ArrowUpRight, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, Map as MapIcon, UserRound } from '@lucide/astro';
+import { ArrowLeftToLine, ArrowRightFromLine, ArrowUpRight, FileText, Hash, House, Layers, PanelLeftClose, PanelLeftOpen, Map as MapIcon, Search as SearchIcon, UserRound } from '@lucide/astro';
 import BrandMark from '../components/BrandMark.astro';
+import Search from '../components/Search.astro';
 import { getRecentTags } from '../lib/tags';
 import '../styles/global.css';
 
@@ -184,6 +185,7 @@ const iconButtonClass =
 
     <!-- Icons -->
     <div class="flex shrink-0 items-center gap-2 lg:ml-auto">
+      <Search buttonClass={iconButtonClass} />
       <button
         id="theme-btn"
         class={`${iconButtonClass} border-0 bg-transparent`}
@@ -300,6 +302,19 @@ const iconButtonClass =
           <FileText class="h-5 w-5 shrink-0" stroke-width={1.75} aria-hidden="true" />
           <span>Posts</span>
         </a>
+        <!-- Opens the site-wide search popup (src/components/Search.astro); mobile overlay sidebar closes first -->
+        <button
+          type="button"
+          class="sidebar-width-btn sidebar-search-btn"
+          title="搜尋文章（/）"
+          aria-label="搜尋文章"
+          aria-haspopup="dialog"
+          aria-controls="search-panel"
+          data-search-open="sidebar"
+          data-umami-event="click-search-sidebar"
+        >
+          <SearchIcon class="h-[18px] w-[18px]" stroke-width={1.75} aria-hidden="true" />
+        </button>
         <button
           id="sidebar-width-btn"
           class="sidebar-width-btn"
@@ -402,6 +417,8 @@ const iconButtonClass =
   }
   .sidebar-width-btn:hover { background: var(--surface); color: var(--text); }
   .sidebar-width-btn:active { transform: scale(0.96); }
+  /* Search sits just left of the width toggle; only the last button keeps the edge margin */
+  .sidebar-search-btn { margin-right: -8px; }
 
   .sidebar-posts-row {
     display: flex;
@@ -572,6 +589,12 @@ const iconButtonClass =
     updateSidebarToggleIcon();
   }
   sidebarToggleButton?.addEventListener('click', toggleSidebar);
+  // Search opened from the sidebar: the overlay sidebar (≤1023px) gets out of the way so its
+  // backdrop doesn't stack under the search mask; the in-flow desktop sidebar is the reader's
+  // layout choice and just sits under the mask.
+  sidebar?.querySelector('[data-search-open]')?.addEventListener('click', () => {
+    if (sidebarOverlayMedia.matches && isSidebarVisible()) toggleSidebar();
+  });
   sidebarBackdrop?.addEventListener('click', toggleSidebar);
   sidebarOverlayMedia.addEventListener('change', updateSidebarToggleIcon);
   updateSidebarToggleIcon();

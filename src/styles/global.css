@@ -246,4 +246,251 @@
     pointer-events: none;
   }
   .tag-pill[aria-current="page"] .tag-name { color: var(--accent); }
+
+  /* Search box (src/components/SearchBox.astro + src/lib/search-ui.ts) on the home page and in the topbar
+     panel. Global, not scoped: results are built by JS and never get Astro's data-astro-cid attribute. */
+  .search-box { position: relative; }
+
+  /* Google-style field: same gradient border, hover flow and glow as .ai-prompt-btn */
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px 0 16px;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    background:
+      linear-gradient(var(--bg), var(--bg)) padding-box,
+      linear-gradient(110deg, var(--color-ai-from), var(--color-ai-via), var(--color-ai-to), var(--color-ai-from)) border-box;
+    background-size: 100% 100%, 300% 100%;
+    cursor: text;
+    transition: box-shadow 0.25s ease;
+  }
+  .search-field:hover { animation: ai-flow 1.4s ease-in-out; }
+  .search-field:hover,
+  .search-field:focus-within {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--color-ai-via) 35%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .search-field:hover { animation: none; }
+  }
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 16px; /* below 16px iOS Safari zooms the page on focus */
+    outline: none;
+    appearance: none;
+  }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* Home page: a button dressed as the field; it opens the popup instead of taking input */
+  .search-trigger {
+    width: 100%;
+    padding-block: 12px;
+    color: var(--muted);
+    font: inherit;
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .search-trigger-placeholder {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-input::-webkit-search-cancel-button { display: none; } /* replaced by .search-clear */
+
+  /* Trailing slot: empty → `/` shortcut hint (unfocused, keyboard devices only); has text → clear button */
+  .search-kbd {
+    padding: 1px 7px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+  }
+  .search-clear {
+    display: none;
+    align-items: center;
+    padding: 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .search-clear:hover { background: var(--surface); color: var(--text); }
+  .search-box[data-has-value] .search-clear { display: flex; }
+  .search-box[data-has-value] .search-kbd,
+  .search-box:focus-within .search-kbd { display: none; }
+  @media (hover: none) {
+    .search-kbd { display: none; }
+  }
+
+  .search-popup {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    max-height: min(60dvh, 520px);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+    overflow: hidden;
+  }
+  .search-popup[hidden] { display: none; }
+
+  /* Topbar panel: the same box floating over a mask that dims everything below the 48px topbar
+     (the topbar stays usable). Above the mobile sidebar overlay (z-index 100). */
+  .search-panel[hidden] { display: none; }
+  .search-panel-mask {
+    position: fixed;
+    inset: 48px 0 0;
+    z-index: 110;
+    background: rgb(0 0 0 / 0.3);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .search-panel-body {
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    z-index: 111;
+  }
+  @media (min-width: 640px) {
+    .search-panel-body {
+      left: 50%;
+      right: auto;
+      width: min(560px, calc(100vw - 24px));
+      transform: translateX(-50%);
+    }
+  }
+  .search-results {
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    overflow-y: auto;
+  }
+  .search-results:empty { display: none; }
+  /* 「系列」/「文章」 headings, only when both groups have results */
+  .search-group-label {
+    padding: 8px 12px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .search-group-label:not(:first-child) {
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .search-result {
+    display: flex;
+    align-items: flex-start; /* thumb stays top-aligned when the title wraps, like the home feed */
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1.5px solid transparent; /* reserved so the selected row's gradient border doesn't shift layout */
+    border-radius: 6px;
+    text-decoration: none;
+  }
+  .search-result-thumb {
+    flex-shrink: 0;
+    width: 72px;
+    height: 54px; /* 4:3, same as thumb.jpg */
+    border-radius: 6px;
+    background: var(--surface);
+    object-fit: cover;
+  }
+  .search-result-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  /* Only the selected row is highlighted; hover moves the selection (search-ui.ts).
+     Same gradient border as the field; the flow runs once each time a row becomes selected. */
+  [aria-selected="true"] > .search-result {
+    background:
+      linear-gradient(color-mix(in srgb, var(--accent) 8%, var(--bg)), color-mix(in srgb, var(--accent) 8%, var(--bg))) padding-box,
+      linear-gradient(110deg, var(--color-ai-from), var(--color-ai-via), var(--color-ai-to), var(--color-ai-from)) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: ai-flow 1.4s ease-in-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [aria-selected="true"] > .search-result { animation: none; }
+  }
+  [aria-selected="true"] > .search-result .search-result-title { color: var(--accent); }
+  .search-result-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--heading);
+  }
+  .search-result-description {
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-result-meta {
+    font-size: 12px;
+    color: var(--accent-muted);
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .search-status {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .search-status[hidden],
+  .search-status:empty { display: none; }
+  .search-status-link { color: var(--link); text-decoration: none; }
+  .search-status-link:hover { text-decoration: underline; }
+
+  /* Query terms inside titles, descriptions and meta (search-ui.ts appendHighlighted) */
+  .search-result mark {
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--color-ai-via) 22%, transparent);
+    color: inherit;
+  }
+
+  /* Desktop (same 1024px breakpoint as the in-flow sidebar): the popup sized for phones reads tiny
+     on a wide screen, so scale it ~1.5× and give the description two lines. */
+  @media (min-width: 1024px) {
+    .search-panel-body { top: 72px; width: min(860px, calc(100vw - 48px)); }
+    .search-panel .search-field { padding: 0 16px 0 20px; }
+    .search-panel .search-input { padding-block: 16px; font-size: 18px; }
+    .search-panel .search-popup { max-height: calc(100dvh - 72px - 64px - 24px); }
+    .search-panel .search-results { padding: 6px; }
+    .search-panel .search-result { gap: 16px; padding: 12px 14px; border-radius: 8px; }
+    .search-panel .search-result-thumb { width: 128px; height: 96px; border-radius: 8px; }
+    .search-panel .search-result-text { gap: 4px; }
+    .search-panel .search-result-title { font-size: 17px; line-height: 1.4; }
+    .search-panel .search-result-description {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: 15px;
+      line-height: 1.5;
+      white-space: normal;
+    }
+    .search-panel .search-result-meta { font-size: 13px; }
+    .search-panel .search-status { padding: 12px 18px; font-size: 14px; }
+  }
 }

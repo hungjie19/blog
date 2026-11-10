@@ -4,5 +4,5 @@
 declare module 'photoswipe-dynamic-caption-plugin';
 
 interface Window {
-  umami?: { track: (event: string, data?: Record<string, string>) => void };
+  umami?: { track: (event: string, data?: Record<string, string | number>) => void };
 }

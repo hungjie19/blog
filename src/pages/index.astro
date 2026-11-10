@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { LayoutGrid, List } from '@lucide/astro';
+import { LayoutGrid, List, Search } from '@lucide/astro';
 import BlogLayout from '../layouts/BlogLayout.astro';
 
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
@@ -32,24 +32,20 @@ const viewButtonClass =
 
   <h1 class="sr-only">Jasper Hung</h1>
   <div>
-    <a
-      href="https://island.jasperhung.dev/"
-      target="_blank"
-      rel="noopener"
-      class="island-banner group relative mb-2 block overflow-hidden rounded-[10px] border border-border no-underline transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-accent active:translate-y-0"
-      data-umami-event="click-island-homepage"
+    <!-- Looks like a search field, opens the site-wide search popup (src/components/Search.astro) -->
+    <button
+      id="search-home-trigger"
+      type="button"
+      class="search-field search-trigger"
+      aria-haspopup="dialog"
+      aria-controls="search-panel"
+      data-search-open="home"
+      data-umami-event="click-search-home"
     >
-      <img
-        src={`${base}images/home/island-banner.jpg`}
-        alt="Island Blog：把部落格各系列做成漂浮在宇宙中的 3D 六角島群"
-        class="block aspect-[3/1] w-full object-cover"
-        width="1600"
-        height="533"
-      />
-      <span class="absolute inset-x-0 bottom-0 flex items-end bg-gradient-to-t from-black/75 to-transparent px-4 pb-3 pt-10 text-white">
-        <span class="text-sm font-semibold sm:text-base">Island Blog：用 3D 浮島逛所有系列 <span aria-hidden="true" class="inline-block transition-transform duration-150 group-hover:translate-x-0.5">↗</span></span>
-      </span>
-    </a>
+      <Search class="h-[18px] w-[18px] shrink-0 text-muted" stroke-width={2} aria-hidden="true" />
+      <span class="search-trigger-placeholder">搜尋文章：標題、tag、摘要</span>
+      <kbd class="search-kbd" aria-hidden="true">/</kbd>
+    </button>
 
     <div class="mt-4 flex justify-end">
       <div class="inline-flex gap-0.5 rounded-lg border border-border bg-surface p-0.5" role="group" aria-label="文章列表顯示方式">
@@ -328,8 +324,8 @@ const viewButtonClass =
 
   :global(html[data-feed-view="card"]) .feed-tags { max-height: 1.5em; }
 
-  /* Card view widens the column to 1280px; keep the Island banner at the list-view size (740px column minus padding) */
-  :global(html[data-feed-view="card"]) .island-banner {
+  /* Card view widens the column to 1280px; keep the search field at the list-view size (740px column minus padding) */
+  :global(html[data-feed-view="card"] #search-home-trigger) {
     max-width: calc(740px - 64px);
     margin-inline: auto;
   }

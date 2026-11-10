@@ -96,6 +96,17 @@ seriesOrder: 1
   - 新文章 frontmatter 只寫上方範本列出的欄位，commit 後即上線；使用者明說「先不要發」或「下架」時才加 `draft`。（曾有 10 篇起草時被標成 draft，上線後 404 好幾天才發現。）
 - 文章底部另有全站「上一篇/下一篇」導航：純按 `date` 時間排序、跨所有文章（上一篇 = 較舊），與系列正交、互不干擾
 
+## 站內搜尋
+
+全站只有一個搜尋 popup（`src/components/Search.astro` 內的 `SearchBox.astro`），入口都只是開它的按鈕：首頁長條、topbar 🔍、sidebar Posts 列 🔍（`data-search-open="<location>"`），以及 `/`、⌘K。比對、render、鍵盤、Umami 在 `src/lib/search-ui.ts`；排序在 `src/lib/search.ts`（字串 `includes()`，title > tag > 摘要／takeaways／所屬系列名，多字 AND）。結果節點是 JS 產生的，樣式放 `global.css` 的 `.search-*`，不要寫成 scoped。
+
+兩份資料，用途不同，不要合併或互相轉換：
+
+- `/search.json`（`src/pages/search.json.ts`）：**搜尋專用**的文章投影，欄位為搜尋挑選、加工（KeyTakeaways 去 HTML、所屬系列名）。只給搜尋用。
+- `/series.json`（`src/pages/series.json.ts`，資料來自 `src/lib/series.ts` 的 `getSeriesSummaries()`）：**系列本身的 feed**，像 `rss.xml` 之於文章。搜尋（只讀外層欄位，`posts` 只算篇數）與 Island（island.jasperhung.dev）共用。只放系列的事實；某個讀者專屬的東西（Island 的 `home`、`links`）由讀者自己算，不加進來。
+
+Umami：`search-query`（`q`、`results`、`series`、`action` = enter／click／dismiss、`location`、`destination`），只在 Enter、點擊、清除或離開時送，不逐字送；`results: 0` 的查詢是「讀者想找、站上沒有」的清單。入口按鈕另有 `click-search-{home,topbar,sidebar}`。
+
 ## SEO / AEO
 
 已實作（不要重複加）：

@@ -1,0 +1,48 @@
+---
+import { Search, X } from '@lucide/astro';
+
+interface Props {
+  /** Umami `location` and the id prefix, e.g. `home`, `topbar`. */
+  location: string;
+}
+
+const { location } = Astro.props;
+const resultsId = `search-${location}-results`;
+---
+
+<!-- One search box (home page, topbar panel): gradient pill field, results pop up below it.
+     Logic: src/lib/search-ui.ts. Styles: `.search-*` in global.css. -->
+<div id={`search-${location}`} class="search-box" role="search" data-search-box data-location={location}>
+  <label class="search-field">
+    <Search class="h-[18px] w-[18px] shrink-0 text-muted" stroke-width={2} aria-hidden="true" />
+    <input
+      class="search-input"
+      type="search"
+      placeholder="搜尋文章：標題、tag、摘要"
+      autocomplete="off"
+      spellcheck="false"
+      enterkeyhint="go"
+      role="combobox"
+      aria-label="搜尋文章"
+      aria-expanded="false"
+      aria-controls={resultsId}
+      aria-autocomplete="list"
+      data-search-input
+    />
+    <!-- Empty: shortcut hint. Has text: clear button. -->
+    <kbd class="search-kbd" aria-hidden="true">/</kbd>
+    <button type="button" class="search-clear" aria-label="清除搜尋" title="清除" data-search-clear>
+      <X class="h-4 w-4" stroke-width={2} aria-hidden="true" />
+    </button>
+  </label>
+  <div class="search-popup" hidden data-search-popup>
+    <ul id={resultsId} class="search-results" role="listbox" aria-label="搜尋結果" data-search-results></ul>
+    <p class="search-status" role="status" hidden data-search-status></p>
+  </div>
+</div>
+
+<script>
+  import { mountSearchBox } from '../lib/search-ui';
+
+  document.querySelectorAll<HTMLElement>('[data-search-box]').forEach(mountSearchBox);
+</script>

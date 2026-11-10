@@ -1,3 +1,5 @@
+import { getCollection } from "astro:content";
+
 export type SeriesType = "series" | "collection";
 
 export type SeriesList = {
@@ -123,5 +125,43 @@ export function sortSeriesEntries<T extends SeriesEntry>(entries: T[]): T[] {
 
     const dateDifference = a.data.date.valueOf() - b.data.date.valueOf();
     return dateDifference !== 0 ? dateDifference : a.id.localeCompare(b.id);
+  });
+}
+
+/** One series as /series.json publishes it: facts about the series only (see src/pages/series.json.ts). */
+export type SeriesSummary = {
+  id: string;
+  title: string;
+  description: string;
+  type: SeriesType;
+  cover: string | null;
+  url: string;
+  /** In reading order (seriesOrder, then date), the same order the series page numbers them. */
+  posts: { slug: string; title: string; date: string }[];
+  /** Slug of the newest post by date. */
+  latest: string | null;
+};
+
+/** Joins seriesLists with the posts that point at each series. Series with no published post are left out. */
+export async function getSeriesSummaries(): Promise<SeriesSummary[]> {
+  const posts = await getCollection("blog");
+  return Object.entries(seriesLists).flatMap(([id, item]) => {
+    const members = sortSeriesEntries(posts.filter(post => post.data.series === id));
+    if (members.length === 0) return [];
+    const newest = members.reduce((a, b) => (b.data.date > a.data.date ? b : a));
+    return [{
+      id,
+      title: item.title,
+      description: item.description,
+      type: item.type,
+      cover: item.cover ?? null,
+      url: `/series/${id}/`,
+      posts: members.map(post => ({
+        slug: post.id,
+        title: post.data.title,
+        date: post.data.date.toISOString(),
+      })),
+      latest: newest.id,
+    }];
   });
 }
