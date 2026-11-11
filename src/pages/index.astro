@@ -18,15 +18,13 @@ const viewButtonClass =
   description="Jasper Hung 的部落格，記錄與 AI 協作的實戰經驗：Claude Code、Agent 工作流、Skill 設計、本地記憶，以及用 Astro、Cloudflare 架站與 SEO／AEO 的實測過程與踩坑筆記。"
 >
   <!-- Feed view (list / card) must land before first paint: card view also widens the content column.
-       Saved choice wins; otherwise phones default to card, wider screens to list. -->
+       Saved choice wins; otherwise list on every screen. Phones used to default to card, but a card
+       loads the 1200×630 og.jpg (~130KB) for a ~360px-wide slot: 3.4s LCP on Slow 4G vs 1.3s for list. -->
   <script is:inline>
     (() => {
       let view = null;
       try { view = localStorage.getItem('feed-view'); } catch {}
-      if (view !== 'list' && view !== 'card') {
-        view = window.matchMedia('(max-width: 640px)').matches ? 'card' : 'list';
-      }
-      document.documentElement.dataset.feedView = view;
+      document.documentElement.dataset.feedView = view === 'card' ? 'card' : 'list';
     })();
   </script>
 
@@ -126,13 +124,15 @@ const viewButtonClass =
     (() => {
       const card = document.documentElement.dataset.feedView === 'card';
       const vh = window.innerHeight;
-      const items = Array.from(document.querySelectorAll('.feed-item'));
-      // Measure before mutating so the layout is computed only once
-      const above = items.map((item) => item.getBoundingClientRect().top < vh);
+      const items = document.querySelectorAll('.feed-item');
+      // List and card grid both run in row order, so tops never decrease: the first item starting
+      // below the fold ends the first screen. Measure before mutating so layout runs only once.
+      let firstScreen = 0;
+      while (firstScreen < items.length && items[firstScreen].getBoundingClientRect().top < vh) firstScreen++;
       let first = true;
       items.forEach((item, i) => {
         const img = item.querySelector('.feed-thumb');
-        if (above[i]) {
+        if (i < firstScreen) {
           // The style is already computed at opacity 0, so turn the transition off or it still fades
           item.classList.add('visible', 'feed-item--instant');
           if (img) {
