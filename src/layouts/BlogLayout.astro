@@ -135,7 +135,28 @@ const iconButtonClass =
   {activeSlug && <link rel="alternate" type="text/markdown" href={mdUrl} title="Raw Markdown" />}
 
   {import.meta.env.PROD && (
-    <script defer src="https://cloud.umami.is/script.js" data-website-id={import.meta.env.PUBLIC_UMAMI_WEBSITE_ID}></script>
+    <>
+      <!--
+        ?notrack turns Umami off in this browser until ?notrack=0 turns it back on (for testing prod
+        with Playwright or checking my own pages). It sets umami.disabled in localStorage, which the
+        tracker checks before every send, so later pages stay untracked without the query.
+        The param is then removed from the address bar so it isn't copied into shared links.
+      -->
+      <script is:inline>
+        (() => {
+          const url = new URL(location.href);
+          if (!url.searchParams.has('notrack')) return;
+          const off = url.searchParams.get('notrack') !== '0';
+          try {
+            if (off) localStorage.setItem('umami.disabled', '1');
+            else localStorage.removeItem('umami.disabled');
+          } catch {}
+          url.searchParams.delete('notrack');
+          history.replaceState(history.state, '', url);
+        })();
+      </script>
+      <script defer src="https://cloud.umami.is/script.js" data-website-id={import.meta.env.PUBLIC_UMAMI_WEBSITE_ID}></script>
+    </>
   )}
 </head>
 <body class="flex h-dvh flex-col overflow-hidden bg-bg text-text">
