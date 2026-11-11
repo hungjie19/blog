@@ -1,0 +1,101 @@
+---
+title: "Umami 排除測試流量：用 ?notrack 與內建 umami.disabled 避免污染數據"
+date: 2026-11-12
+description: "在追查網站效能時，自動化測試流量意外灌入 Umami 即時面板。透過 Umami 內建的 localStorage 開關與十幾行 inline script，建立乾淨的排除機制並寫入 CLAUDE.md。"
+tags: [Umami, Astro, Playwright, Web Analytics, CLAUDE.md]
+---
+
+<KeyTakeaways>
+  <p>如何在測試 Production 時避免測試流量污染 Umami 分析數據？利用 Umami 內建檢查的 <code>localStorage['umami.disabled']</code>，在前端掛載輕量 inline script 解析 <code>?notrack</code> 參數並自動抹除網址軌跡；僅適用於 Umami，無法攔截 Proxy 層注入的 Cloudflare Web Analytics。</p>
+</KeyTakeaways>
+
+在追查部落格首頁 LCP 效能的過程中，為了比對本機 preview 與正式環境的載入落差，我讓 LLM 透過 Playwright 對 Production 站點跑了幾輪限速測試。切回瀏覽器隨手打開 Umami 的即時事件面板時，畫面上剛好在短時間內跳出一整排密集的新增事件。
+
+將近二十筆 `Viewed page /` 夾雜幾筆特定文章頁面，來源全部顯示為同一組作業系統、同一座城市與同一個 Session。這批測試流量就這樣直接寫進了正式環境的統計數據裡。
+
+既然之後免不了還要對正式環境進行自動化抽檢，就不能放任測試數據反覆污染報表。當下的需求很直接：需要一個網址參數，只要帶上它，就能讓當前造訪完全不觸發追蹤。
+
+## 本來想自己攔截，先去翻 Umami 原始碼
+
+直覺的第一個做法，可能是自己寫一層判斷邏輯，例如偵測到特定 query string 時動態決定要不要載入 Umami 的追蹤 script，或者在 window 物件上覆寫追蹤函式。
+
+不過在動手發明輪子之前，更乾淨的做法是先確認 Umami 本身有沒有提供排除機制。直接抓取 Production 載入的官方 tracker 程式碼（`cloud.umami.is/script.js`），可以在事件發送邏輯中找到這段檢查：
+
+```javascript
+H=()=>oe||!x||b?.getItem("umami.disabled")||"umami.disabled"===e.name&&d!==e||...
+Q=async(e,t="event")=>{if(H())return; ...
+```
+
+在呼叫送出 pageview 或自訂 event 的核心函式 `Q` 之前，都會先執行檢查函式 `H()`。其中關鍵的一項判斷是 `localStorage.getItem("umami.disabled")`。
+
+只要這個 key 在 `localStorage` 裡存在且有值，追蹤碼就會直接中斷執行，完全不發出任何網路請求。而且 Umami 每次準備送出事件時都會重新讀取一次，單頁切換路徑也同樣會被這層判斷攔截。
+
+這個機制本來就存在，只是需要一個低摩擦的方式去寫入這個狀態。如果每次都要手動打開開發者工具在 Console 敲指令，換到手機瀏覽器或自動化腳本時操作就很麻煩。
+
+## 用十幾行 inline script 串接 `?notrack`
+
+既然核心開關已經在 `localStorage` 裡，前端要處理的事情就只剩下：
+
+1. 偵測網址是否帶有 `?notrack`。
+2. 只要帶了參數（且值不是 `0`），就寫入 `localStorage['umami.disabled'] = '1'`。
+3. 如果帶了 `?notrack=0`，則移除該項目以恢復追蹤。
+4. 寫入完畢後，用 `history.replaceState` 把參數從網址列抹掉，保留其他正常的查詢參數（例如 `utm_source`），避免使用者複製網址分享時把開關帶給別人。
+
+程式碼放在 Astro 的 `src/layouts/BlogLayout.astro` 中，置於 `import.meta.env.PROD` 條件區塊內：
+
+```html
+<script is:inline>
+  (() => {
+    const url = new URL(location.href);
+    if (!url.searchParams.has('notrack')) return;
+    const off = url.searchParams.get('notrack') !== '0';
+    try {
+      if (off) localStorage.setItem('umami.disabled', '1');
+      else localStorage.removeItem('umami.disabled');
+    } catch {}
+    url.searchParams.delete('notrack');
+    history.replaceState(history.state, '', url);
+  })();
+</script>
+```
+
+這裡必須使用 Astro 的 `is:inline`，並且確保這段 script 放在 Umami 的 `<script defer ...>` 標籤之前。由於 Umami 的腳本帶有 `defer`，會在 HTML 解析完成後才執行，前方的 inline script 必定會提早一步跑完，確保 flag 在追蹤碼送出第一次 pageview 之前就已經就緒。
+
+在本機 preview 透過代理攔截 Umami 的 `/api/send` 進行計數驗證：
+
+| 操作步驟 | 發送次數 |
+|---|---|
+| 一般進首頁 | 1 |
+| 瀏覽 `/?notrack` | **0** |
+| 點擊連結進入文章頁（網址無參數） | **0** |
+| 瀏覽 `/tags/?notrack=0&utm_source=x` | 1（網址列乾淨保留 `?utm_source=x`） |
+| 再次返回首頁 | 1 |
+
+只要訪問過一次帶有 `?notrack` 的網址，該瀏覽器往後所有的點擊與換頁都會持續處於靜音狀態，直到帶入 `?notrack=0` 或手動清除網站儲存空間。
+
+## 擋得住 Umami，但擋不住 Cloudflare
+
+這個方案有兩個明確的適用邊界需要留意：
+
+第一個限制是 **Cloudflare Web Analytics 依然會記錄**。Umami 是由前端 HTML 載入的腳本，可以透過客戶端儲存狀態攔截；但 Cloudflare 的 RUM beacon 是在邊緣節點（Proxy）由 Cloudflare 自動插入回應的 HTML 尾端，不受前端應用程式邏輯控制。如果站點同時掛了 Cloudflare 分析，自動化測試產生的流量在 Cloudflare 端依然會留下造訪軌跡。
+
+第二個限制是 **無痕視窗與自動化 Context 的生命週期**。`localStorage` 是跟隨瀏覽器設定檔（Browser Profile）綁定的。當 Playwright 執行測試時，預設每次啟動的 Browser Context 都是全新的隔離環境，裡面不會有上一輪留下來的資料。這意味著自動化腳本不能只依賴「以前造訪過」，每次建立新 Context 時的第一個請求，都必須顯式帶上 `?notrack`，或者在 Context 初始化時透過 `addInitScript` 預先注入該 flag。
+
+> [!CAUTION]
+> 在無痕模式或每次 Context 都重建的自動化測試中，只在瀏覽器手動訪問過一次並不會永久生效。自動化腳本的首個存取 URL 必須強制帶上 `?notrack`。
+
+## 別靠記憶：把開關規則寫進 `CLAUDE.md`
+
+既然這批異常流量最初是 AI 執行效能實測時產生的，單純把功能做出來還不夠。靠工程師自己記住「測正式站前要帶參數」很容易在未來的某次除錯中再次破功。
+
+最根本的防護是將操作契約收斂進專案規範。在 repo 的 `CLAUDE.md` 中的 Analytics 區塊加入明確約束：
+
+- 凡透過 Playwright 或其他自動化方式對正式站點發起請求，首個 URL 必須強制附帶 `?notrack`。
+- 說明該參數會驅動 Layout 內的 inline script 寫入原生 `umami.disabled`。
+- 註記 Playwright Context 重建時的注意事項，以及 Cloudflare Web Analytics 無法被此機制攔截的限制。
+
+將這套流程沉澱進專案規則後，未來無論是自己除錯還是代理人執行回歸測試，都能按照既定規範自動關閉追蹤，不再無端弄髒線上數據。
+
+---
+
+分析數據最忌諱的就是雜訊混雜。原本預期要從網址解析一路寫到阻斷載入的自製機制，在翻看追蹤碼底層後發現官方早就留了 `umami.disabled` 的開關。結合網址參數自動寫入狀態並抹除痕跡，除了讓自己在手機與電腦上點一下連結就能快速排除日常瀏覽，也讓自動化測試在進出正式站時有一套標準契約可以遵循。
