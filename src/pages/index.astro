@@ -73,10 +73,11 @@ const viewButtonClass =
                 data-umami-event-destination={post.id}
                 data-umami-event-position="cover"
               >
-                <!-- list view: 4:3 thumb.jpg; card view swaps to the 1.91:1 og.jpg -->
+                <!-- list view: 4:3 thumb.jpg; card view: 1.91:1 og.jpg. No src here: the inline script
+                     after the feed picks one. With a server-side src, the parser lays out mid-stream and
+                     lazy-loads thumbs before card view can swap them, fetching both (30 images, 6s LCP on Slow 4G). -->
                 <img
                   class="feed-thumb"
-                  src={`${base}images/posts/${post.id}/thumb.jpg`}
                   data-thumb={`${base}images/posts/${post.id}/thumb.jpg`}
                   data-og={`${base}images/posts/${post.id}/og.jpg`}
                   alt=""
@@ -114,11 +115,35 @@ const viewButtonClass =
     </div>
   </div>
 
-  <!-- Runs right after the feed is parsed, before layout, so card view never fetches the thumbs first -->
+  <!--
+    Runs right after the feed is parsed, before the module scripts:
+    - sets each image's src for the current view (thumb.jpg or og.jpg), so only one of them is fetched
+    - items in the first viewport skip the fade-in and load their image eagerly; waiting for the
+      module script + IntersectionObserver + 600ms transition delayed LCP by ~900ms on Slow 4G.
+      The viewport is measured here because the server can't know how many items fit on screen.
+  -->
   <script is:inline>
-    if (document.documentElement.dataset.feedView === 'card') {
-      document.querySelectorAll('.feed-thumb').forEach((img) => { img.src = img.dataset.og; });
-    }
+    (() => {
+      const card = document.documentElement.dataset.feedView === 'card';
+      const vh = window.innerHeight;
+      const items = Array.from(document.querySelectorAll('.feed-item'));
+      // Measure before mutating so the layout is computed only once
+      const above = items.map((item) => item.getBoundingClientRect().top < vh);
+      let first = true;
+      items.forEach((item, i) => {
+        const img = item.querySelector('.feed-thumb');
+        if (above[i]) {
+          // The style is already computed at opacity 0, so turn the transition off or it still fades
+          item.classList.add('visible', 'feed-item--instant');
+          if (img) {
+            img.loading = 'eager';
+            if (first) { img.fetchPriority = 'high'; first = false; }
+          }
+        }
+        // src last, so loading / fetchPriority already apply to the first request
+        if (img) img.src = card ? img.dataset.og : img.dataset.thumb;
+      });
+    })();
   </script>
 </BlogLayout>
 
@@ -218,6 +243,8 @@ const viewButtonClass =
     opacity: 1;
     transform: translateY(0);
   }
+
+  .feed-item.feed-item--instant { transition: none; }
 
   /* ───────── List view (default) ───────── */
 
@@ -371,5 +398,6 @@ const viewButtonClass =
     },
     { threshold: 0.05 }
   );
-  items.forEach(item => observer.observe(item));
+  // First-viewport items were already shown by the inline script after the feed
+  items.forEach(item => { if (!item.classList.contains('visible')) observer.observe(item); });
 </script>
