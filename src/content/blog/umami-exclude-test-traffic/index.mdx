@@ -1,17 +1,23 @@
 ---
 title: "Umami 排除測試流量：用 ?notrack 與內建 umami.disabled 避免污染數據"
-date: 2026-11-12
-description: "在追查網站效能時，自動化測試流量意外灌入 Umami 即時面板。透過 Umami 內建的 localStorage 開關與十幾行 inline script，建立乾淨的排除機制並寫入 CLAUDE.md。"
-tags: [Umami, Astro, Playwright, Web Analytics, CLAUDE.md]
+date: 2026-11-12T00:30:02+08:00
+description: "在追查網站效能時，自動化測試流量意外灌入 Umami 即時面板。透過 Umami 內建的 localStorage 開關與十幾行 inline script，建立乾淨的排除機制並寫入 CLAUDE.md，並交代自動化 Context 與 Cloudflare 分析的限制。"
+tags:
+  - Umami
+  - Astro
+  - Playwright
+  - Web-Analytics
 ---
 
 <KeyTakeaways>
   <p>如何在測試 Production 時避免測試流量污染 Umami 分析數據？利用 Umami 內建檢查的 <code>localStorage['umami.disabled']</code>，在前端掛載輕量 inline script 解析 <code>?notrack</code> 參數並自動抹除網址軌跡；僅適用於 Umami，無法攔截 Proxy 層注入的 Cloudflare Web Analytics。</p>
 </KeyTakeaways>
 
-在追查部落格首頁 LCP 效能的過程中，為了比對本機 preview 與正式環境的載入落差，我讓 LLM 透過 Playwright 對 Production 站點跑了幾輪限速測試。切回瀏覽器隨手打開 Umami 的即時事件面板時，畫面上剛好在短時間內跳出一整排密集的新增事件。
+在追查部落格首頁 LCP 效能的過程中，為了比對本機 preview 與正式環境的載入落差，我讓 Agent 透過 Playwright 對 Production 站點跑了幾輪限速測試。切回瀏覽器隨手打開 Umami 的即時事件面板時，畫面上剛好在短時間內跳出一整排密集的新增事件。
 
 將近二十筆 `Viewed page /` 夾雜幾筆特定文章頁面，來源全部顯示為同一組作業系統、同一座城市與同一個 Session。這批測試流量就這樣直接寫進了正式環境的統計數據裡。
+
+![Umami 即時事件面板連續顯示多筆首頁瀏覽事件](./umami-test-traffic.jpg)
 
 既然之後免不了還要對正式環境進行自動化抽檢，就不能放任測試數據反覆污染報表。當下的需求很直接：需要一個網址參數，只要帶上它，就能讓當前造訪完全不觸發追蹤。
 
@@ -28,7 +34,7 @@ Q=async(e,t="event")=>{if(H())return; ...
 
 在呼叫送出 pageview 或自訂 event 的核心函式 `Q` 之前，都會先執行檢查函式 `H()`。其中關鍵的一項判斷是 `localStorage.getItem("umami.disabled")`。
 
-只要這個 key 在 `localStorage` 裡存在且有值，追蹤碼就會直接中斷執行，完全不發出任何網路請求。而且 Umami 每次準備送出事件時都會重新讀取一次，單頁切換路徑也同樣會被這層判斷攔截。
+只要這個 key 在 `localStorage` 裡存在且有值，追蹤碼就會直接中斷事件送出，不會向 Umami 的 `/api/send` 傳送事件資料。而且 Umami 每次準備送出事件時都會重新讀取一次，單頁切換路徑也同樣會被這層判斷攔截。
 
 這個機制本來就存在，只是需要一個低摩擦的方式去寫入這個狀態。如果每次都要手動打開開發者工具在 Console 敲指令，換到手機瀏覽器或自動化腳本時操作就很麻煩。
 
@@ -96,6 +102,6 @@ Q=async(e,t="event")=>{if(H())return; ...
 
 將這套流程沉澱進專案規則後，未來無論是自己除錯還是代理人執行回歸測試，都能按照既定規範自動關閉追蹤，不再無端弄髒線上數據。
 
----
+## 心得
 
 分析數據最忌諱的就是雜訊混雜。原本預期要從網址解析一路寫到阻斷載入的自製機制，在翻看追蹤碼底層後發現官方早就留了 `umami.disabled` 的開關。結合網址參數自動寫入狀態並抹除痕跡，除了讓自己在手機與電腦上點一下連結就能快速排除日常瀏覽，也讓自動化測試在進出正式站時有一套標準契約可以遵循。
