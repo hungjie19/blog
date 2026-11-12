@@ -106,7 +106,7 @@ seriesOrder: 1
 - `/search.json`（`src/pages/search.json.ts`）：**搜尋專用**的文章投影，欄位為搜尋挑選、加工（KeyTakeaways 去 HTML、所屬系列名）。只給搜尋用。
 - `/series.json`（`src/pages/series.json.ts`，資料來自 `src/lib/series.ts` 的 `getSeriesSummaries()`）：**系列本身的 feed**，像 `rss.xml` 之於文章。搜尋（只讀外層欄位，`posts` 只算篇數）與 Island（island.jasperhung.dev）共用。只放系列的事實；某個讀者專屬的東西（Island 的 `home`、`links`）由讀者自己算，不加進來。
 
-Umami：`search-query`（`q`、`results`、`series`、`action` = enter／click／dismiss、`location`、`destination`），只在 Enter、點擊、清除或離開時送，不逐字送；`results: 0` 的查詢是「讀者想找、站上沒有」的清單。入口按鈕另有 `click-search-{home,topbar,sidebar}`。
+Umami：`search-query`（`q`、`results`、`series`、`action` = enter／click／dismiss／pause、`location`、`destination`），只在 Enter、點擊、清除或離開（含切分頁／App、⌘K 關閉）時送，不逐字送；唯一例外是 0 筆結果停住 1 秒（注音選字中不算）送 `pause`，因為即時搜尋下讀者沒找到會直接改字，被改掉的那個字才是要記的；同一個 `q` 只送一次；`results: 0` 的查詢是「讀者想找、站上沒有」的清單。入口按鈕另有 `click-search-{home,topbar,sidebar}`。
 
 ## SEO / AEO
 

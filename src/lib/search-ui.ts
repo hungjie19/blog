@@ -107,10 +107,24 @@ export function mountSearchBox(root: HTMLElement) {
   let matched = { posts: 0, series: 0 };
   let active = -1;
   // One `search-query` event per distinct query, sent when the reader acts on it
-  // (Enter / click / clear / leaving), never per keystroke.
+  // (Enter / click / clear / leaving), never per keystroke. The one exception is a
+  // zero-result query left untouched for PAUSE_MS ('pause'): live results make readers
+  // rewrite a miss instead of pressing Enter, and the rewritten miss is what we want to log.
   let lastTracked = '';
+  let composing = false; // 注音／拼音 candidate picking: the text is not a query yet
+  let pauseTimer: number | undefined;
+  const PAUSE_MS = 1000;
 
-  function track(action: 'enter' | 'click' | 'dismiss', destination?: string) {
+  function schedulePause() {
+    window.clearTimeout(pauseTimer);
+    const q = input.value.trim();
+    if (!q || composing || rows.length > 0) return;
+    pauseTimer = window.setTimeout(() => {
+      if (input.value.trim() === q && !composing && rows.length === 0) track('pause');
+    }, PAUSE_MS);
+  }
+
+  function track(action: 'enter' | 'click' | 'dismiss' | 'pause', destination?: string) {
     const q = input.value.trim();
     if (!q || q === lastTracked) return;
     lastTracked = q;
@@ -233,6 +247,7 @@ export function mountSearchBox(root: HTMLElement) {
   }
 
   async function update() {
+    window.clearTimeout(pauseTimer);
     const q = input.value.trim();
     if (!q) {
       rows = [];
@@ -277,6 +292,7 @@ export function mountSearchBox(root: HTMLElement) {
     if (rows.length === 0) showNoResults(q);
     else setStatus('');
     syncPopup();
+    schedulePause();
   }
 
   function go(i: number) {
@@ -288,6 +304,15 @@ export function mountSearchBox(root: HTMLElement) {
   input.addEventListener('input', () => {
     root.toggleAttribute('data-has-value', input.value.length > 0);
     void update();
+  });
+  input.addEventListener('compositionstart', () => {
+    composing = true;
+    window.clearTimeout(pauseTimer);
+  });
+  // Browsers disagree on whether the last `input` comes before or after this, so re-arm here too
+  input.addEventListener('compositionend', () => {
+    composing = false;
+    schedulePause();
   });
   input.addEventListener('focus', () => {
     syncPopup();
@@ -333,6 +358,13 @@ export function mountSearchBox(root: HTMLElement) {
     if (next && !root.contains(next)) hidePopup(); // Tab moved focus elsewhere
   });
 
-  // Typed a query and left the page some other way: still worth knowing what they looked for
+  // The popup closed from outside the box (⌘K / `/` toggle): log the query now, not on the next tap
+  root.addEventListener('search:close', () => track('dismiss'));
+
+  // Typed a query and left the page some other way: still worth knowing what they looked for.
+  // `hidden` covers tab / app switches and phone lock, where iOS often never fires pagehide.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') track('dismiss');
+  });
   window.addEventListener('pagehide', () => track('dismiss'));
 }

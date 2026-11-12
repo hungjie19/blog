@@ -52,9 +52,11 @@ const { buttonClass } = Astro.props;
     input.select();
   }
 
-  // Query logging on close is handled by the box itself (outside pointerdown / Escape)
+  // Query logging lives in the box: it catches outside pointerdown / Escape itself, and
+  // `search:close` covers the closes it can't see (the ⌘K / `/` toggle)
   function close({ restoreFocus = false } = {}) {
     if (!isOpen()) return;
+    box.dispatchEvent(new CustomEvent('search:close'));
     panel.hidden = true;
     document.querySelectorAll('[data-search-open]').forEach(el => el.setAttribute('aria-expanded', 'false'));
     if (restoreFocus) opener?.focus();
