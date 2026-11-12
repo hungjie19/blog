@@ -4,6 +4,7 @@
 // Turns one generated cover image into the two files a post uses and flags the post:
 //   public/images/posts/<slug>/og.jpg     1200×630, watermarked → OG meta, article hero, card view
 //   public/images/posts/<slug>/thumb.jpg  480×360, centre 4:3 of the OG frame, no watermark → list view
+//                                         (--thumb-fit contain: the whole source image instead, see below)
 //   src/content/blog/<slug>/index.mdx     gets `cover: true` if it is missing
 //
 // Composition rule for generated images: keep the subject, product logos and labels inside the
@@ -26,11 +27,12 @@ const SIZE_BUDGET = 200 * 1024;
 // Matches the size of the watermark baked into the generated covers
 const WATERMARK_SCALE = 0.65;
 const ANCHORS = new Set(["center", "top", "bottom"]);
+const THUMB_FITS = new Set(["cover", "contain"]);
 
 function usage() {
 	console.log(`
 Usage:
-  pnpm cover <image> --slug <slug> [--baked-watermark] [--anchor center|top|bottom] [--force]
+  pnpm cover <image> --slug <slug> [--baked-watermark] [--anchor center|top|bottom] [--thumb-fit cover|contain] [--force]
 
 Options:
   --slug <slug>        Post folder under src/content/blog/ (required)
@@ -38,6 +40,9 @@ Options:
                        skip burning another one and crop from the bottom (keeps the mark)
   --anchor <where>     Which part to keep when the image is taller than 1.91:1
                        (default: bottom with --baked-watermark, otherwise center)
+  --thumb-fit <fit>    cover (default): thumb is the centre 4:3 of the OG frame
+                       contain: the whole image fits the thumb width, top/bottom filled with a
+                       blurred, darkened copy of itself (slide covers: titles span the full width)
   --force              Replace an existing og.jpg / thumb.jpg
 
 Outputs public/images/posts/<slug>/og.jpg + thumb.jpg and adds \`cover: true\` to the post.
@@ -45,13 +50,14 @@ Outputs public/images/posts/<slug>/og.jpg + thumb.jpg and adds \`cover: true\` t
 }
 
 function parseArgs(args) {
-	const options = { input: undefined, slug: undefined, baked: false, anchor: undefined, force: false };
+	const options = { input: undefined, slug: undefined, baked: false, anchor: undefined, thumbFit: "cover", force: false };
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
 		if (arg === "--help" || arg === "-h") return { help: true };
 		if (arg === "--slug") options.slug = args[++i];
 		else if (arg === "--baked-watermark") options.baked = true;
 		else if (arg === "--anchor") options.anchor = args[++i];
+		else if (arg === "--thumb-fit") options.thumbFit = args[++i];
 		else if (arg === "--force") options.force = true;
 		else if (!arg.startsWith("-") && !options.input) options.input = arg;
 		else throw new Error(`Unknown or misplaced argument: ${arg}`);
@@ -60,6 +66,7 @@ function parseArgs(args) {
 	if (!options.slug) throw new Error("Missing --slug.");
 	options.anchor ??= options.baked ? "bottom" : "center";
 	if (!ANCHORS.has(options.anchor)) throw new Error("--anchor must be center, top, or bottom.");
+	if (!THUMB_FITS.has(options.thumbFit)) throw new Error("--thumb-fit must be cover or contain.");
 	return options;
 }
 
@@ -79,6 +86,16 @@ async function toOgFrame(input, anchor) {
 	}
 	const buffer = await sharp(input).extract(crop).resize(OG_WIDTH, OG_HEIGHT).png().toBuffer();
 	return { buffer, source: `${width}×${height}`, crop };
+}
+
+/** The whole image fitted to the thumb width, letterboxed over a blurred, darkened copy of itself. */
+async function containThumb(input) {
+	const fg = await sharp(input).resize(THUMB_WIDTH, THUMB_HEIGHT, { fit: "inside" }).toBuffer({ resolveWithObject: true });
+	const bg = await sharp(input).resize(THUMB_WIDTH, THUMB_HEIGHT, { fit: "cover" }).blur(18).modulate({ brightness: 0.55 }).toBuffer();
+	return sharp(bg)
+		.composite([{ input: fg.data, top: Math.round((THUMB_HEIGHT - fg.info.height) / 2), left: Math.round((THUMB_WIDTH - fg.info.width) / 2) }])
+		.jpeg(JPEG)
+		.toBuffer();
 }
 
 function addCoverFlag(mdxPath) {
@@ -116,7 +133,10 @@ async function main() {
 
 	const og = await sharp(ogSource).jpeg(JPEG).toBuffer();
 	// thumb comes from the un-watermarked frame; the bottom-right mark sits outside the 4:3 slice anyway
-	const thumb = await sharp(frame.buffer).extract(THUMB_CROP).resize(THUMB_WIDTH, THUMB_HEIGHT).jpeg(JPEG).toBuffer();
+	const thumb =
+		options.thumbFit === "contain"
+			? await containThumb(input)
+			: await sharp(frame.buffer).extract(THUMB_CROP).resize(THUMB_WIDTH, THUMB_HEIGHT).jpeg(JPEG).toBuffer();
 
 	fs.mkdirSync(outDir, { recursive: true });
 	fs.writeFileSync(ogPath, og);
@@ -126,7 +146,7 @@ async function main() {
 	const rel = (p) => path.relative(process.cwd(), p);
 	console.log(`Source:  ${frame.source} → crop ${frame.crop.width}×${frame.crop.height} at (${frame.crop.left}, ${frame.crop.top}), anchor ${options.anchor}`);
 	console.log(`og:      ${rel(ogPath)}  ${OG_WIDTH}×${OG_HEIGHT}  ${kb(og.length)}  ${options.baked ? "(baked watermark kept)" : "(watermark burned)"}`);
-	console.log(`thumb:   ${rel(thumbPath)}  ${THUMB_WIDTH}×${THUMB_HEIGHT}  ${kb(thumb.length)}`);
+	console.log(`thumb:   ${rel(thumbPath)}  ${THUMB_WIDTH}×${THUMB_HEIGHT}  ${kb(thumb.length)}  (${options.thumbFit})`);
 	console.log(`post:    ${rel(mdxPath)}  ${flagged ? "added cover: true" : "cover already set"}`);
 	if (og.length > SIZE_BUDGET) console.warn(`warning: og.jpg is ${kb(og.length)}, over the 200KB budget`);
 }

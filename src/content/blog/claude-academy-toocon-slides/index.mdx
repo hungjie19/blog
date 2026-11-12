@@ -1,0 +1,155 @@
+---
+title: "TOOCON #47 演講簡報：跟著 Claude Academy 重新認識 Claude"
+date: 2026-11-12T21:17:25+08:00
+description: "GDG Kaohsiung TOOCON #47 演講簡報：整理 iThome 鐵人賽 30 天跟著 Anthropic 免費的 Claude Academy 上課的重點，從 LLM 猜下一個字、諂媚、Lost in the Middle 與 /autocompact，到 AI Fluency 4D 框架和 Claude API 的工具、RAG 與快取。"
+tags:
+  - GDG
+  - TOOCON
+  - Speaker
+  - Claude-Academy
+  - AI-Fluency
+  - Claude-API
+  - Context-Engineering
+series: slides
+seriesOrder: 1
+cover: true
+---
+
+<KeyTakeaways>
+  <p>Claude Academy 是 Anthropic 官方的免費線上課程，共 26 門、有繁體中文。這份 TOOCON #47 簡報從我上完的 18 門裡挑出三門核心課：AI Capabilities and Limitations 解釋 LLM 為什麼會順著你改口、長對話中間的內容為什麼容易被忽略；AI Fluency 用委派、描述、辨別、審慎四步跟 AI 分工；Building with the Claude API 帶你搭出含工具使用、RAG 與提示快取的後端。</p>
+</KeyTakeaways>
+
+2026 年 11 月 10 日，我在 GDG Kaohsiung 主辦的 [TOOCON #47](https://gdg.community.dev/events/details/google-gdg-kaohsiung-presents-toocon-47/) 分享「跟著 Claude Academy，重新認識 Claude」。內容來自我參加 iThome 2026 鐵人賽的 30 天：每天上一門 Claude Academy 的課，寫一篇筆記。
+
+這篇放的是當天的 56 頁投影片。上方封面是第 1 頁，點開後用左右鍵或滑動就能一路翻到最後一頁；也可以直接點下面任何一張縮圖，從那一頁開始看。
+
+## Claude Academy 是什麼？
+
+Claude Academy 是 Anthropic 官方的線上課程平台，目前有 26 門課，免費、有繁體中文。我 30 天上了 18 門、拿到 15 個 badge，這場挑了三門推薦：
+
+- **AI Capabilities and Limitations：認識 AI**。LLM 的本質是猜下一個字，所以會諂媚、會順著你最新那句話改口，長對話中間的內容也最容易被忽略。完整筆記在[上篇](/posts/ai-capabilities-and-limitations-part1/)與[下篇](/posts/ai-capabilities-and-limitations-part2/)。
+- **AI Fluency: Framework and Foundations：跟 AI 分工**。委派、描述、辨別、審慎四個步驟，換模型、換工具都適用。完整筆記在[上篇](/posts/ai-fluency-framework-foundations-delegation/)與[下篇](/posts/ai-fluency-framework-foundations-description-discernment-diligence/)。
+- **Building with the Claude API：用 API 開發 App**。不會寫 code 也聽得懂的程式課，從 API key、對話歷史一路做到[工具使用](/posts/building-with-the-claude-api-part3/)、[RAG](/posts/building-with-the-claude-api-part4/)與[提示快取](/posts/building-with-the-claude-api-part5/)，從[第 1 堂](/posts/building-with-the-claude-api-part1/)開始讀。
+
+30 天怎麼排課，寫在[這 30 天怎麼走](/posts/claude-academy-30-day-roadmap/)；上完之後整理的學習路徑，在[鐵人賽終曲](/posts/claude-academy-learning-path/)。
+
+## TOOCON #47 簡報：56 頁投影片
+
+<SlideGrid>
+
+![投影片 2：Anthropic 出了 26 門課 繁體中文 免費](./slides/02.jpg)
+
+![投影片 3：每天都在用 Claude 為什麼還要上課？](./slides/03.jpg)
+
+![投影片 4：我一開始 也這樣想](./slides/04.jpg)
+
+![投影片 5：但會不會 我其實沒用對？](./slides/05.jpg)
+
+![投影片 6：iThome 2026 鐵人賽系列封面，跟著 Claude Academy，重新認識 Claude，30 天學習、實作、踩坑與應用紀錄](./slides/06.jpg)
+
+![投影片 7：30 天 18 門課 15 個 badge，Claude Academy 完成徽章截圖](./slides/07.jpg)
+
+![投影片 8：推薦 18 門課真的很多O_o"](./slides/08.jpg)
+
+![投影片 9：核心三門課 AI capabilities and limitations 認識 AI AI Fluency: Framework and foundations 跟 AI 分工 Building with the Claude API API 開發 APP](./slides/09.jpg)
+
+![投影片 10：AI capabilities and limitations 認識 AI](./slides/10.jpg)
+
+![投影片 11：AI 回答你的時候 它到底在做什麼？](./slides/11.jpg)
+
+![投影片 12：AI / LLM 本質是什麼？ 「猜下一個字」 不是搜尋引擎](./slides/12.jpg)
+
+![投影片 13：1906 年：馬可夫鏈 （Markov Chain） 數學地基 只看前一個字 看到「吃」 猜「飯」](./slides/13.jpg)
+
+![投影片 14：Try It Out: Next Token Prediction 課程：用手機打字的情境體驗馬可夫鏈](./slides/14.jpg)
+
+![投影片 15：2010 年前後：手機預測輸入 走入生活 多看前面幾個詞 統計你最常打的詞頻與習慣。 只看「高雄」→ 猜「捷運」 看「參加 高雄」→ 猜「TOOCON」](./slides/15.jpg)
+
+![投影片 16：2017 年：Transformer AI 轉捩點 讀取整段、整篇甚至整本書的脈絡 不只猜詞、還能寫小說](./slides/16.jpg)
+
+![投影片 17：120 年 變的是能看多遠 不變的是猜下一個字 一個字 → 幾個詞 → 一本書](./slides/17.jpg)
+
+![投影片 18：問一句 「你確定嗎？」 它就改口了](./slides/18.jpg)
+
+![投影片 19：訓練留下的四個指紋 指紋 現象 1. 諂媚 你一反駁，它就讓步，即使它一開始是對的 2. 冗長 要一句話，給你一篇文章 3. 過度謹慎 安全的請求也被拒絕 4. 信心校準鬆散 語氣很有把握，不代表答案可靠](./slides/19.jpg)
+
+![投影片 20：它讓步 不是因為你說對了 是訓練留下的習慣](./slides/20.jpg)
+
+![投影片 21：它很聽話 但聽的是最新那一句 那你一開始交代的規則呢？](./slides/21.jpg)
+
+![投影片 22：Lost in the Middle，課程的 U 形曲線圖：關鍵資訊埋在長上下文中間時準確度最低](./slides/22.jpg)
+
+![投影片 23：關鍵指令：放頭尾，別埋中間](./slides/23.jpg)
+
+![投影片 24：不要讓 內容堆滿 指令 用途 /clear 清除對話 /context 看是誰佔了桌面 /compact 壓成摘要，騰出空間 /autocompact 設定壓縮閥值](./slides/24.jpg)
+
+![投影片 25：壓縮也可以帶意圖 程式碼：/compact 只留重要決策，跟我們接下來要做的目標… 告訴 agent 哪些要留、接下來往哪裡走](./slides/25.jpg)
+
+![投影片 26：最近很紅的技巧 /autocompact 400k，旁邊是 Lydia Hallie 說明 auto-compact 的 X 貼文截圖](./slides/26.jpg)
+
+![投影片 27：AI Fluency: Framework and foundations 跟 AI 分工](./slides/27.jpg)
+
+![投影片 28：4D 框架 能力 關鍵提問 口訣 委派 Delegation 分工：哪些自己做，哪些 AI 能幫忙？ 做多少 描述 Description 目標、格式、脈絡、語氣是什麼？ 怎麼做 辨別 Discernment 事實準嗎？推理合理嗎？ 對不對 審慎 Diligence 偏見、驗證、敏感資料、透明度、署名？ 行不行](./slides/28.jpg)
+
+![投影片 29：委派 是清楚自己要解決的問題 AI 應該扮演什麼角色 模型能力，排第二](./slides/29.jpg)
+
+![投影片 30：你不一定懂工具 但你最懂你的問題](./slides/30.jpg)
+
+![投影片 31：首先你是一位 領域專家 其次才是 AI 委派者](./slides/31.jpg)
+
+![投影片 32：沒有領域知識 只能挑 讀起來最順的版本](./slides/32.jpg)
+
+![投影片 33：順，不代表對 還能怎麼做？](./slides/33.jpg)
+
+![投影片 34：不熟的領域 請它翻譯成你熟的 「這段 Kotlin 改成 TypeScript 會長怎樣？」 翻譯是為了讓你有能力提問和檢查](./slides/34.jpg)
+
+![投影片 35：Claude 會改版、按鈕會換位置 這四步不會變 委派、描述、辨別、審慎 任何模型適用](./slides/35.jpg)
+
+![投影片 36：Building with the Claude API API 進階課 Claude with Amazon Bedrock Claude on Google Cloud (Vertex) 不同供應商](./slides/36.jpg)
+
+![投影片 37：程式課 不會寫 code 也聽得懂](./slides/37.jpg)
+
+![投影片 38：帶你搭出這樣的 App 架構 使用者（前端） ↓ 你的後端 API key History Tool use RAG Prompt caching MCP ↓ Claude API](./slides/38.jpg)
+
+![投影片 39：API key 放伺服器端 History API 沒有記憶，自己處理](./slides/39.jpg)
+
+![投影片 40：順序 宣告工具給 Claude 用 Claude 提出要用什麼工具 執行的是你的程式](./slides/40.jpg)
+
+![投影片 41：tools example: 程式碼：def get_current_datetime(date_format): ... # 你的程式…](./slides/41.jpg)
+
+![投影片 42：程式碼：User: 103 天之後是禮拜幾？…](./slides/42.jpg)
+
+![投影片 43：Embedding 找語意、BM25 找關鍵字 RRF 合併兩份排名](./slides/43.jpg)
+
+![投影片 44：今天吃什麼？ 食物 爺爺 爸爸 妹妹 RRF 分數 排名 豆漿油條 1 1 3 1/2 + 1/2 + 1/4 = 1.25 1 草莓蛋糕 2 3 1 1/3 + 1/4 + 1/2 = 1.08 2 牛排 3 2 2 1/4 + 1/3 + 1/3 = 0.92 3 第 1 名拿 1/2、第 2 名拿 1/3、第 3 名拿 1/4（課程示範 k=1）](./slides/44.jpg)
+
+![投影片 45：快取看的是 前綴一字不差 失效：換模型、改 effort、工具重排、MCP 重連 整段重算](./slides/45.jpg)
+
+![投影片 46：快取時效性 API 預設 5 分鐘（可選 1 小時） Claude Code：1 小時；過期就整段重寫 午休回來的第一輪 最貴](./slides/46.jpg)
+
+![投影片 47：快取要趁早 熱的時候壓縮，幾乎都是讀快取 冷了才壓縮，整段重算](./slides/47.jpg)
+
+![投影片 48：但，不用擔心](./slides/48.jpg)
+
+![投影片 49：idle compaction Claude Code v2.1.299 (2026/10/14) 對話超過 200K、閒置約 54 分鐘，自動壓縮](./slides/49.jpg)
+
+![投影片 50：有詳細課程 MCP client ↔ server Introduction to Model Context Protocol Model Context Protocol: Advanced topics](./slides/50.jpg)
+
+![投影片 51：上課風格 先寫架構讓你跑通 每堂抽掉一塊 換成真的 API](./slides/51.jpg)
+
+![投影片 52：我把每堂課 存成 commit github.com/hungjie19/claude-academy-api-app](./slides/52.jpg)
+
+![投影片 53：上完課 API 費用： $1.61 USD 開課前儲值 $5 USD](./slides/53.jpg)
+
+![投影片 54：我怎麼上這些課？ 用教學引導模式陪讀 每堂課結束，先口頭講出重點 確認沒偏，才往下一堂 用 AI 學 AI](./slides/54.jpg)
+
+![投影片 55：不管作品裡有多少 AI 參與 最後的負責人 仍然是你](./slides/55.jpg)
+
+![投影片 56：Thanks Q&A](./slides/56.jpg)
+
+</SlideGrid>
+
+## 簡報引用的資料
+
+- 第 26 頁的 `/autocompact 400k`，出自 Anthropic 的 Lydia Hallie 在 X 上的[說明貼文](https://x.com/lydiahallie/status/2108624109538291901)：1M context 的模型預設約 967K 才壓縮，在那之前每則訊息都帶著整段對話，就算大多是讀快取，也還是算用量。
+- 第 52 頁提到的課程作業：上 Building with the Claude API 時，我把每堂課存成一個 commit，放在 [claude-academy-api-app](https://github.com/hungjie19/claude-academy-api-app)。

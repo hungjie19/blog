@@ -4,6 +4,7 @@ import BlogLayout from "../../layouts/BlogLayout.astro";
 import AuthorCard from "../../components/AuthorCard.astro";
 import TableOfContents from "../../components/TableOfContents.astro";
 import KeyTakeaways from "../../components/KeyTakeaways.astro";
+import SlideGrid from "../../components/SlideGrid.astro";
 import { Sparkles } from "@lucide/astro";
 import { getSeries, seriesLabel, sortSeriesEntries } from "../../lib/series";
 
@@ -136,7 +137,7 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
     </div>
 
     <div class="article-body">
-      <Content components={{ KeyTakeaways }} />
+      <Content components={{ KeyTakeaways, SlideGrid }} />
     </div>
     {
       seriesList && (

@@ -1,0 +1,50 @@
+---
+// 簡報文章的投影片縮圖格。內容是 markdown 圖片（每張一段 <p>），由 pnpm slides:import 產生；
+// 燈箱照常把 .article-body 內的圖包成同一組，點任一張就能左右翻頁。
+---
+
+<div class="slide-grid">
+  <slot />
+</div>
+
+<style>
+  .slide-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  @media (min-width: 769px) {
+    .slide-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* 黑底投影片放在 dark mode 黑底頁面上會糊成一片：靠 surface 色階＋極淡邊框做出卡片，不畫實色框 */
+  :global(.article-body) .slide-grid :global(p) {
+    margin: 0;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    transition: border-color 150ms ease, transform 150ms ease;
+  }
+
+  :global(.article-body) .slide-grid :global(p:hover) {
+    border-color: var(--muted);
+    transform: scale(1.02);
+  }
+
+  :global(.article-body) .slide-grid :global(a.lightbox-trigger) {
+    display: block;
+  }
+
+  :global(.article-body) .slide-grid :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 0;
+    border-radius: 5px;
+  }
+</style>

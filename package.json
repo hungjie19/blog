@@ -13,7 +13,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "watermark": "node scripts/watermark-image.mjs",
-    "cover": "node scripts/cover.mjs"
+    "cover": "node scripts/cover.mjs",
+    "slides:import": "node scripts/slides-import.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^6.0.3",

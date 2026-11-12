@@ -95,6 +95,12 @@ export const seriesLists = {
     type: "collection",
     cover: "/images/series/astro-blog.jpg",
   },
+  slides: {
+    title: "簡報",
+    description: "上台分享用過的 Slidev 簡報：每份簡報一篇，投影片依序排成縮圖，點開就能在燈箱裡左右翻頁看完整份，延伸的完整筆記連到對應的系列文章。",
+    type: "collection",
+    cover: "/images/series/slides.jpg",
+  },
 } satisfies Record<string, SeriesList>;
 
 export type SeriesId = keyof typeof seriesLists;
