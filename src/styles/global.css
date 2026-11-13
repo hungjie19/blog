@@ -75,13 +75,30 @@
     margin: 0;
   }
 
+  /* Native UI (default scrollbars, form controls) follows the site theme, not just the OS.
+     Keyed to the class rather than `light dark`: without JS the tokens stay light, so
+     native UI must stay light too. */
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+
   * {
     box-sizing: border-box;
+    scrollbar-width: thin;
   }
 
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  /* scrollbar-color inherits, so one declaration on the root covers every scroller */
+  html {
+    --scrollbar-thumb: var(--border);
+    --scrollbar-track: transparent;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  /* Legacy WebKit fallback (Safari < 26.2). Guarded so browsers that support both don't mix them. */
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+  }
 }
 
 .meta-link {
