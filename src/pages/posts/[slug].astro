@@ -258,13 +258,65 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
       }
     }
 
+    // Mermaid 圖是 inline <svg> 不是 <img>，上面抓不到；figure 本身直接當燈箱項目
+    for (const figure of document.querySelectorAll<HTMLElement>('.article-body .mermaid-diagram')) {
+      figure.setAttribute('role', 'button');
+      figure.setAttribute('aria-label', '放大圖表');
+      figure.tabIndex = 0;
+      figure.addEventListener('click', () => window.umami?.track('open-lightbox-diagram'));
+      figure.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        figure.click();
+      });
+    }
+
     const lightbox = new PhotoSwipeLightbox({
       gallery: 'article',
-      children: 'a.lightbox-trigger',
+      children: 'a.lightbox-trigger, .mermaid-diagram',
       pswpModule: () => import('photoswipe'),
     });
+    lightbox.addFilter('domItemData', (itemData, element) =>
+      element.classList.contains('mermaid-diagram') ? diagramSlide(element) : itemData,
+    );
     new PhotoSwipeDynamicCaption(lightbox, { type: 'below' });
     lightbox.init();
+  }
+
+  // 燈箱用圖片 slide 才能雙指／滾輪放大，但 <img> 裡的 SVG 讀不到頁面的 CSS 變數：
+  // 開燈箱當下把目前主題（light／dark）的 --pele-* 值寫死進 SVG 複本，再轉成 data URL。
+  const PELE_VARS = ['--pele-bg', '--pele-fg', '--pele-muted', '--pele-line', '--pele-surface', '--pele-surface-alt', '--pele-border', '--pele-accent'];
+  const DIAGRAM_PADDING = 16;
+  const DIAGRAM_ZOOM = 3; // 宣告成 3 倍大，燈箱才有放大空間；SVG 是向量，放大不會糊
+
+  function diagramSlide(figure: HTMLElement) {
+    const svg = figure.querySelector('svg')!;
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    const styles = getComputedStyle(figure);
+    for (const name of PELE_VARS) clone.style.setProperty(name, styles.getPropertyValue(name).trim());
+
+    // 燈箱底是黑的，補一塊頁面底色＋留白，light mode 的深色字才看得到
+    const { x, y, width, height } = svg.viewBox.baseVal;
+    const w = width + DIAGRAM_PADDING * 2;
+    const h = height + DIAGRAM_PADDING * 2;
+    clone.setAttribute('viewBox', `${x - DIAGRAM_PADDING} ${y - DIAGRAM_PADDING} ${w} ${h}`);
+    clone.setAttribute('width', String(w));
+    clone.setAttribute('height', String(h));
+    const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    background.setAttribute('x', String(x - DIAGRAM_PADDING));
+    background.setAttribute('y', String(y - DIAGRAM_PADDING));
+    background.setAttribute('width', String(w));
+    background.setAttribute('height', String(h));
+    background.setAttribute('rx', '8');
+    background.setAttribute('fill', styles.getPropertyValue('--pele-bg').trim());
+    clone.prepend(background);
+
+    return {
+      src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(clone))}`,
+      width: Math.round(w * DIAGRAM_ZOOM),
+      height: Math.round(h * DIAGRAM_ZOOM),
+      alt: svg.getAttribute('aria-label') ?? '',
+    };
   }
 
   // Heading anchors: click a heading to copy its link and scroll it to the top

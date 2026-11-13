@@ -154,6 +154,26 @@
 }
 
 @layer components {
+  /* ```mermaid fence 由 src/plugins/remark-mermaid.ts 在 build time 渲染成 Pele SVG。
+     SVG 只吃 --pele-* 變數（沒有寫死色碼），對應到 token 後 html.dark 切換會自動跟著變色。
+     字型不改：版面是 build time 依 Pele 預設字型量的，換字型可能讓文字超出框。 */
+  .mermaid-diagram {
+    --pele-bg: var(--bg);
+    --pele-fg: var(--article-text);
+    --pele-muted: var(--muted);
+    --pele-line: var(--muted);
+    --pele-surface: var(--surface);
+    --pele-surface-alt: color-mix(in srgb, var(--surface) 50%, var(--border));
+    --pele-border: color-mix(in srgb, var(--muted) 50%, var(--border));
+    --pele-accent: var(--accent);
+    /* SVG 只縮不放（max-width:100%），比內文窄的圖照原尺寸顯示：寬度貼齊圖再置中，點擊範圍也只剩圖本身 */
+    width: fit-content;
+    max-width: 100%;
+    margin: 1.5rem auto;
+  }
+  /* role="button" 由燈箱 JS 加上，沒有 JS 時不顯示可點的游標 */
+  .mermaid-diagram[role="button"] { cursor: zoom-in; }
+
   /* 「貼給 AI 整理」pill：平常靜止的漸層邊框，hover 流動一圈 */
   .ai-prompt-btn {
     display: inline-flex;

@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import { remarkAdmonitions } from './src/plugins/remark-admonitions.ts';
+import { remarkMermaid } from './src/plugins/remark-mermaid.ts';
 import { rehypeFigureCaption } from './src/plugins/rehype-figure-caption.ts';
 import { rehypeWrapTables } from './src/plugins/rehype-wrap-tables.ts';
 import sitemap from '@astrojs/sitemap';
@@ -67,7 +68,7 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkAdmonitions],
+    remarkPlugins: [remarkAdmonitions, remarkMermaid],
     rehypePlugins: [rehypeFigureCaption, rehypeWrapTables],
   },
   vite: {

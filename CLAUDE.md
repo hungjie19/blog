@@ -67,6 +67,7 @@ src/content/blog/
   build time 由 `src/plugins/rehype-figure-caption.ts`（rehype plugin，註冊在 `astro.config.mjs`）自動把「圖片段落 + 緊接的 `.image-caption` 段落」合併成 `<figure><img>...<figcaption></figure>`，不用改寫作習慣。文章頁的 lightbox（PhotoSwipe + dynamic-caption-plugin，邏輯在 `src/pages/posts/[slug].astro`）會從 `figcaption` 讀取說明文字顯示在放大圖片下方；沒寫這行則 fallback 用 alt text。
   - **alt 與 caption 分工**：alt 寫「畫面上有什麼」（給螢幕閱讀器、圖片搜尋、AI），caption 寫「這張圖代表什麼」（給讀者）。兩者不要寫成同一句，有 figcaption 時螢幕閱讀器會兩段都念。
   - **caption 只能是純文字**：不放反引號、`<code>`、連結、粗體，也不寫裸網址（`http://…` 會被 GFM 自動轉成連結）。需要標示指令或名稱時用「」。違反時 build 會失敗並指出是哪段 caption。
+- **圖表（Mermaid）**：直接寫標準 ` ```mermaid ` fence，不用元件、不用 import。`src/plugins/remark-mermaid.ts` 在 build time 用 Pele 渲染成 `<figure class="mermaid-diagram">` 包 inline SVG，讀者端零 JS；remark 階段就換掉，Expressive Code 不會處理它。顏色由 `global.css` 的 `.mermaid-diagram` 把 `--pele-*` 對應到 token，dark mode 自動跟著切。點圖開燈箱（`[slug].astro` 開啟當下把目前主題的顏色寫死進 SVG 轉成圖片，才能放大），Umami 事件 `open-lightbox-diagram`。語法錯誤會讓 build 失敗。`.md` endpoint 原樣輸出 fence。
 
 ## Frontmatter 格式
 
