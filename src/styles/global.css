@@ -83,21 +83,25 @@
 
   * {
     box-sizing: border-box;
-    scrollbar-width: thin;
   }
 
-  /* scrollbar-color inherits, so one declaration on the root covers every scroller */
   html {
     --scrollbar-thumb: var(--border);
     --scrollbar-track: transparent;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
-  /* Legacy WebKit fallback (Safari < 26.2). Guarded so browsers that support both don't mix them. */
-  @supports not (scrollbar-color: auto) {
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-    ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+  /* Chrome / Safari: a 4px custom scrollbar. scrollbar-width can't go below `thin` (~8px),
+     so the WebKit pseudo-elements stay on purpose. */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+
+  /* Firefox only. Chrome 121+ drops ::-webkit-scrollbar as soon as either standard
+     property applies, so they must not reach WebKit/Blink. scrollbar-color inherits;
+     scrollbar-width doesn't, hence `*`. */
+  @supports not selector(::-webkit-scrollbar) {
+    * { scrollbar-width: thin; }
+    html { scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
   }
 }
 
