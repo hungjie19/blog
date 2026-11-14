@@ -5,11 +5,19 @@ export type SeriesType = "series" | "collection";
 export type SeriesList = {
   title: string;
   description: string;
+  website?: string;
   type: SeriesType;
   cover?: string;
 };
 
 export const seriesLists = {
+  "gdg-devfest-kh-2026": {
+    title: "DevFest 高雄 2026",
+    description: "收錄 GDG Kaohsiung DevFest 2026 當天的現場講題筆記，涵蓋 AI Agent、開發工具、資安與設計等分享。",
+    website: "https://gdgkh.cc/2026/",
+    type: "series",
+    cover: "/images/series/gdg-devfest-kh-2026.jpg",
+  },
   "ithome-2026-ironman": {
     title: "iThome 2026 鐵人賽：跟著 Claude Academy，重新認識 Claude",
     description:
@@ -139,6 +147,7 @@ export type SeriesSummary = {
   id: string;
   title: string;
   description: string;
+  website?: string;
   type: SeriesType;
   cover: string | null;
   url: string;
@@ -159,6 +168,7 @@ export async function getSeriesSummaries(): Promise<SeriesSummary[]> {
       id,
       title: item.title,
       description: item.description,
+      ...(item.website ? { website: item.website } : {}),
       type: item.type,
       cover: item.cover ?? null,
       url: `/series/${id}/`,

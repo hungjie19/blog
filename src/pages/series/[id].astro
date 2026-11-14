@@ -37,6 +37,19 @@ const ListTag = isCollection ? 'ul' : 'ol';
       )}
       <h1 class="mb-0 mt-6 text-3xl font-bold tracking-[-0.02em] text-text">{series.title}</h1>
       <p class="mb-0 mt-3 max-w-[38rem] text-base leading-relaxed text-muted">{series.description}</p>
+      {series.website && (
+        <a
+          href={series.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-4 inline-flex text-sm font-medium text-accent underline decoration-border underline-offset-4 hover:decoration-accent"
+          aria-label={`開啟 ${series.title} 官方網站（新分頁）`}
+          data-umami-event="click-series-website"
+          data-umami-event-destination={id}
+        >
+          活動官網 ↗
+        </a>
+      )}
       <p class="mb-0 mt-5 text-sm text-accent-muted">{posts.length} 篇文章</p>
     </header>
 
