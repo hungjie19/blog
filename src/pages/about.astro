@@ -9,7 +9,7 @@ const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL :
 type Scope = 'Internal' | 'Public' | 'Online';
 type Challenge = { date: string; scope: Scope; title: string; href?: string };
 const challenges: Challenge[] = [
-  { date: '2026-11-10', scope: 'Public', title: 'TOOCON #47 簡報' },
+  { date: '2026-11-10', scope: 'Public', title: '簡報 TOOCON #47〈跟著 Claude Academy 重新認識 Claude〉', href: `${base}posts/claude-academy-toocon-slides/` },
   {
     date: '2026-10-14',
     scope: 'Online',
