@@ -1,0 +1,134 @@
+---
+title: 'Obsidian Tag 越長越亂：用 Controlled Vocabulary 收斂標籤'
+date: 2026-11-19T10:58:43+08:00
+description: '同一個概念在 Obsidian 裡出現中英文、單複數、大小寫好幾種 tag，是 folksonomy 的老問題。這篇記錄我怎麼用 controlled vocabulary 收斂 574 個 tag，讓人和多個 AI agent 寫入時遵守同一套規則。'
+tags:
+  - Obsidian
+  - Knowledge-Management
+  - Controlled-Vocabulary
+  - Folksonomy
+  - Information-Architecture
+  - MCP
+cover: true
+---
+
+<KeyTakeaways>
+  <p>Obsidian 的 tag 越用越亂，同一個概念出現中文、英文、單複數、大小寫好幾種寫法，該怎麼收斂？這是資訊科學裡 folksonomy（自由標籤）的老問題，標準解法是 controlled vocabulary（受控詞彙）：統一語言與大小寫，用同義詞對照表指定唯一寫法，寫入時對照既有 tag，再定期 audit；這是我在個人 vault 裡讓人和多個 AI agent 共用同一套規則的做法。</p>
+</KeyTakeaways>
+
+我習慣把每次跟 AI 討論完的對話整理成 summary，存進 Obsidian 的 vault（Obsidian 用來放筆記的資料夾），這個做法寫在〈[Session is Knowledge：把 AI 對話保存成自己的知識庫](/posts/session-is-knowledge/)〉。五月底，我替 33 篇 summary 補上 frontmatter（Markdown 檔最上方那段 YAML 格式的欄位），每篇帶幾個 tag，打開 Obsidian 的標籤窗格，點一個 tag 就能篩出同主題的筆記。
+
+之後寫入的不只我。整理 summary 的 skill、把 summary 提煉成 wiki 的 skill、Claude 和 Codex，都會往 frontmatter 寫 tag。後來我在看 summary 時發現不太對：`sub-agent` 和 `subagent` 同時存在，`ai-agents` 和 `ai-agent` 也是；有的 tag 是 `statusLine`，有的全小寫；還有幾個中文 tag 混在裡面，數量不多，但確實有。
+
+七月初盤點時，vault 裡已經有 574 個不重複的 tag。
+
+## 同一件事，為什麼會長出好幾個 tag？
+
+當時整理 summary 的 skill 裡其實有一份高頻詞表：篩出用了 8 次以上的 tag，要求每篇「至少從清單挑 2 個」，想藉此讓大家往同一批詞靠攏。
+
+我開始懷疑這份表本身就有問題，拿去跟 LLM 討論，整理出三點：
+
+- 表是手動篩出來的快照，不含全部 tag，也沒人持續更新，count 只會越來越舊。
+- 用得多不代表用得對，count 不能拿來判斷哪個寫法才是正確的。
+- 「至少挑 2 個」會讓寫入的人（或 agent）為了湊數挑熱門詞，而不是挑最貼切的詞。
+
+查下去才發現，這不是我自己發明的煩惱。資訊架構師 Thomas Vander Wal 在 2004 年造了 **folksonomy** 這個詞（folk + taxonomy），指的是使用者自己隨手貼標籤、由下往上長出來的分類。Golder 和 Huberman 在 2006 年研究 del.icio.us 這類協作標籤系統時指出，自由標籤不像受控詞彙那樣有機制處理這幾個問題：
+
+- **Synonymy（同義詞）**：同一個概念有好幾種寫法。這對搜尋傷害最大，因為你永遠不確定自己找齊了沒，搜 `information retrieval` 的人會漏掉別人標成 `IR` 的內容。
+- **Polysemy（一詞多義）**：同一個詞指不同東西，例如 `java` 可以是程式語言、島嶼或咖啡。
+- **Basic-level variation（粒度不一致）**：同一隻獵豹，有人標 `cheetah`，有人標 `cat`，有人標 `animal`。
+
+我的 vault 遇到的主要是第一種，再加上中英文混用、單複數、大小寫這幾種「寫法不同、概念相同」的變體。
+
+對應的正式解法叫 **controlled vocabulary（受控詞彙）**：每個概念指定一個 preferred term（偏好詞），其他寫法登記成 alias（別名），寫入時一律換成偏好詞。圖書館的主題詞表、NISO Z39.19 標準、W3C 的 SKOS 都是這套思路。
+
+企業級的 taxonomy 工具對個人 vault 太重了，所以我跟 LLM 討論後的方向是：用幾份 Markdown 檔當詞彙資料層，規則寫清楚，讓人和 agent 都照同一份走。
+
+## 先統一語言：一律英文
+
+第一件事是處理中文 tag。從當時的修改紀錄看，被換掉的大概是這些：
+
+| 原本 | 改成 |
+|---|---|
+| `部落格` | `blog` |
+| `簡報` | `presentation` |
+| `個人品牌` | `personal-brand` |
+| `跨session記憶` | `cross-session-memory` |
+| `agent-架構` | `agent-architecture` |
+
+中文 tag 數量不多，但散在大約 52 個檔案裡。已經有英文對應詞的直接併進去，例如 `個人品牌` 併進既有的 `personal-brand`；沒有的才新造英文詞。
+
+不要中文，是因為這些 summary 之後會拿來寫部落格，summary 的 tag 也是產生部落格 tag 的依據之一，而部落格的 tag 一律是英文。summary 這邊混著中文，部落格那邊的依據就跟著亂。在 vault 裡，混用的代價也很具體：同一個概念被語言切成兩個 tag，點 `blog` 看不到標成 `部落格` 的那幾篇。規則寫成「一律英文，不例外」，連 `請假流程` 這種很難翻的詞也要翻成 `leave-process`。我的考量是，只要開了例外，之後每個 agent 寫 tag 時都得先判斷「這個算不算例外」。
+
+## 大小寫：每個 repo 有自己的規則
+
+中文清完，接著是大小寫。這裡我沒有讓 vault 和部落格用同一套規則，因為兩邊的 tag 給不同的對象看。
+
+**vault 統一全小寫加連字號**（lowercase kebab-case），像 `statusLine` 改成 `statusline`、`Minerva-University` 改成 `minerva-university`。vault 的 tag 是給我和 agent 篩選用的內部資料，Obsidian 比對 tag 本來就不分大小寫，沒有理由讓同一個詞出現兩種大小寫。
+
+**部落格則要寫出正確的大小寫。** 部落格的 tag 會變成文章下方的 tag pill 和 tag 頁，讀者看得到。`llm` 寫成小寫，讀起來就不像一個縮寫；所以部落格這邊規定 `LLM`、`MCP`、`SEO` 這類縮寫全大寫，產品名照品牌寫法，例如 `OpenMemory`，其他詞每段開頭大寫。
+
+兩邊共用的是治理流程，詞彙資料各自維護。部落格的 tag 存在 blog repo 文章的 frontmatter 裡，Obsidian 根本看不到，硬拿 vault 的詞表去管部落格，只會把兩邊的語料搞混。
+
+## 同義詞對照表：該併的併，不確定的先不併
+
+語言和大小寫統一之後，剩下的全是英文，同義詞反而好比對了。這份對照表叫 `aliases.md`，格式很單純：
+
+```text
+preferred: subagent
+alias: sub-agent
+
+preferred: ai-agent
+alias: ai-agents
+
+preferred: personal-brand
+alias: personal-branding
+```
+
+alias 欄的詞同時就是黑名單，之後誰寫出 `sub-agent`，就換成 `subagent`。
+
+這一步我刻意留了幾組沒有併：`skill`／`skills`、`agent`／`agents`。看起來只是單複數，但當時判斷兩個寫法在不同筆記裡可能指的不是同一件事。確定不了是不是同一個概念，就先放在「待裁決」，不為了整齊硬併。我的看法是併錯比多一個 tag 更麻煩：被併進去的那幾篇，會在搜尋時跑到錯的主題底下。
+
+整理過程中也順手清掉一類垃圾：從內文誤抓來的字面值，像 GitHub issue 編號 `3286`、排行榜名次 `3`、色碼 `ff5f57`。這些不是分類，也不會有人點進去找相關筆記，直接刪掉。
+
+## 寫入時比對，治理時再裁決
+
+規則有了，接著要讓它每次寫入都被遵守。我把治理拆成兩種頻率：
+
+- **寫入時（每次都做）**：任何 agent 寫 tag 前，先讀 `tag-system/index.md`。這是入口，只說明這次要讀哪些檔。接著呼叫 Obsidian MCP 的 `list_all_tags` 拿到全部既有 tag，跟候選詞比對：同一個概念已經有 tag 就沿用，真的沒有才新增。
+- **治理時（偶爾做）**：另一個 `tag-taxonomy` skill 掃全庫，找出疑似同義、單複數、粒度不一致的候選，列給我裁決，裁決結果回寫進 `aliases.md`，再記一筆到決策紀錄 `tag-audit.md`。
+
+
+`list_all_tags` 是 MCPVault 提供的工具。MCP 是讓 AI 呼叫外部工具的協定，MCPVault 則讓 AI 直接讀取本機的 Obsidian vault，我在〈[Obsidian MCPVault：讓 AI 自動查詢我的知識倉庫](/posts/obsidian-mcp-knowledge-search/)〉介紹過它：
+
+| Repo | Stars |
+|---|---|
+| [bitbonsai/mcpvault](https://github.com/bitbonsai/mcpvault) | 1,725 ⭐ |
+
+整個 `tag-system/` 資料夾最後長這樣：
+
+```text
+tag-system/
+├── index.md          # 入口：寫 tag 前讀這份，它告訴你還要讀什麼
+├── tag-rules.md      # 規則：語言、大小寫、禁止的 pattern
+├── canonical-tags.md # 分類方向感，不是完整清單
+├── aliases.md        # 同義詞對照表 + 退役黑名單
+├── tag-audit.md      # 決策紀錄，只給治理時讀
+└── generated/        # audit 產物，過期即棄
+```
+
+有一條是刻意的：完整的 tag 清單不放在任何靜態檔裡，每次都用 `list_all_tags` 即時查。快照一定會過期，原本那份高頻詞表就是這樣過期的。
+
+重構完跑了第一次完整 audit，合併 10 組同義詞，再刪掉一批從檔名或等級代號誤抓來的 tag，574 個降到 557 個。加上前面的中文和英文同義詞清理，前後大概收掉了三五十個很相似的 tag。
+
+> [!CAUTION]
+> ### `list_all_tags` 會把內文的 `#色碼` 也當成 tag
+> `list_all_tags` 除了 frontmatter，也會掃內文的 inline hashtag，連 inline code 裡的 `#ff5f57` 都會被算進去，所以回傳的清單裡會混著色碼。這些不是 frontmatter 的 tag，寫入時不能拿來當「既有 tag」重用。我把這個警告直接寫進 `index.md`，免得 agent 把色碼當成詞彙。
+
+## 心得
+
+這套做法讓我覺得有用的地方，是第一次把 tag 全部搜出來時，看到一大堆重複。跟 LLM 一起把規則定下來、把它們收斂成同一個之後，後續不管是搜尋舊文章還是寫部落格，處理 tag 都順很多，不會再像原本那些 summary 一樣，各寫各的發散出去。這件事是連動的：上游的 tag 收斂了，下游用到它的地方都跟著受益。
+
+另一個沒預期到的好處是，tag 收斂之後，能看出我最近比較專注在哪些主題、知識庫裡哪些領域累積最多。tag 那麼發散的時候，這件事根本看不出來。
+
+最後發現，這整套檢查靠 Obsidian MCP 的 `list_all_tags` 就能很輕鬆做到，不用另外寫掃描程式，這點我覺得很棒，也很方便。
