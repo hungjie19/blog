@@ -98,6 +98,8 @@ alias 欄的詞同時就是黑名單，之後誰寫出 `sub-agent`，就換成 `
 - **寫入時（每次都做）**：任何 agent 寫 tag 前，先讀 `tag-system/index.md`。這是入口，只說明這次要讀哪些檔。接著呼叫 Obsidian MCP 的 `list_all_tags` 拿到全部既有 tag，跟候選詞比對：同一個概念已經有 tag 就沿用，真的沒有才新增。
 - **治理時（偶爾做）**：另一個 `tag-taxonomy` skill 掃全庫，找出疑似同義、單複數、粒度不一致的候選，列給我裁決，裁決結果回寫進 `aliases.md`，再記一筆到決策紀錄 `tag-audit.md`。
 
+> [!NOTE]
+> 寫入時「先看全部既有 tag 再比對」這一步，後來被我反過來了：先看清單會讓 LLM 只挑既有的泛詞，現在改成先只看內容推理 tag，再拿既有 tag 收斂。過程寫在下一篇：[先推理、再收斂](/posts/tag-infer-first-converge-second/)。
 
 `list_all_tags` 是 MCPVault 提供的工具。MCP 是讓 AI 呼叫外部工具的協定，MCPVault 則讓 AI 直接讀取本機的 Obsidian vault，我在〈[Obsidian MCPVault：讓 AI 自動查詢我的知識倉庫](/posts/obsidian-mcp-knowledge-search/)〉介紹過它：
 
