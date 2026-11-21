@@ -1,0 +1,103 @@
+---
+title: "Modern Web Guidance 實測：Google 的 skill 補足 AI 缺的前端新語法"
+date: 2026-11-21T23:35:21+08:00
+description: "實測 Google Chrome 團隊的 Modern Web Guidance skill：agent 寫前端前先查 guide，改掉習慣的舊語法，並用 legacy-scan 掃出部落格的 color-scheme 與捲軸問題，也記下 4px 細捲軸的取捨。"
+tags:
+  - Modern-Web-Guidance
+  - Skill
+  - Claude-Code
+  - CSS
+  - Dark-Mode
+  - Scrollbar
+cover: true
+---
+
+<KeyTakeaways>
+  <p>Modern Web Guidance 是 Google Chrome 團隊維護、讓 AI agent 寫前端前先查現代寫法的 skill，能補足 AI 缺的新語法嗎？在我的 Astro 部落格上可以：agent 不是不知道新語法，而是愛回到最常見的舊寫法，這個 skill 把它拉回來，也掃出我自己看不出來的問題；但這是單一專案的一次實測。</p>
+</KeyTakeaways>
+
+我在跟 agent 討論 blog 功能，在思考要裝 lib 還是要自己寫呢？似乎也不太困難的功能… 這時候我想到剛看到的 skill，就把 Google 的 [modern-web-guidance-src](https://github.com/GoogleChrome/modern-web-guidance-src) 丟給它，問：裝了會不會有幫助？
+
+## 它先糾正了 agent 剛給我的答案
+
+Modern Web Guidance 是 Chrome 團隊維護、MDN、Firefox 與 Edge 一起參與的 agent skill。agent 寫前端之前先跑 `npx modern-web-guidance@latest search`，它用離線的 embedding 加 BM25，從 README 目前列的 262 個 web feature 裡找出對應的 guide，再把整份 guide 讀進 context。
+
+| Repo | Stars | 說明 |
+| --- | --- | --- |
+| [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | ~24.3k | 發布給 agent 使用的 Skill 與指南集 |
+| [GoogleChrome/modern-web-guidance-src](https://github.com/GoogleChrome/modern-web-guidance-src) | ~9.8k | 原始碼與指南內容維護倉庫 |
+
+agent 沒有先安裝，而是用 README 的免安裝方式直接在我的 blog repo 上試，並加上 `DISABLE_TELEMETRY=1`（它預設會把搜尋字串回傳給 Google）。用「swipeable card carousel scroll snap」搜尋，前 10 筆都貼題，例如 `carousel`、`scroll-snap-state-sync`、`swipe-to-remove`。
+
+讀完 `carousel` 這份 guide，它的結論是原生 `scroll-snap` 加一小段 script，和我先前跟 agent 討論出的方向一致（不用拉 lib）。但它改掉了討論中的一句話：agent 之前寫位置指示（「3 / 128」）用 `IntersectionObserver`，理由是 Safari 不支援 `scrollsnapchange`；guide 的說法是位置追蹤該用 `scrollend`（Safari 26.2 起支援，2025-12 成為 Baseline），不支援時才退回 debounced `scroll`，`scrollsnapchange` 只有 Chrome 有。它還補上 agent 沒講的無障礙屬性（`aria-roledescription="carousel"`、`role="status"`）與 Safari 平滑捲動的卡頓陷阱。
+
+## 「模型的前端知識停在 2017 年」是真的嗎？
+
+我在社群上看過「模型訓練的 web 知識停在 2017 年」這類說法，懷疑是聳動標題，就問 agent：「所以他說模型訓練 web 停留在 2017 正確嗎」。agent 在 README 和整個 repo 用 `gh search code` 都找不到這個說法。2017 出現在 guide 裡的 Baseline 支援度資料，例如 `scroll-behavior` 從 Chrome 61（2017 年 9 月）開始支援，講的是 feature 哪一年開始能用。README 的原話是 `LLM training data contains vast amounts of legacy code`，講的是舊範例的比例，不是知識截止日。
+
+這次剛好看到一個對得上的例子：agent（Claude Opus 5.5）自述知識截止在 2026-06，`scrollend` 在 2025-12 就進了 Baseline，它理論上知道，第一輪還是寫了最常見的 `IntersectionObserver`。這是一次觀察，只能說與 README 的說法一致，不能推論成模型都會這樣。
+
+README 的 eval 快照也要打折看：claude_code（opus-5-5）在 215 題上從 57% 提升到 88%，也就是 31 個百分點。agent 提醒，題目、Playwright 評分腳本與標準答案都是官方設計，評分檢查的又剛好是 guide 推薦的寫法，這個數字只適合當上限參考。
+
+## legacy-scan 掃出兩個我看不出來的問題
+
+接著跑 `legacy-scan src`。它目前只涵蓋約兩成的 guide，卻在我的部落格抓出兩類共 4 筆問題，agent 逐筆對照它的 Keep／Drop 規則，確認都成立：
+
+1. `src/styles/global.css` 第 82 行只有 `::-webkit-scrollbar`，沒有標準的捲軸屬性。Firefox 不認這組寫法，Firefox 讀者看到的是系統預設的粗捲軸。
+2. 深淺色切換（`BlogLayout.astro`）沒有同步 `color-scheme`，整個 repo 也沒設過這個屬性。瀏覽器一直把頁面當成亮色頁面，所以暗色模式下系統捲軸和搜尋框的 `<input>` 這類原生元件還是亮的。
+
+這兩個問題在 Mac 的 Chrome 上完全看不出來。
+
+## 裝進 skills 目錄，第一次修改沒有全照 guide
+
+安裝只選 `modern-web-guidance`，不裝同 repo 的 `chrome-extensions`：
+
+```bash
+npx skills add GoogleChrome/modern-web-guidance -s modern-web-guidance -g -a claude-code -y
+```
+
+我選裝在共用的 `~/.claude/skills/`，其他帳號與 Codex 都用 symlink 指到這裡，一次就全部生效；走 plugin 的話只會裝進目前的帳號。
+
+這是裝好後第一次觸發：agent 直接 retrieve 了 `customize-scrollbar-color-and-thickness` 與 `dark-mode-toggle` 兩份 guide 來修。有兩處刻意沒照 guide 寫：
+
+1. **沒有在根元素寫 `color-scheme: light dark`**：guide 建議預設跟著系統走，但這個部落格在 JavaScript 尚未執行時，CSS token 固定是亮色主題。照寫的話，暗色系統下會出現「亮色頁面配暗色原生元件」。所以改成綁定 `html.dark` 與 `html.light` class，並照 guide 提醒同時更新 CSS 與 `<meta name="color-scheme">`（只改 meta 會被 CSS 宣告蓋掉），防閃爍的 inline script 與切換按鈕兩處都同步。
+2. **捲軸滑塊的對比度沒動**：guide 要求至少 3:1，目前的 `--border` token 在亮色約 1.3:1、暗色約 1.6:1，換成 `--muted` 才達標，但捲軸會明顯變深。這是視覺取捨，目前還沒改。
+
+捲軸本體照 guide 改用標準的 `scrollbar-width: thin` 與 `scrollbar-color`，把 WebKit 規則包進 `@supports not (scrollbar-color: auto)` 當舊版 Safari 的 fallback。`pnpm build` 通過、`legacy-scan` 重跑歸零，用 Playwright 來回切主題，`class`、meta、`color-scheme` 都同步，就先 commit 了。
+
+## 捲軸變肥了：guide 的寫法留不住 4px
+
+看實際畫面時，我說了一句：scrollbar 變肥了一點點。原本我把捲軸壓在 4px，而標準屬性 `scrollbar-width` 只有 `thin` 可選，比 4px 粗。Chrome 121 之後還有個反直覺的行為：只要寫了標準的 `scrollbar-width` 或 `scrollbar-color`，整組 `::-webkit-scrollbar` 就會被忽略，不是各取所需。
+
+agent 提的做法是反過來：Chrome 與 Safari 繼續用 4px 的 `::-webkit-scrollbar`，標準屬性包進 `@supports not selector(::-webkit-scrollbar)`，只讓 Firefox 套用：
+
+```css
+/* Chrome / Safari 維持 4px 極簡細捲軸 */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+/* 只有不認得 ::-webkit-scrollbar 的瀏覽器（Firefox）才套用標準屬性 */
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}
+```
+
+在 Chromium 上驗證，標準屬性的計算值是 `auto`，`@supports` 區塊被跳過，4px 生效，`color-scheme` 不受影響。我在意的是 4px 的視覺，所以選了這個寫法。agent 說標準寫法的好處是能保留系統的捲軸行為，不過它對各瀏覽器的細節也不確定，我沒有再往下查。
+
+## 發文前再驗證一次
+
+2026-11-21 我把可以重做的部分重做了一遍：
+
+- README 的數字對得上：兩個 repo 的 stars 如上表，feature 數是 262 個，eval 快照是 57% 到 88%（2026-11-08 那筆）。
+- 在 blog 重跑 `legacy-scan src`，先前的捲軸與 `color-scheme` 兩個問題不再被標出，混合寫法沒有被誤判。
+- 改掃另一個個人 repo，也抓到同樣的 `::-webkit-scrollbar` 舊寫法，以及 `[...arr].sort()` 可改成 `toSorted()`。
+- 它自己註明結果是 provisional，要對 Keep／Drop 條件逐筆判斷。blog 重掃時也冒出幾筆新的（`toSorted`、目錄元件的 scroll listener），這幾筆我沒有逐一判斷該不該改。
+
+## 這個 skill 真的很有用
+
+這個 skill 真的很有用，它幫 agent 補足了 modern web 的知識，讓 agent 知道可以使用更新的語法，也知道相容性問題，這對開發相當有幫助。光是簡單安裝下去，就能掃描出當下專案的小問題，這點就是證據，所以這個 skill 是很不錯的。
