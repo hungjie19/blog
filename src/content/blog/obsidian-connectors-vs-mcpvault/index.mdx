@@ -1,0 +1,100 @@
+---
+title: 'Obsidian Connector 分析：Skills 加 CLI，跟 MCPVault 的取捨'
+date: 2026-11-26T15:56:05+08:00
+description: '拆解 Obsidian 官方 Connector（Agent Skills 與 Obsidian CLI）提供了什麼，再從搜尋排序、Token 消耗與搬檔連結更新跟 MCPVault 比較，說明我最後的取捨：不換工具。'
+tags:
+  - Obsidian
+  - MCPVault
+  - Obsidian-CLI
+  - Skill
+  - MCP
+  - Knowledge-Management
+  - Token-Optimization
+cover: true
+---
+
+<KeyTakeaways>
+  <p>Obsidian 官方 Connector 是 MCP 嗎？不是，它是一套遵循 Agent Skills 規格的指令集加上官方 CLI；這是以標準 Markdown 連結的 vault 比較後的判斷，對我來說繼續以 MCPVault 為主、需要時用 CLI 查連結圖就夠，不需要換工具。</p>
+</KeyTakeaways>
+
+今天看到了消息：「Obsidian 現在有官方的連接器，適用於每個代理……您可以讓代理彼此合作，把知識整理為筆記、圖表、畫布、表格、看板等。」 看到「官方連接器」這幾個字，我的第一反應是趕快去翻[官方文件](https://obsidian.md/help/connectors)：Obsidian 自己出手做 MCP Server 了嗎？畢竟我的 Claude Code 目前已經掛了 MCPVault 在跑日常筆記搜尋與記憶讀取，如果官方出了原生整合方案，原本的工作流是不是該跟著換掉？
+
+## 分析 Obsidian Connectors
+
+打開官方說明頁 [Connectors](https://obsidian.md/help/connectors) 和開源倉庫 `obsidianmd/obsidian-skills`，答案很快就明確了：頁面上完全沒有提到 MCP、stdio transport 或常駐 server process。所謂的「Connector」，本質上是**七個遵循 `agentskills.io` 規格的 Agent Skills**，其中一個負責教 Agent 使用官方的 Obsidian CLI：
+
+* **格式類（不需開啟 Obsidian App）**：`obsidian-markdown`、`obsidian-bases`、`json-canvas`。這三個 Skill 教 Agent 看懂 Obsidian 專屬的語法與 JSON 結構，讀寫依然由 Agent 呼叫自己的檔案工具直接完成。
+* **操作類（需開啟 Obsidian App）**：`obsidian-cli`，負責教 Agent 用 Bash 呼叫官方的 [Obsidian CLI](https://obsidian.md/help/cli)。
+* **延伸工具類**：`obsidian-headless`（不靠桌面端進行 Sync 或 Publish）、`defuddle`（網頁轉 Markdown）與 `knap`（模板渲染）。
+
+官方頁寫的是：
+
+> Connectors let you connect Obsidian to any AI agent including Claude, ChatGPT, Antigravity, Cursor…
+>
+> （Connectors 讓你把 Obsidian 連接到任何 AI Agent，包括 Claude、ChatGPT、Antigravity、Cursor……）
+
+所以「適用於每個代理」指的不是一個跨平台共享的後端 Server，而是這些 Skill 都是純 Markdown 指令檔，支援 Skills 規格的 Agent 都能直接載入。至於宣傳詞裡提到的看板（Kanban），並不在這七個官方 Skill 之內，是 Agent 依照語法格式自己寫出來的檔案。
+
+兩邊倉庫的基本資料（2026-11-26 查詢）：
+
+| Repo | 用途定位 | Stars | 授權條款 |
+| --- | --- | --- | --- |
+| [obsidianmd/obsidian-skills](https://github.com/obsidianmd/obsidian-skills) | 官方 Agent Skills（格式規範與 CLI 用法） | 53.8k ⭐ | MIT |
+| [bitbonsai/mcpvault](https://github.com/bitbonsai/mcpvault) | 社群維護的本地 `stdio` MCP Server，直接讀寫 vault 檔案 | 1.7k ⭐ | MIT |
+
+## 跟現有 MCPVault 怎麼比？搜尋、Token 消耗與功能邊界
+
+釐清官方 Connector 不是 MCP 之後，真正該比較的是「**MCPVault**」與「**官方 Skills + Obsidian CLI**」這兩套方案在實際工作流裡的差異。兩邊都沒有公布官方 benchmark 數據，下表是從架構與文件整理的：
+
+| 比較維度 | MCPVault | 官方 CLI（搭配 `obsidian-cli` Skill） |
+| --- | --- | --- |
+| **運作架構** | 常駐本地 `stdio` MCP Server，直接讀寫檔案系統 | 每次執行開啟新 process，透過 IPC 連線 Obsidian 桌面端 |
+| **App 依賴** | 不需要開啟 Obsidian | 必須開啟 Obsidian 桌面端（沒開會先觸發冷啟動） |
+| **安全邊界** | 內建 vault 根目錄、symlink 檢查與 `--read-only` 模式 | 權限極高，包含可直接執行 App 內 JavaScript 的 `eval` |
+| **核心強項** | BM25 相關性排序、tag 列舉與管理（`list_all_tags`）、長筆記指定行數讀取 | 連結圖分析（`backlinks`、`unresolved`、`orphans`）、任務與資料庫查詢 |
+
+### 1. 搜尋機制如何影響 Token 消耗？
+
+兩邊都能限定搜尋範圍：MCPVault 用 `pathPrefix`，CLI 的 `search` 也有 `path=<folder>`。真正的差別在排序。
+
+我用同一個關鍵字 `pathPrefix` 在自己的 vault 各搜一次。MCPVault 用 BM25 排序，第一筆就是專門討論這個主題的筆記；CLI 的 `search` 一共回傳 12 個檔案，同一篇排在第 8 個，前面是只順帶提到這個詞的 log 與其他筆記。文件也沒有說明 CLI 搜尋結果怎麼排序。
+
+單看單次指令的回傳大小，兩邊差距不大，CLI 的 `search` 只回檔名，反而更省字。但 Agent 拿到排序不準的清單，就得多讀幾篇全文才找得到要的那篇，**MCPVault 省下來的是「後續少讀幾篇全文」的成本**。
+
+### 2. 多裝一包 Skill 會讓 Context 爆掉嗎？
+
+一開始我也擔心一次載入七個 Skill 會讓系統提示詞變得很肥，但查了載入機制後發現是誤判。Agent Skills 採用按需載入，平時常駐在 Context 裡的只有 Skill 名稱與一行簡短描述，每個大約只佔幾十到一百多 Token，只有任務真的觸發時才會讀取整份 `SKILL.md`。Claude Code 對 MCP Tool 也已經有 deferred loading 機制，常駐的同樣只有工具名稱。
+
+真正容易吃掉大量 Token 的地方不是 Skill 本身，而是 **CLI 走 Bash 執行，部分指令沒有筆數限制**。`search` 可以加 `limit=`，但 `orphans`、`unresolved` 只有 `total`（只回數量）可選；我的 vault 跑一次 `obsidian orphans` 就是 407 行，整段終端機輸出會直接灌進 Context 裡。
+
+### 3. 搬移檔案會不會順便更新連結？
+
+這是原本最吸引人的一點：既然官方 CLI 直接控制 Obsidian 本體，那讓它幫忙搬移或重新命名筆記時，應該就能自動更新其他筆記裡的內部連結，省掉自己寫腳本或手動修正的麻煩。
+
+但兩個工具各自卡在不同地方：
+
+* **MCPVault 不處理連結**：它的搬移筆記只做「讀取內容 → 寫入新路徑 → 刪除原檔」三個檔案系統動作，沒有解析或改寫內部連結的程式碼。
+* **Obsidian CLI 會更新連結，但寫回的格式不一定是你要的**：CLI 的 `move` 會連動更新指向該筆記的連結，但 `.obsidian/app.json` 維持預設值時，Obsidian 會改寫成「最短路徑」格式。例如 `[t](a/target.md)` 在 `target.md` 搬到 `b/` 之後，正確的相對路徑應該是 `b/target.md`，Obsidian 卻寫成 `[t](target.md)`。只要檔名在 vault 裡唯一，Obsidian 自己解析得到；但 GitHub 或其他 Markdown 工具是照相對路徑找檔案，這條連結就會壞掉。
+
+> [!CAUTION]
+> 如果你的知識庫要求「標準 Markdown 相對路徑」以確保跨工具相容性，不要直接用預設設定下的 Obsidian CLI 搬移檔案。可行的修法是在 `app.json` 補上 `"newLinkFormat": "relative"` 與 `"alwaysUpdateLinks": true`，但代價是之後在圖形介面拖曳檔案時也會直接改寫連結、不再先跳確認；這組設定我沒有改，改了也要重新測一次搬檔結果。
+
+> [!TIP]
+> Obsidian CLI 不用另外安裝，在 Obsidian 的 Settings → General 打開開關即可，執行指令時 Obsidian App 要開著。
+
+## 什麼情況該裝，什麼情況留著 MCPVault 就好？
+
+**如果你不需要 Canvas、Bases 或 Wikilinks 等 Obsidian 專屬格式，這套官方 Connector 並非必裝。** 我的筆記全部採用標準 Markdown 語法，資料夾結構與摘要格式也由自己的工作流定義，那三個教 Agent 寫專屬格式的 Skill 派不上用場。
+
+另外有一點很容易混淆：**使用 Obsidian CLI 並不需要先安裝官方 Skill**。CLI 是桌面端內建的功能，打開開關後在終端機跑 `obsidian help` 就能查到所有指令參數，Skill 的角色是幫 Agent 省掉讀說明書的摸索時間。
+
+所以對我這種已經在用 MCPVault 的情況，兩者不用二選一，而是分工：
+
+1. **日常搜尋與讀寫主力留給 MCPVault**：不需要為了讓 AI 找筆記而一直開著 Obsidian App，也保留 BM25 排序、tag 查詢與檔案系統安全邊界。
+2. **Obsidian CLI 留作唯讀的連結圖查詢工具**：偶爾做知識庫健檢時再呼叫它，補上 MCPVault 碰不到的 Obsidian 內部連結索引。`backlinks` 查某篇被哪些筆記引用、`unresolved` 找連不到的連結、`orphans` 找沒被任何筆記連到的檔案。不過結果要先過濾：我的 vault 跑 `unresolved` 列出 14 條，大多是刻意指向 vault 外的路徑（例如 `../../blog/...`）；`orphans` 的 407 個檔案也大多是 agent 報告、議會紀錄這類本來就不會被連的檔案。
+
+## 最後的決定
+
+這次我最在意的是兩件事：官方 Connector 到底提供了什麼，以及它跟我現在用的工具比起來如何。Obsidian 願意自己推出 Connector，代表有一條由官方維護、比較正式的路可以走；拆開來看，它是一包 Skill 加上一組要開著桌面端才能跑的 CLI，而 CLI 不靠 Skill 也能用。
+
+拿來跟 MCPVault 比完，對我來說重點是 MCPVault 有 BM25 搜尋、列出所有 tag 這類工具，讓 Agent 省 Token、快速找到對應的文件，這比較重要。至於讀寫、更新文件，筆記本來就是 MD 檔，兩邊都做得很好；我自己的筆記格式也早就寫在 Skill 裡，官方那幾個格式 Skill 對我沒有影響。剩下的就是個人取捨：分析完之後，我目前沒有需要增加或更換工具，CLI 開關打開，偶爾查連結圖就夠了。
