@@ -139,6 +139,7 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
     <div class="article-body">
       <Content components={{ KeyTakeaways, SlideGrid }} />
     </div>
+    <AuthorCard />
     {
       seriesList && (
         <aside class="series-box" aria-label="系列文章">
@@ -215,7 +216,6 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
         </nav>
       )
     }
-    <AuthorCard />
   </article>
   <TableOfContents headings={headings} />
 </BlogLayout>
@@ -686,8 +686,9 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
     text-align: center;
   }
 
+  /* 文末卡片（AuthorCard → 系列文 → 上下一篇）同組，間距一律 12px */
   .series-box {
-    margin-top: 2.5rem;
+    margin-top: 12px;
     padding: 16px 20px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -771,10 +772,6 @@ https://jasperhung.dev/posts/${aiPromptSlug}.md
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin-top: 2.5rem;
-  }
-
-  .series-box + .post-nav {
     margin-top: 12px;
   }
 

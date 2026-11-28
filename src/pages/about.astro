@@ -58,15 +58,17 @@ const challengesByYear = Object.entries(
 
     <div class="about-bio">
       <p>我是 Jasper，軟體工程師，研究 Agent Workflow，把它套進日常與工作。</p>
-      <p>現在主力用 Orca 指揮 Agent，搭 Tailscale 隨時連回來；懶得打字就開 Spokenly 語音聽寫。Claude 跟 Codex 雙開、三個帳號一起上工，記憶交給 OpenMemory、Obsidian 和 LLM Wiki 撐著。</p>
+      <p>現在主力用 Orca 指揮 Agent，搭 Tailscale 隨時連回來；懶得打字就開 Spokenly 語音聽寫。Claude、Codex、Gemini 三個夥伴一起上工，記憶交給 OpenMemory、Obsidian 和 LLM Wiki 撐著。</p>
       <p>AI 用多了，輸入太多、輸出太少，腦袋快塞爆，乾脆開了這個部落格把東西倒出來。</p>
       <p>寫文之後，也開始關心 SEO、AEO 和社群經營。</p>
       <p>這裡分享 AI 工具、Agent Workflow、軟體開發，以及各種實驗與踩坑心得。</p>
     </div>
 
     <div class="about-links">
-      <a href="https://github.com/hungjie19" target="_blank" rel="noopener" data-umami-event="click-github-about"><BrandIcon name="github" />GitHub</a>
       <a href="https://www.threads.com/@jasper.hung.one" target="_blank" rel="noopener" data-umami-event="click-threads-about"><BrandIcon name="threads" />Threads</a>
+      <a href="https://www.instagram.com/jasper.hung.one/" target="_blank" rel="noopener" data-umami-event="click-instagram-about"><BrandIcon name="instagram" />Instagram</a>
+      <a href="https://www.facebook.com/profile.php?id=61596638817324" target="_blank" rel="noopener" data-umami-event="click-facebook-about"><BrandIcon name="facebook" />Facebook</a>
+      <a href="https://github.com/hungjie19" target="_blank" rel="noopener" data-umami-event="click-github-about"><BrandIcon name="github" />GitHub</a>
     </div>
 
     <section aria-labelledby="challenges-title" class="mt-12 border-t border-border pt-8">
@@ -169,7 +171,8 @@ const challengesByYear = Object.entries(
 
   .about-links {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    gap: 8px 16px;
     margin-top: 20px;
   }
 
